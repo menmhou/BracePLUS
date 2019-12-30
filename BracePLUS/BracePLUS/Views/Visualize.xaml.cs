@@ -15,7 +15,6 @@ namespace BracePLUS.Views
     public partial class Visualize : ContentPage
     {
         VisualizeViewModel viewModel;
-
         public Visualize()
         {
             InitializeComponent();

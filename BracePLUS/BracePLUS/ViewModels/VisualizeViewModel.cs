@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
+using BracePLUS.Views;
 using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
 
@@ -18,55 +19,57 @@ namespace BracePLUS.ViewModels
         FastLineSeries x, y, z;
         public List<string> NodeList { get; set; }
         SfChart DataChart;
-        private static Random random;
 
         // View model commands
         public Command ClearDataCommand { get; set; }
 
         public VisualizeViewModel()
         {
-            x = new FastLineSeries { ItemsSource = App.x_data };
-            y = new FastLineSeries { ItemsSource = App.y_data };
-            z = new FastLineSeries { ItemsSource = App.z_data };
-
-            random = new Random();
-
-            //AddRandomData(500);
-
-            ClearDataCommand = new Command(() => ExecuteClearDataCommand());
+            x = new FastLineSeries { ItemsSource = App.chart_x_data };
+            y = new FastLineSeries { ItemsSource = App.chart_y_data };
+            z = new FastLineSeries { ItemsSource = App.chart_z_data };
 
             DataChart = new SfChart();
+
+            ExecuteInitChartCommand();
+
+            ClearDataCommand = new Command(() => ExecuteClearDataCommand());           
 
             NodeList = new List<string>();
             for (int i = 0; i < 16; i++)
                 NodeList.Add((i + 1).ToString());
 
-            ExecuteInitChartCommand();
+            AddRandomData(App.generator.Next(500, 1000));
         }
 
         public async Task Save()
         {
-            // Save
-            var filename = Path.Combine(App.FolderPath, $"{Path.GetRandomFileName()}.braceplus.dat");
-            File.WriteAllText(filename, MessageHandler.RandomString(8));
+            // Create file instance
+            var filename = Path.Combine(App.FolderPath, $"{Path.GetRandomFileName()}.dat");
+            FileStream file = new FileStream(filename, FileMode.Append, FileAccess.Write);
 
-            /*
+            bool writeFile = true;
             // Check if app has data.
             if (App.InputData.Count == 0)
             {
                 writeFile = await Application.Current.MainPage.DisplayAlert("Empty File", "No data received, stored file will be empty. Do you wish to continue?", "Yes", "No");
             }
-            
-            // If app has data/user has requested to continue with writing, fill file with all data available.
+
+            // If app has data/user has requested to continue with writing, fill file with all data available + header.
             if (writeFile)
             {
-                Debug.WriteLine("Writing file " + filename);
-                foreach (byte[] bytes in App.InputData)
+                // File header
+                byte[] b = new byte[3];
+                b[0] = 0x0A; b[1] = 0x0B; b[2] = 0x0C;
+                file.Write(b, 0, b.Length);
+
+                // Write file data and close.
+                foreach (var bytes in App.InputData)
                 {
-                    File.WriteAllBytes(filename, bytes);
+                    file.Write(bytes, 0, bytes.Length);
                 };
+                file.Close();
             }         
-            */
         }
 
         public void ExecuteInitChartCommand()
@@ -90,22 +93,27 @@ namespace BracePLUS.ViewModels
 
         public void ExecuteClearDataCommand()
         {
-            App.x_data.Clear();
-            App.y_data.Clear();
-            App.z_data.Clear();
+            App.chart_x_data.Clear();
+            App.chart_y_data.Clear();
+            App.chart_z_data.Clear();
         }
 
         void AddRandomData(int range)
         {
-            double[] values = new double[3]; 
+            double[] values = new double[4]; 
 
             for (double i = 0; i < range; i++)
             {
-                values[0] = App.generator.Next(0, 100);
-                values[1] = App.generator.Next(100, 200);
-                values[2] = App.generator.Next(200, 300);
+                values[0] = i;
+                values[1] = App.generator.Next(0, 100);
+                values[2] = App.generator.Next(100, 200);
+                values[3] = App.generator.Next(200, 300);
 
-                App.AddData(i, values);
+                //App.chart_x_data.Add(new ChartDataPoint(i, values[1]));
+                //App.chart_y_data.Add(new ChartDataPoint(i, values[2]));
+                //App.chart_z_data.Add(new ChartDataPoint(i, values[3]));
+
+                App.AddData(values);
             }
         }
     }

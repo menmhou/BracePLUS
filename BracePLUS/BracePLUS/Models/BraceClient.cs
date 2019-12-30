@@ -332,7 +332,7 @@ namespace BracePLUS.Models
                         break;
 
                     case Constants.SYS_INIT:
-                        await SystemInit(raw);
+                        SystemInit(raw);
                         Debug.WriteLine("Initialising system.");
                         break;
 
@@ -343,7 +343,7 @@ namespace BracePLUS.Models
             };
         }
 
-        async Task SystemInit(string raw)
+        void SystemInit(string raw)
         {
             // Send init command
             Debug.WriteLine("Beginning system init");
@@ -653,7 +653,7 @@ namespace BracePLUS.Models
             double[] time = data[0];
             double[] values = data[App.NODE_INDEX];
 
-            App.AddData(time[0], values);
+            //App.AddData(time[0], values);
 
             print(string.Format("t:{0} x:{1} y:{2} z{3}",
                 time[0], values[0], values[1], values[2]), info);

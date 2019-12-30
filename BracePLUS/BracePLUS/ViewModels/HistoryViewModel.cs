@@ -34,7 +34,7 @@ namespace BracePLUS.ViewModels
         {
             var tempData = new ObservableCollection<DataObject>();
 
-            var files = Directory.EnumerateFiles(App.FolderPath, "*.braceplus.dat");
+            var files = Directory.EnumerateFiles(App.FolderPath, "*.dat");
             foreach (var filename in files)
             {
                 // Get info about file
@@ -48,6 +48,10 @@ namespace BracePLUS.ViewModels
                 tempData.Add(new DataObject
                 {
                     Name = fi.Name,
+                    Size = fi.Length,
+                    Date = date,
+                    Filename = filename,
+                    Location = "Local",
                     Detail = detail
                 });  
             }
@@ -57,7 +61,15 @@ namespace BracePLUS.ViewModels
 
         public void ClearObjects()
         {
+            // Clear files from local list
             DataObjects.Clear();
+
+            // Clear files from memory
+            var files = Directory.EnumerateFiles(App.FolderPath, "*.dat");
+            foreach (var filename in files)
+            {
+                File.Delete(filename);
+            }
         }
 
         void LoadDummyItems()

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.ViewModels;
 using Syncfusion.SfChart.XForms;
@@ -15,9 +16,12 @@ namespace BracePLUS.Views
     public partial class History : ContentPage
     {
         HistoryViewModel viewModel;
+
+        MessageHandler handler;
         public History()
         {
             InitializeComponent();
+            handler = new MessageHandler();
             BindingContext = viewModel = new HistoryViewModel();
         }
 
@@ -26,9 +30,10 @@ namespace BracePLUS.Views
             base.OnAppearing();
             viewModel.LoadLocalFiles();
 
-            listView.ItemsSource = viewModel.DataObjects
+            listView.ItemsSource = viewModel.DataObjects;
+            /*
                 .OrderBy(d => d.Date)
-                .ToList();
+                .ToList(); */
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
@@ -39,9 +44,24 @@ namespace BracePLUS.Views
                 return;
 
             // Inspect file...
-            await Application.Current.MainPage.DisplayAlert("Inspect file", item.Name, "OK");
+            await Navigation.PushAsync(new Inspect
+            {
+                BindingContext = item
+            });
+   
 
             listView.SelectedItem = null;
+        }
+
+        private async void OnClearButtonAdded(object sender, EventArgs e)
+        {
+            // Check with user to clear all files
+            var clear = await Application.Current.MainPage.DisplayAlert("Clear files?", "Clear all files from device memory. Continue?", "Yes", "Cancel");
+
+            if (clear) viewModel.ClearObjects();
+
+            // Reload data in listview
+            listView.ItemsSource = null;
         }
     }
 }

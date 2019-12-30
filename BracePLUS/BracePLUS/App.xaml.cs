@@ -28,9 +28,9 @@ namespace BracePLUS
         public static bool isConnected;
         public static ICharacteristic characteristic;
         public static List<DataObject> dataList;
-        public static ObservableCollection<ChartDataPoint> x_data { get; set; }
-        public static ObservableCollection<ChartDataPoint> y_data { get; set; }
-        public static ObservableCollection<ChartDataPoint> z_data { get; set; }
+        public static ObservableCollection<ChartDataPoint> chart_x_data { get; set; }
+        public static ObservableCollection<ChartDataPoint> chart_y_data { get; set; }
+        public static ObservableCollection<ChartDataPoint> chart_z_data { get; set; }
 
         public App()
         {
@@ -45,9 +45,9 @@ namespace BracePLUS
 
             InputData = new List<byte[]>();
 
-            x_data = new ObservableCollection<ChartDataPoint>();
-            y_data = new ObservableCollection<ChartDataPoint>();
-            z_data = new ObservableCollection<ChartDataPoint>();
+            chart_x_data = new ObservableCollection<ChartDataPoint>();
+            chart_y_data = new ObservableCollection<ChartDataPoint>();
+            chart_z_data = new ObservableCollection<ChartDataPoint>();
 
             MainPage = new MainPage();
         }
@@ -68,11 +68,17 @@ namespace BracePLUS
             // Handle when your app resumes
         }
 
-        static public void AddData(double t, double[] data)
+        static public void AddData(double[] data)
         {
-            x_data.Add(new ChartDataPoint(t, data[0]));
-            y_data.Add(new ChartDataPoint(t, data[1]));
-            z_data.Add(new ChartDataPoint(t, data[2]));
+            var t = data[0];
+            chart_x_data.Add(new ChartDataPoint(t, data[1]));
+            chart_y_data.Add(new ChartDataPoint(t, data[2]));
+            chart_z_data.Add(new ChartDataPoint(t, data[3]));
+
+            foreach (var datum in data)
+            {
+                InputData.Add(BitConverter.GetBytes(datum));
+            }
         }
     }
 }
