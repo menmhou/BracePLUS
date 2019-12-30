@@ -15,6 +15,7 @@
                       IsRefreshing="{Binding IsRefreshing, Mode=OneWay}"
                       IsGroupingEnabled="True">
 
+                
                 <ListView.GroupHeaderTemplate>
                     <DataTemplate>
                         <ViewCell>
