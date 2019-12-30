@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:sv="clr-namespace:AiForms.Renderers;assembly=SettingsView"
+                x:Class="BracePLUS.Views.Settings">
+
+    <ContentPage.Content>
+
+        <sv:SettingsView HasUnevenRows="True">
+
+            <sv:Section>
+                <sv:ButtonCell Title="Test Data Logging"
+                               Command="{Binding TestSDUploadCommand}"
+                               IsEnabled="{Binding Autoconnect}"
+                               TitleColor="{StaticResource TitleTextColor}"
+                               TitleAlignment="Center" />
+
+                <sv:ButtonCell Title="Get SD Card Info"
+                               Command="{Binding GetSDInfoCommand}"
+                               TitleColor="{StaticResource TitleTextColor}"
+                               TitleAlignment="Center" />
+            </sv:Section>
+
+            <sv:Section>
+                <sv:ButtonCell Title="Save Configuration"
+                               Command="{Binding SaveConfigurationCommand}"
+                               TitleColor="{StaticResource TitleTextColor}"
+                               TitleAlignment="Center" />
+            </sv:Section>
+
+            <sv:Section>
+                <sv:LabelCell Title="Connected Device"
+                              TitleColor="Black"
+                              ValueText="{Binding ConnectedDevice}"
+                              ValueTextColor="Black"/>
+                <sv:LabelCell Title="Device ID"
+                              ValueText="{Binding DeviceID}"
+                              TitleColor="Black"
+                              ValueTextColor="Black"/>
+                <sv:LabelCell Title="Signal Strength"
+                              ValueText="{Binding RSSI}"
+                              TitleColor="Black"
+                              ValueTextColor="Black"/>
+
+                <sv:SwitchCell Title="Switch"
+                               On="true"
+                               Description="This is description." />
+            </sv:Section>
+
+        </sv:SettingsView>
+
+    </ContentPage.Content>
+
+</ContentPage>
+

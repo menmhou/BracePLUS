@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BracePLUS.Views.Interface">
+
+    <ContentPage.ToolbarItems>
+
+        <ToolbarItem Text="Clear"
+                     Priority="0"
+                     Clicked="OnClearMessagesButtonClicked"/>
+
+        <ToolbarItem Text="Scan"
+                     Priority="1"
+                     Clicked="OnScanButtonClicked"/>
+
+    </ContentPage.ToolbarItems>
+
+    <ContentPage.Content>
+        <StackLayout Padding="8, 8, 8, 8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="40"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="ConnectionButton"
+                        Text="{Binding ConnectButtonText}"
+                        Command="{Binding ConnectCommand}"
+                        Grid.ColumnSpan="2"/>
+                <Button x:Name="StreamButton"
+                        Text="{Binding StreamButtonText}"
+                        Command="{Binding StreamCommand}"
+                        Grid.Row="1"
+                        Grid.Column="0"/>
+                <Button x:Name="SaveSDCardButton"
+                        Text="{Binding SaveButtonText}"
+                        Command="{Binding SaveCommand}"
+                        Grid.Row="1"
+                        Grid.Column="1" />
+            </Grid>
+
+            <StackLayout Spacing="10"
+                         Padding="5"
+                         Orientation="Vertical"
+                         x:Name="outerStack">
+
+                <ScrollView>
+                    <StackLayout x:Name="MessageStack"
+                                 Spacing="5"
+                                 HorizontalOptions="FillAndExpand"
+                                 VerticalOptions="FillAndExpand">
+
+                    </StackLayout>
+                </ScrollView>
+
+            </StackLayout>
+
+        </StackLayout>
+
+    </ContentPage.Content>
+
+</ContentPage>

@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TabbedPage xmlns="http://xamarin.com/schemas/2014/forms"
+            xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+            xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            mc:Ignorable="d"
+            xmlns:views="clr-namespace:BracePLUS.Views"
+            x:Class="BracePLUS.Views.MainPage">
+
+    <!-- Set tabs for app -->
+    <TabbedPage.Children>
+
+        <!-- Interface page -->
+        <NavigationPage Title="Connect">
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="connect_logo.png" />
+                    <On Platform="Android" Value="ConnectLogoWhite.png" />
+                </OnPlatform>
+            </NavigationPage.Icon>
+            <x:Arguments>
+                <views:Interface />
+            </x:Arguments>
+        </NavigationPage>
+
+        <!-- Data Visualisation page -->
+        <NavigationPage Title="Data">
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="LiveDataLogo.png" />
+                    <On Platform="Android" Value="DataLogoWhite.png" />
+                </OnPlatform>
+            </NavigationPage.Icon>
+            <x:Arguments>
+                <views:Visualize />
+            </x:Arguments>
+        </NavigationPage>
+
+        <!-- Browse page -->
+        <NavigationPage Title="History">
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="HistoryLogo.png" />
+                    <On Platform="Android" Value="history_icon.png" />
+                </OnPlatform>
+            </NavigationPage.Icon>
+            <x:Arguments>
+                <views:History />
+            </x:Arguments>
+        </NavigationPage>
+
+        <!-- Settings page -->
+        <NavigationPage Title="Settings">
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="settings_icon.png" />
+                    <On Platform="Android" Value="settings_icon.png" />
+                </OnPlatform>
+            </NavigationPage.Icon>
+            <x:Arguments>
+                <views:Settings />
+            </x:Arguments>
+        </NavigationPage>
+
+    </TabbedPage.Children>
+
+</TabbedPage>

@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:BracePLUS.ViewModels"
+             x:Class="BracePLUS.Views.History">
+
+    <ContentPage.Content>
+        <StackLayout Margin="7, 0, 10, 0">
+
+            <ListView x:Name="HistoryListView"
+                      ItemsSource="{Binding Data}"
+                      ItemSelected="OnItemSelected"
+                      IsPullToRefreshEnabled="False"
+                      RefreshCommand="{Binding RefreshCommand}"
+                      IsRefreshing="{Binding IsRefreshing, Mode=OneWay}"
+                      IsGroupingEnabled="True">
+
+                <ListView.GroupHeaderTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <Label Text="{Binding Location}"
+                                   FontSize="Medium"/>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.GroupHeaderTemplate>
+                               
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextCell Text="{Binding Name}" />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                
+            </ListView>
+            
+        </StackLayout>
+    </ContentPage.Content>    
+
+</ContentPage>
