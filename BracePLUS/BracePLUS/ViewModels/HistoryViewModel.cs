@@ -9,47 +9,55 @@ using Xamarin.Forms;
 using BracePLUS.Models;
 using System.Collections.Generic;
 using BracePLUS.Views;
+using BracePLUS.Extensions;
 
 namespace BracePLUS.ViewModels
 {
     public class HistoryViewModel : BaseViewModel
     {
-        // Commands
-       // public 
-
         // Public Properties
         public bool IsRefreshing { get; set; }
 
-        public ObservableCollection<DataObject> Data { get; set; }
+        // Private Properties
+        MessageHandler handler;
+
+        public ObservableCollection<DataObject> DataObjects { get; set; }
 
         public HistoryViewModel()
         {
             Title = "History";
-            Data = new ObservableCollection<DataObject>();
+            DataObjects = new ObservableCollection<DataObject>();
+            handler = new MessageHandler();
         }
 
         public void LoadLocalFiles()
         {
             var tempData = new ObservableCollection<DataObject>();
 
-            var files = Directory.EnumerateFiles(App.FolderPath, "*.notes.txt");
+            var files = Directory.EnumerateFiles(App.FolderPath, "*.braceplus.dat");
             foreach (var filename in files)
             {
-                Debug.WriteLine("Discovered file: " + File.ReadAllText(filename));
+                // Get info about file
+                FileInfo fi = new FileInfo(filename);
+
+                var date = File.GetCreationTime(filename).ToString();
+                var size = handler.FormattedFileSize(fi.Length);
+                var detail = String.Format("{0}, {1}", size, date);
+
                 // Create new data object
                 tempData.Add(new DataObject
                 {
-                    Filename = filename,
-                    Name = "test"
+                    Name = fi.Name,
+                    Detail = detail
                 });  
             }
 
-            Data = tempData;
+            DataObjects = tempData;
         }
 
         public void ClearObjects()
         {
-            Data.Clear();
+            DataObjects.Clear();
         }
 
         void LoadDummyItems()

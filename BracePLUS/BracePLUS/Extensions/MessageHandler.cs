@@ -222,5 +222,24 @@ namespace BracePLUS.Extensions
 
             return data;
         }
+
+        public string FormattedFileSize(long len)
+        {
+            string filesize = "";
+            if (len < 1000)
+            {
+                filesize = string.Format("{0} Bytes", len);
+            }
+            else if (len < 1000000)
+            {
+                filesize = string.Format("{0} KB", len / 1000);
+            }
+            else
+            {
+                filesize = string.Format("{0} MB", len / 1000000);
+            }
+
+            return filesize;
+        }
     }
 }

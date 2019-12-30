@@ -5,17 +5,30 @@
              x:Class="BracePLUS.Views.History">
 
     <ContentPage.Content>
-        <StackLayout Margin="7, 0, 10, 0">
+        <StackLayout Margin="0, 0, 0, 0">
 
+            <ListView x:Name="listView"
+                      Margin="4"
+                      ItemSelected="OnListViewItemSelected"
+                      IsPullToRefreshEnabled="False">
+                
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextCell Text="{Binding Name}"
+                                  Detail="{Binding Detail}" />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!--
             <ListView x:Name="HistoryListView"
-                      ItemsSource="{Binding Data}"
+                      ItemsSource="{Binding DataObjects}"
                       ItemSelected="OnItemSelected"
                       IsPullToRefreshEnabled="False"
                       RefreshCommand="{Binding RefreshCommand}"
                       IsRefreshing="{Binding IsRefreshing, Mode=OneWay}"
                       IsGroupingEnabled="True">
 
-                
                 <ListView.GroupHeaderTemplate>
                     <DataTemplate>
                         <ViewCell>
@@ -24,15 +37,15 @@
                         </ViewCell>
                     </DataTemplate>
                 </ListView.GroupHeaderTemplate>
-                               
+  
+
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextCell Text="{Binding Name}" />
+                        <TextCell Text="Test" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
-                
             </ListView>
-            
+            -->
         </StackLayout>
     </ContentPage.Content>    
 

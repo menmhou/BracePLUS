@@ -24,12 +24,14 @@ namespace BracePLUS.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-
-            HistoryListView.ItemsSource = viewModel.Data;
             viewModel.LoadLocalFiles();
+
+            listView.ItemsSource = viewModel.DataObjects
+                .OrderBy(d => d.Date)
+                .ToList();
         }
 
-        async void OnItemSelected(object sender, SelectedItemChangedEventArgs e)
+        async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
         {
             Debug.WriteLine("Item selected.");
             var item = e.SelectedItem as DataObject;
@@ -39,7 +41,7 @@ namespace BracePLUS.Views
             // Inspect file...
             await Application.Current.MainPage.DisplayAlert("Inspect file", item.Name, "OK");
 
-            HistoryListView.SelectedItem = null;
+            listView.SelectedItem = null;
         }
     }
 }

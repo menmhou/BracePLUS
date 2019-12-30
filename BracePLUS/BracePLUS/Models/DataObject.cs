@@ -14,11 +14,11 @@ namespace BracePLUS.Models
         public bool IsDownloaded { get; set; }
 
         public string Name { get; set; }
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
         public string Filename { get; set; }
         public string Location { get; set; }
-
         public int Size { get; set; }
+        public string Detail { get; set; }
 
         public List<byte[]> Data { get; set; }
         

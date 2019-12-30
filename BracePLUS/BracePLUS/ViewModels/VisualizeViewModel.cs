@@ -47,8 +47,7 @@ namespace BracePLUS.ViewModels
         public async Task Save()
         {
             // Save
-            // Save
-            var filename = Path.Combine(App.FolderPath, $"{Path.GetRandomFileName()}.notes.txt");
+            var filename = Path.Combine(App.FolderPath, $"{Path.GetRandomFileName()}.braceplus.dat");
             File.WriteAllText(filename, MessageHandler.RandomString(8));
 
             /*
