@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,6 +43,15 @@ namespace BracePLUS.Views
             var item = e.SelectedItem as DataObject;
             if (item == null)
                 return;
+
+            Debug.WriteLine("Reading all bytes...");
+
+            // Read all data into object
+            item.Data = File.ReadAllBytes(item.Filename);
+            item.IsDownloaded = true;
+
+            Debug.WriteLine("Byte reading completed.");
+            Debug.Write(item.Data.Length); Debug.WriteLine(" bytes read.");
 
             // Inspect file...
             await Navigation.PushAsync(new Inspect

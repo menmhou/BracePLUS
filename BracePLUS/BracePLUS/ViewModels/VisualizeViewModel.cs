@@ -39,7 +39,8 @@ namespace BracePLUS.ViewModels
             for (int i = 0; i < 16; i++)
                 NodeList.Add((i + 1).ToString());
 
-            AddRandomData(App.generator.Next(500, 1000));
+            for (int i = 0; i < 100; i++)
+                AddRandomData(Constants.BUF_SIZE);
         }
 
         public async Task Save()
@@ -100,21 +101,20 @@ namespace BracePLUS.ViewModels
 
         void AddRandomData(int range)
         {
-            double[] values = new double[4]; 
+            byte[] values = new byte[range];
 
-            for (double i = 0; i < range; i++)
-            {
-                values[0] = i;
-                values[1] = App.generator.Next(0, 100);
-                values[2] = App.generator.Next(100, 200);
-                values[3] = App.generator.Next(200, 300);
+            Random rand = new Random();
 
-                //App.chart_x_data.Add(new ChartDataPoint(i, values[1]));
-                //App.chart_y_data.Add(new ChartDataPoint(i, values[2]));
-                //App.chart_z_data.Add(new ChartDataPoint(i, values[3]));
+            // Add random values for rest of data
+            rand.NextBytes(values);
 
-                App.AddData(values);
-            }
+            // Simulate time bytes
+            values[0] = 0;
+            values[1] = 0;
+            values[2] = 0;
+            values[3] = 0;
+
+            App.AddData(values);
         }
     }
 }

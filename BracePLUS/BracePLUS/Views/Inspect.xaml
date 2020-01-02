@@ -11,6 +11,7 @@
     <ContentPage.Content>
         <TableView x:Name="tableView"
                    HasUnevenRows="True">
+            
             <TableSection Title="Data Info"
                           TextColor="CadetBlue">
                 <ViewCell>
@@ -35,9 +36,10 @@
                     </Grid>
                 </ViewCell>
             </TableSection>
+            
             <TableSection Title="Graph"
                           TextColor="CadetBlue">
-                <ViewCell>
+                <ViewCell Tapped="GridTapped">
                     <chart:SfChart x:Name="chart"
                                    HeightRequest="160"
                                    VerticalOptions="FillAndExpand"
@@ -51,8 +53,14 @@
                         <chart:SfChart.SecondaryAxis>
                             <chart:NumericalAxis IsVisible="False"/>
                         </chart:SfChart.SecondaryAxis>
-
                     </chart:SfChart>
+                </ViewCell>
+            </TableSection>
+            <TableSection Title="Raw Data"
+                          TextColor="CadetBlue">
+                <ViewCell Tapped="RawDataTapped">
+                    <Label Text="{Binding DataString}"
+                           FontSize="Medium"/>
                 </ViewCell>
             </TableSection>
         </TableView>

@@ -42,7 +42,7 @@ namespace BracePLUS.ViewModels
 
                 var date = File.GetCreationTime(filename).ToString();
                 var size = handler.FormattedFileSize(fi.Length);
-                var detail = String.Format("{0}, {1}", size, date);
+                var detail = string.Format("{0}, {1}", size, date);
 
                 // Create new data object
                 tempData.Add(new DataObject
@@ -52,6 +52,7 @@ namespace BracePLUS.ViewModels
                     Date = date,
                     Filename = filename,
                     Location = "Local",
+                    IsDownloaded = false,
                     Detail = detail
                 });  
             }

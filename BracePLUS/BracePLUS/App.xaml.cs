@@ -68,17 +68,16 @@ namespace BracePLUS
             // Handle when your app resumes
         }
 
-        static public void AddData(double[] data)
+        static public void AddData(byte[] bytes)
         {
-            var t = data[0];
+            /*
             chart_x_data.Add(new ChartDataPoint(t, data[1]));
             chart_y_data.Add(new ChartDataPoint(t, data[2]));
             chart_z_data.Add(new ChartDataPoint(t, data[3]));
+            */
 
-            foreach (var datum in data)
-            {
-                InputData.Add(BitConverter.GetBytes(datum));
-            }
+            InputData.Add(bytes);
+            
         }
     }
 }
