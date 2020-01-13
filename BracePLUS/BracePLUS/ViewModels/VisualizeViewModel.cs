@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,22 +17,31 @@ namespace BracePLUS.ViewModels
     public class VisualizeViewModel : BaseViewModel
     {
         // View model properties
-        FastLineSeries x, y, z;
         public List<string> NodeList { get; set; }
         SfChart DataChart;
 
         // View model commands
         public Command ClearDataCommand { get; set; }
 
+        public ObservableCollection<ChartDataModel> LineData1 { get; set; }
+        public ObservableCollection<ChartDataModel> LineData2 { get; set; }
+        public ObservableCollection<ChartDataModel> LineData3 { get; set; }
+
         public VisualizeViewModel()
         {
-            x = new FastLineSeries { ItemsSource = App.chart_x_data };
-            y = new FastLineSeries { ItemsSource = App.chart_y_data };
-            z = new FastLineSeries { ItemsSource = App.chart_z_data };
+            LineData1 = new ObservableCollection<ChartDataModel>();
+            LineData2 = new ObservableCollection<ChartDataModel>();
+            LineData3 = new ObservableCollection<ChartDataModel>();
 
             DataChart = new SfChart();
 
-            ExecuteInitChartCommand();
+            ChartZoomPanBehavior behavior = new ChartZoomPanBehavior
+            {
+                ZoomMode = ZoomMode.X,
+                MaximumZoomLevel = 10
+            };
+
+            DataChart.ChartBehaviors.Add(behavior);
 
             ClearDataCommand = new Command(() => ExecuteClearDataCommand());           
 
@@ -39,7 +49,9 @@ namespace BracePLUS.ViewModels
             for (int i = 0; i < 16; i++)
                 NodeList.Add((i + 1).ToString());
 
-            for (int i = 0; i < 100; i++)
+            Random rand = new Random();
+
+            for (int i = 0; i < rand.Next(10); i++)
                 AddRandomData(Constants.BUF_SIZE);
         }
 
@@ -64,32 +76,16 @@ namespace BracePLUS.ViewModels
                 b[0] = 0x0A; b[1] = 0x0B; b[2] = 0x0C;
                 file.Write(b, 0, b.Length);
 
-                // Write file data and close.
+                // Write file data
                 foreach (var bytes in App.InputData)
                 {
                     file.Write(bytes, 0, bytes.Length);
                 };
+
+                // File footer and close.
+                file.Write(b, 0, b.Length);
                 file.Close();
             }         
-        }
-
-        public void ExecuteInitChartCommand()
-        {
-            x.Color = Color.Blue;
-            y.Color = Color.Red;
-            z.Color = Color.Green;
-
-            DataChart.Series.Add(x);
-            DataChart.Series.Add(y);
-            DataChart.Series.Add(z);
-
-            ChartZoomPanBehavior behavior = new ChartZoomPanBehavior
-            {
-                ZoomMode = ZoomMode.X,
-                MaximumZoomLevel = 10
-            };
-
-            DataChart.ChartBehaviors.Add(behavior);
         }
 
         public void ExecuteClearDataCommand()
@@ -113,6 +109,24 @@ namespace BracePLUS.ViewModels
             values[1] = 0;
             values[2] = 0;
             values[3] = 0;
+
+            for (int i = 4; i < range; i+=6)
+            {
+                try
+                {
+                    var x = (values[i] * 256 + values[i+1]) * 0.00906;
+                    var y = (values[i + 2] * 256 + values[i + 3]) * 0.00906;
+                    var z = (values[i + 4] * 256 + values[i + 5]) * 0.00906;
+
+                    LineData1.Add(new ChartDataModel(i.ToString(), x));
+                    LineData2.Add(new ChartDataModel(i.ToString(), y));
+                    LineData3.Add(new ChartDataModel(i.ToString(), z));
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Random data generation ended with exception: " + ex.Message);
+                }               
+            }
 
             App.AddData(values);
         }

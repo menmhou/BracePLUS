@@ -28,7 +28,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Button x:Name="ConnectionButton"
-                        Text="{Binding ConnectButtonText}"
+                        Text="{Binding ConnectText}"
                         Command="{Binding ConnectCommand}"
                         Grid.ColumnSpan="2"/>
                 <Button x:Name="StreamButton"

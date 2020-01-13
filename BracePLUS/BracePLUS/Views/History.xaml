@@ -13,14 +13,23 @@
         <StackLayout Margin="0, 0, 0, 0">
 
             <ListView x:Name="listView"
-                      Margin="4"
                       ItemSelected="OnListViewItemSelected"
-                      IsPullToRefreshEnabled="False">
+                      HasUnevenRows="True"
+                      IsPullToRefreshEnabled="False"
+                      BackgroundColor="#EEEEEE">
                 
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextCell Text="{Binding Name}"
-                                  Detail="{Binding Detail}" />
+                        <ViewCell>
+                            <StackLayout Margin="6, 6, 6, 6">
+                                <Label Text="{Binding Name}"
+                                       FontSize="Subtitle"
+                                       TextColor="Black"/>
+                                <Label Text="{Binding Detail}"
+                                       FontSize="Small"
+                                       TextColor="DimGray"/>
+                            </StackLayout>
+                        </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

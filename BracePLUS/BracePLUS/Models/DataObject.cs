@@ -14,11 +14,9 @@ namespace BracePLUS.Models
     {
         private MessageHandler handler;
 
-        FastLineSeries x, y, z;
-
-        private ObservableCollection<ChartDataPoint> x_data;
-        private ObservableCollection<ChartDataPoint> y_data;
-        private ObservableCollection<ChartDataPoint> z_data;
+        private ObservableCollection<ChartDataModel> LineData1;
+        private ObservableCollection<ChartDataModel> LineData2;
+        private ObservableCollection<ChartDataModel> LineData3;
 
         public bool IsDownloaded { get; set; }
         public string Name { get; set; }
@@ -31,11 +29,15 @@ namespace BracePLUS.Models
             get { return handler.FormattedFileSize(Size); }
             set { }
         }
-        public string Detail { get; set; }
+        public string Detail
+        { 
+            get { return string.Format("{0}, {1}", FormattedSize, Date); }
+            set { }
+        }
 
         public string DataString 
         {
-            get { return BitConverter.ToString(Data); }
+            get { return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "..."); }
             set { }
         }
 
@@ -45,13 +47,9 @@ namespace BracePLUS.Models
         {
             handler = new MessageHandler();
 
-            x_data = new ObservableCollection<ChartDataPoint>();
-            y_data = new ObservableCollection<ChartDataPoint>();
-            z_data = new ObservableCollection<ChartDataPoint>();
-
-            x = new FastLineSeries { ItemsSource = x_data } ;
-            y = new FastLineSeries { ItemsSource = y_data } ;
-            z = new FastLineSeries { ItemsSource = z_data } ;
+            LineData1 = new ObservableCollection<ChartDataModel>();
+            LineData2 = new ObservableCollection<ChartDataModel>();
+            LineData3 = new ObservableCollection<ChartDataModel>();
         }
 
         public bool DownloadData(string path)
@@ -74,26 +72,25 @@ namespace BracePLUS.Models
         {
             double _x, _y, _z;
 
-            for (int i = 0; i < 50; i++)
+            chart = new SfChart();
+
+            try
             {
-                _x = ((Data[(i * 6) + 4] << 8) + Data[(i * 6) + 5]) * 0.00906;
-                _y = ((Data[(i * 6) + 6] << 8) + Data[(i * 6) + 7]) * 0.00906;
-                _z = ((Data[(i * 6) + 8] << 8) + Data[(i * 6) + 9]) * 0.02636;
+                for (int i = 0; i < 100; i++)
+                {
+                    _x = ((Data[(i * 6) + 4] << 8) + Data[(i * 6) + 5]) * 0.00906;
+                    _y = ((Data[(i * 6) + 6] << 8) + Data[(i * 6) + 7]) * 0.00906;
+                    _z = ((Data[(i * 6) + 8] << 8) + Data[(i * 6) + 9]) * 0.02636;
 
-                x_data.Add(new ChartDataPoint(i, _x));
-                y_data.Add(new ChartDataPoint(i, _y));
-                z_data.Add(new ChartDataPoint(i, _z));
+                    LineData1.Add(new ChartDataModel(i.ToString(), _x));
+                    LineData1.Add(new ChartDataModel(i.ToString(), _y));
+                    LineData1.Add(new ChartDataModel(i.ToString(), _z));
+                }
             }
-
-            x.Color = Color.Blue;
-            y.Color = Color.Red;
-            z.Color = Color.Green;
-
-            x.ItemsSource = x_data;
-
-            chart.Series.Add(x);
-            chart.Series.Add(y);
-            chart.Series.Add(z);
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Chart initialisation failed with exception: " + ex.Message);
+            }           
         }
     }
 }

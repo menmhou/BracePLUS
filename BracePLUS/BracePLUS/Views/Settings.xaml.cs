@@ -16,5 +16,20 @@ namespace BracePLUS.Views
             InitializeComponent();
             BindingContext = viewModel = new SettingsViewModel();
         }
+
+        private async void TestLoggingCellTapped(object sender, EventArgs e)
+        {
+            await viewModel.ExecuteTestSDUploadCommand();
+        }
+
+        private async void GetSDStatusTapped(object sender, EventArgs e)
+        {
+            await viewModel.ExecuteGetSDInfoCommand();
+        }
+
+        private async void SystemResetTapped(object sender, EventArgs e)
+        {
+            await viewModel.ExecuteSystemResetCommand();
+        }
     }
 }

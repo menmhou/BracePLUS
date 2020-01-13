@@ -31,6 +31,24 @@
                             VerticalOptions="FillAndExpand"
                             HorizontalOptions="FillAndExpand">
 
+                <chart:SfChart.Series>
+                    <chart:LineSeries x:Name="lineSeries1" 
+                                      ItemsSource="{Binding LineData1}" 
+                                      Color="Red"
+                                      XBindingPath="Name"
+                                      YBindingPath="Value" />
+                    <chart:LineSeries x:Name="lineSeries2" 
+                                      ItemsSource="{Binding LineData2}" 
+                                      Color="Blue"
+                                      XBindingPath="Name"
+                                      YBindingPath="Value" />
+                    <chart:LineSeries x:Name="lineSeries3" 
+                                      ItemsSource="{Binding LineData3}" 
+                                      Color="Green"
+                                      XBindingPath="Name"
+                                      YBindingPath="Value" />
+                </chart:SfChart.Series>
+                
                 <chart:SfChart.PrimaryAxis>
                     <chart:CategoryAxis AutoScrollingDelta="100"/> 
                 </chart:SfChart.PrimaryAxis>

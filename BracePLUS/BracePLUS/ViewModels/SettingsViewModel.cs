@@ -12,9 +12,21 @@ namespace BracePLUS.ViewModels
     {
         // View properties
         public bool Autoconnect;
-        public string ConnectedDevice { get; set; }
-        public string DeviceID { get; set; }
-        public string RSSI { get; set; }
+        public string ConnectedDevice 
+        { 
+            get { return App.ConnectedDevice; }
+            set { } 
+        }
+        public string DeviceID
+        {
+            get { return App.DeviceID; }
+            set { }
+        }
+        public string RSSI
+        {
+            get { return App.RSSI; }
+            set { }
+        }
 
         // View commands
         public Command TestSDUploadCommand { get; set; }
@@ -29,18 +41,13 @@ namespace BracePLUS.ViewModels
 
             TestSDUploadCommand = new Command(async () => await ExecuteTestSDUploadCommand());
             GetSDInfoCommand = new Command(async () => await ExecuteGetSDInfoCommand());
-
-            ConnectedDevice = App.Client.ConnectedDevice;
-            DeviceID = App.Client.DeviceID;
-            RSSI = App.Client.RSSI;
         }
 
         public async Task ExecuteTestSDUploadCommand()
         {
             if (!App.isConnected)
             {
-                //await DisplayAlert("Unconnected", "Please connect to Brace+ to test data logging.", "OK");
-
+                await Application.Current.MainPage.DisplayAlert("Unconnected", "Please connect to Brace+ to test data logging.", "OK");
             }
             else
             {
@@ -53,12 +60,25 @@ namespace BracePLUS.ViewModels
         {
             if (!App.isConnected)
             {
-                // await DisplayAlert("Unconnected", "Please connect to Brace+ to get SD card information.", "OK");
+                await Application.Current.MainPage.DisplayAlert("Unconnected", "Please connect to Brace+ to get SD card information.", "OK");
             }
             else
             {
                 // Get SD Card Info
                 await App.Client.GetSDInfo();
+            }
+        }
+
+        public async Task ExecuteSystemResetCommand()
+        {
+            if (!App.isConnected)
+            {
+                await Application.Current.MainPage.DisplayAlert("Unconnected", "Please connect to Brace+ to reset system.", "OK");
+            }
+            else
+            {
+                // Perform system reset
+                // await App.Client....
             }
         }
     }

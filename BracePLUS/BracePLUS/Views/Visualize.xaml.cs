@@ -26,7 +26,6 @@ namespace BracePLUS.Views
             base.OnAppearing();
 
             NodePicker.SelectedIndex = 0;
-            viewModel.ExecuteInitChartCommand();
         }
 
         void OnPickerSelectedIndexChanged(object sender, EventArgs e)

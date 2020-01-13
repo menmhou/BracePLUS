@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BracePLUS.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -20,73 +21,90 @@ namespace BracePLUS.Extensions
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        public string translate(string str)
+        public string translate(string str, int status = 0)
         {
-            string msg;
+            string msg = "";
 
-            switch (str)
+            switch (status)
             {
-                case "X":
-                    msg = "Connection with Brace+ Established.";
+                case Constants.SYS_INIT:
+                    if (str == "^") msg = "System Initialised and Active.";
+                    else if (str == ".") msg = "System Initialisation Failed.";
+                    else if (str == "i") msg = "Initalising system.";
                     break;
 
-                case "i":
-                    msg = "Initalising system...";
-                    break;
-
-                case "I":
-                    msg = "System Initalisation complete.";
-                    break;
-
-                case "t":
-                    msg = "Testing SD data logging...";
-                    break;
-
-                case "e":
-                    msg = "Error. File open failed.";
-                    break;
-
-                case "T":
-                    msg = "SD data log tests complete.";
-                    break;
-
-                case "F":
-                    msg = "Uploading files from SD Card...";
-                    break;
-
-                case "C":
-                    msg = "SD Card status checks complete.";
-                    break;
-
-                case "l":
-                    msg = "Logging data to SD Card...";
-                    break;
-
-                case "L":
-                    msg = "Data logging finished.";
-                    break;
-
-                case "g":
-                    msg = "Starting file download...";
-                    break;
-
-                case "G":
-                    msg = "File download finished.";
-                    break;
-
-                case "sdE":
-                    msg = "SD card error.";
-                    break;
-
-                case "sdOK":
-                    msg = "Logging. File Open OK.";
+                case Constants.SYS_STREAM:
+                    if (str == "s") msg = "Stream incoming...";
+                    else if (str == ".") msg = "Stream failed.";
+                    else if (str == "^") msg = "Stream complete.";
                     break;
 
                 default:
-                    msg = string.Format("Unknown: {0}", str);
+                    switch (str)
+                    {
+                        case "X":
+                            msg = "Connection with Brace+ Established.";
+                            break;
+
+                        case "i":
+                            msg = "Initalising system...";
+                            break;
+
+                        case "I":
+                            msg = "System Initalisation complete.";
+                            break;
+
+                        case "t":
+                            msg = "Testing SD data logging...";
+                            break;
+
+                        case "e":
+                            msg = "Error. File open failed.";
+                            break;
+
+                        case "T":
+                            msg = "SD data log tests complete.";
+                            break;
+
+                        case "F":
+                            msg = "Uploading files from SD Card...";
+                            break;
+
+                        case "C":
+                            msg = "SD Card status checks complete.";
+                            break;
+
+                        case "l":
+                            msg = "Logging data to SD Card...";
+                            break;
+
+                        case "L":
+                            msg = "Data logging finished.";
+                            break;
+
+                        case "g":
+                            msg = "Starting file download...";
+                            break;
+
+                        case "G":
+                            msg = "File download finished.";
+                            break;
+
+                        case "sdE":
+                            msg = "SD card error.";
+                            break;
+
+                        case "sdOK":
+                            msg = "Logging. File Open OK.";
+                            break;
+
+                        default:
+                            msg = string.Format("Unknown: " + str);
+                            break;
+                    }
                     break;
             }
-
+           
             return msg;
         }
 

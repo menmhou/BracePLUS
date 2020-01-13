@@ -22,8 +22,8 @@ namespace BracePLUS.Models
         public const string BRACE_SD =  "Saved on Brace+";    // Define file location on brace+
 
         public const string serviceUUID = "AD11CF40-063F-11E5-BE3E-0002A5D5C51B";
-        public const string menuCharUUID = "BF3FBD80-063F-11E5-9E69-0002A5D5C501";
-        public const string streamCharUUID = "BF3FBD80-063F-11E5-9E69-0002A5D5C502";
+        public const string menuCharUUID = "BF3FBD80-063F-11E5-9E69-0002A5D5C502";
+        public const string streamCharUUID = "BF3FBD80-063F-11E5-9E69-0002A5D5C501";
 
         public const string SyncFusionLicense = "MTg4MzI4QDMxMzcyZTM0MmUzMG9LVEN5VU1xaFMxT3FLVGFoYVFwUzdydU1ZRFB4VjBkbEJOQmNOU0tsUFE9";
 
@@ -31,7 +31,7 @@ namespace BracePLUS.Models
 
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
 
-        public const int ESTABLISH_CONTACT = 0;
+        public const int CLIENT_CONNECT = 0;
         public const int SYS_INIT = 1;
         public const int SD_TEST = 2;
         public const int LOG_TEST = 3;

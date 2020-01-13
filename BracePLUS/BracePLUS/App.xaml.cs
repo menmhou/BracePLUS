@@ -17,11 +17,16 @@ namespace BracePLUS
     {
         // Models
         public static BraceClient Client;
+        public static Configuration Config;
 
         // Global Members
         public static Random generator;
         public static List<byte[]> InputData;
         public static string FolderPath { get; private set; }
+        // BLE Status
+        public static string ConnectedDevice { get; set; }
+        public static string DeviceID { get; set; }
+        public static string RSSI { get; set; }
 
         // Global variables
         public static int NODE_INDEX = 4;
@@ -70,14 +75,19 @@ namespace BracePLUS
 
         static public void AddData(byte[] bytes)
         {
-            /*
-            chart_x_data.Add(new ChartDataPoint(t, data[1]));
-            chart_y_data.Add(new ChartDataPoint(t, data[2]));
-            chart_z_data.Add(new ChartDataPoint(t, data[3]));
-            */
+            for (int i = 7; i < bytes.Length-3; i += 6)
+            {
+                var x = (bytes[i] * 256 + bytes[i + 1]) * 0.00906;
+                var y = (bytes[i+2] * 256 + bytes[i + 3]) * 0.00906;
+                var z = (bytes[i+4] * 256 + bytes[i + 5]) * 0.02636;
 
-            InputData.Add(bytes);
+                chart_x_data.Add(new ChartDataPoint(i, x));
+                chart_y_data.Add(new ChartDataPoint(i, y));
+                chart_z_data.Add(new ChartDataPoint(i, z));
+            }
+                        
             
+            InputData.Add(bytes);
         }
     }
 }

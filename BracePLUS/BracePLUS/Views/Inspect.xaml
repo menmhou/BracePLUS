@@ -5,66 +5,97 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
              mc:Ignorable="d"
-             Title="Inspect Data"
+             Title="Inspect File"
              x:Class="BracePLUS.Views.Inspect">
-    
+
     <ContentPage.Content>
         <TableView x:Name="tableView"
-                   HasUnevenRows="True">
-            
-            <TableSection Title="Data Info"
-                          TextColor="CadetBlue">
-                <ViewCell>
-                    <Grid Padding="8, 8, 8, 8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Label Text="{Binding Date}"
+                   HasUnevenRows="True"
+                   BackgroundColor="#EEEEEE">
+            <TableRoot>
+                <TableSection Title="File Info">
+                    <ViewCell>
+                        <Frame BackgroundColor="White"
+                               CornerRadius="24"
+                               Margin="0, 6">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Label Text="{Binding Date}"
+                                       TextColor="Black"
+                                       FontSize="Large"
+                                       Grid.Row="0"
+                                       Grid.ColumnSpan="2"/>
+                                <Label Text="{Binding FormattedSize}"
+                                       FontSize="Medium"
+                                       Grid.Row="1"
+                                       Grid.ColumnSpan="2"/>
+                                <Label Text="{Binding Filename}"
+                                       FontSize="Medium"
+                                       Grid.Row="2"
+                                       Grid.ColumnSpan="2"/>
+                            </Grid>
+                        </Frame>
+                    </ViewCell>
+                </TableSection>
+
+                <TableSection Title="Data Chart">
+                    <ViewCell Tapped="GridTapped">
+                        <Frame BackgroundColor="White"
+                               HasShadow="True"
+                               CornerRadius="24"
+                               Margin="0, 6">
+                            <chart:SfChart x:Name="chart"
+                                           HeightRequest="160"
+                                           VerticalOptions="FillAndExpand"
+                                           HorizontalOptions="FillAndExpand">
+
+                                <chart:SfChart.Series>
+                                    <chart:LineSeries x:Name="lineSeries1" 
+                                      ItemsSource="{Binding LineData1}" 
+                                      Color="Red"
+                                      XBindingPath="Name"
+                                      YBindingPath="Value" />
+                                    <chart:LineSeries x:Name="lineSeries2" 
+                                      ItemsSource="{Binding LineData2}" 
+                                      Color="Blue"
+                                      XBindingPath="Name"
+                                      YBindingPath="Value" />
+                                    <chart:LineSeries x:Name="lineSeries3" 
+                                      ItemsSource="{Binding LineData3}" 
+                                      Color="Green"
+                                      XBindingPath="Name"
+                                      YBindingPath="Value" />
+                                </chart:SfChart.Series>
+
+                                <chart:SfChart.PrimaryAxis>
+                                    <chart:CategoryAxis />
+                                </chart:SfChart.PrimaryAxis>
+
+                                <chart:SfChart.SecondaryAxis>
+                                    <chart:NumericalAxis />
+                                </chart:SfChart.SecondaryAxis>
+                            </chart:SfChart>
+                        </Frame>
+                    </ViewCell>
+                </TableSection>
+
+                <TableSection Title="Raw Data">
+                    <ViewCell Tapped="RawDataTapped">
+                        <Frame BackgroundColor="White"
+                               HasShadow="True"
+                               CornerRadius="24"
+                               Margin="0, 6">
+                            <Label Text="{Binding DataString}"
                                TextColor="Black"
                                FontSize="Large"
-                               Grid.Row="0"
-                               Grid.ColumnSpan="2"/>
-                        <Label Text="{Binding FormattedSize}"
-                               FontSize="Medium"
-                               Grid.Row="1"
-                               Grid.ColumnSpan="2"/>
-                        <Label Text="{Binding Filename}"
-                               FontSize="Medium"
-                               Grid.Row="2"
-                               Grid.ColumnSpan="2"/>
-                    </Grid>
-                </ViewCell>
-            </TableSection>
-            
-            <TableSection Title="Graph"
-                          TextColor="CadetBlue">
-                <ViewCell Tapped="GridTapped">
-                    <chart:SfChart x:Name="chart"
-                                   HeightRequest="160"
-                                   VerticalOptions="FillAndExpand"
-                                   HorizontalOptions="FillAndExpand">
-
-                        <chart:SfChart.PrimaryAxis>
-                            <chart:CategoryAxis AutoScrollingDelta="100"
-                                                IsVisible="False"/>
-                        </chart:SfChart.PrimaryAxis>
-
-                        <chart:SfChart.SecondaryAxis>
-                            <chart:NumericalAxis IsVisible="False"/>
-                        </chart:SfChart.SecondaryAxis>
-                    </chart:SfChart>
-                </ViewCell>
-            </TableSection>
-            <TableSection Title="Raw Data"
-                          TextColor="CadetBlue">
-                <ViewCell Tapped="RawDataTapped">
-                    <Label Text="{Binding DataString}"
-                           FontSize="Medium"/>
-                </ViewCell>
-            </TableSection>
+                               Margin="8, 8, 8, 8"/>
+                        </Frame>
+                    </ViewCell>
+                </TableSection>
+            </TableRoot>
         </TableView>
-        
     </ContentPage.Content>
-    
 </ContentPage>

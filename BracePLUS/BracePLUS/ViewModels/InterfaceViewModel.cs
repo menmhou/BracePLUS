@@ -10,8 +10,18 @@ namespace BracePLUS.ViewModels
 {
     public class InterfaceViewModel
     {
-        // Properties
-        public string ConnectButtonText { get; set; }
+        // Private properties
+        private string _connectText;
+
+        // Public Properties
+        public string ConnectText 
+        {
+            get => _connectText;
+            set
+            {
+                _connectText = value;
+            }
+        }
         public string StreamButtonText { get; set; }
         public string SaveButtonText { get; set; }
 
@@ -29,7 +39,7 @@ namespace BracePLUS.ViewModels
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SaveCommand = new Command(async () => await ExecuteSaveCommand());
 
-            ConnectButtonText = "Connect";
+            ConnectText = "Connect";
             StreamButtonText = "Stream Data";
             SaveButtonText = "Save to SD";
         }
@@ -38,11 +48,12 @@ namespace BracePLUS.ViewModels
         {
             if (App.isConnected)
             {
-                ConnectButtonText = "Disconnect";
+                ConnectText = "Connect";
+                await App.Client.Disconnect();
             }
             else
             {
-                ConnectButtonText = "Connect";
+                ConnectText = "Disconnect";
                 await App.Client.Connect();
             }
         }
@@ -51,13 +62,10 @@ namespace BracePLUS.ViewModels
         {
             if (App.isConnected)
             {
-                if (App.Client.isStreaming) StreamButtonText = "Stop Streaming";
-                else StreamButtonText = "Stream Data";
                 await App.Client.Stream();
             }
             else
             {
-                Debug.WriteLine("Not connected");
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to stream data.", "OK");
             }
         }
@@ -66,8 +74,6 @@ namespace BracePLUS.ViewModels
         {
             if (App.isConnected)
             {
-                if (App.Client.isSaving) SaveButtonText = "Stop Saving";
-                else StreamButtonText = "Save to SD";
                 await App.Client.Save();
             }
             else

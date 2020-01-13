@@ -1,55 +1,99 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-                xmlns:sv="clr-namespace:AiForms.Renderers;assembly=SettingsView"
                 x:Class="BracePLUS.Views.Settings">
 
     <ContentPage.Content>
+        <TableView HasUnevenRows="True"
+                   BackgroundColor="#EEEEEE">
+            <TableRoot>
+                <TableSection x:Name="RunSystemTests"
+                              Title="System Tests">
+                    <ViewCell Tapped="TestLoggingCellTapped">
+                    <Frame BackgroundColor="White">
+                        <StackLayout>
+                            <Label Text="Test Data Logging"
+                                       VerticalOptions="CenterAndExpand"
+                                       HorizontalOptions="Center"
+                                       FontSize="Subtitle"
+                                       TextColor="Red"/>
+                        </StackLayout>
+                    </Frame>
+                    </ViewCell>
+                    <ViewCell Tapped="GetSDStatusTapped">
+                        <Frame BackgroundColor="White">
+                            <StackLayout>
+                                <Label Text="Get SD Card Status"
+                                       VerticalOptions="CenterAndExpand"
+                                       HorizontalOptions="Center"
+                                       FontSize="Subtitle"
+                                       TextColor="Red"/>
+                            </StackLayout>
+                        </Frame>
+                    </ViewCell>
+                    <ViewCell Tapped="SystemResetTapped">
+                        <Frame BackgroundColor="White">
+                            <StackLayout>
+                                <Label Text="System Reset"
+                                       VerticalOptions="CenterAndExpand"
+                                       HorizontalOptions="Center"
+                                       FontSize="Subtitle"
+                                       TextColor="Red"/>
+                            </StackLayout>
+                        </Frame>
+                    </ViewCell>
+                </TableSection>
 
-        <sv:SettingsView HasUnevenRows="True">
-
-            <sv:Section>
-                <sv:ButtonCell Title="Test Data Logging"
-                               Command="{Binding TestSDUploadCommand}"
-                               IsEnabled="{Binding Autoconnect}"
-                               TitleColor="{StaticResource TitleTextColor}"
-                               TitleAlignment="Center" />
-
-                <sv:ButtonCell Title="Get SD Card Info"
-                               Command="{Binding GetSDInfoCommand}"
-                               TitleColor="{StaticResource TitleTextColor}"
-                               TitleAlignment="Center" />
-            </sv:Section>
-
-            <sv:Section>
-                <sv:ButtonCell Title="Save Configuration"
-                               Command="{Binding SaveConfigurationCommand}"
-                               TitleColor="{StaticResource TitleTextColor}"
-                               TitleAlignment="Center" />
-            </sv:Section>
-
-            <sv:Section>
-                <sv:LabelCell Title="Connected Device"
-                              TitleColor="Black"
-                              ValueText="{Binding ConnectedDevice}"
-                              ValueTextColor="Black"/>
-                <sv:LabelCell Title="Device ID"
-                              ValueText="{Binding DeviceID}"
-                              TitleColor="Black"
-                              ValueTextColor="Black"/>
-                <sv:LabelCell Title="Signal Strength"
-                              ValueText="{Binding RSSI}"
-                              TitleColor="Black"
-                              ValueTextColor="Black"/>
-
-                <sv:SwitchCell Title="Switch"
-                               On="true"
-                               Description="This is description." />
-            </sv:Section>
-
-        </sv:SettingsView>
-
+                <TableSection x:Name="ConnectionInfo"
+                              Title="Connection Info">
+                    <ViewCell>
+                        <Frame BackgroundColor="White">
+                            <Grid>
+                                <Label Text="Connected Device"
+                                       FontSize="Subtitle"
+                                       TextColor="Black"
+                                       Grid.Column="0"/>
+                                <Label Text="{Binding ConnectedDevice}"
+                                       HorizontalTextAlignment="End"
+                                       FontSize="Subtitle"
+                                       TextColor="DarkSlateGray"
+                                       Grid.Column="1"/>
+                            </Grid>
+                        </Frame>
+                    </ViewCell>
+                    <ViewCell>
+                        <Frame BackgroundColor="White">
+                            <Grid>
+                                <Label Text="Device ID"
+                                       FontSize="Subtitle"
+                                       TextColor="Black"
+                                       Grid.Column="0"/>
+                                <Label Text="{Binding DeviceID}"
+                                       HorizontalTextAlignment="End"
+                                       FontSize="Subtitle"
+                                       TextColor="DarkSlateGray"
+                                       Grid.Column="1"/>
+                            </Grid>
+                        </Frame>
+                    </ViewCell>
+                    <ViewCell>
+                        <Frame BackgroundColor="White">
+                            <Grid>
+                                <Label Text="Signal Strength"
+                                       FontSize="Subtitle"
+                                       TextColor="Black"
+                                       Grid.Column="0"/>
+                                <Label Text="{Binding RSSI}"
+                                       HorizontalTextAlignment="End"
+                                       FontSize="Subtitle"
+                                       TextColor="DarkSlateGray"
+                                       Grid.Column="1"/>
+                            </Grid>
+                        </Frame>
+                    </ViewCell>
+                </TableSection>
+            </TableRoot>
+        </TableView>
     </ContentPage.Content>
-
 </ContentPage>
 

@@ -40,20 +40,15 @@ namespace BracePLUS.ViewModels
                 // Get info about file
                 FileInfo fi = new FileInfo(filename);
 
-                var date = File.GetCreationTime(filename).ToString();
-                var size = handler.FormattedFileSize(fi.Length);
-                var detail = string.Format("{0}, {1}", size, date);
-
                 // Create new data object
                 tempData.Add(new DataObject
                 {
                     Name = fi.Name,
                     Size = fi.Length,
-                    Date = date,
+                    Date = File.GetCreationTime(filename).ToString(),
                     Filename = filename,
                     Location = "Local",
                     IsDownloaded = false,
-                    Detail = detail
                 });  
             }
 
@@ -71,36 +66,6 @@ namespace BracePLUS.ViewModels
             {
                 File.Delete(filename);
             }
-        }
-
-        void LoadDummyItems()
-        {
-            // Create two sets of dummy data to demonstrate list grouping
-            var localData = new DataList()
-            {
-                new DataObject() { Name = "local1.txt"},
-                new DataObject() { Name = "local2.txt"},
-                new DataObject() { Name = "local3.txt"}
-            };
-            localData.Heading = "Local Data";
-
-            var cloudData = new DataList()
-            {
-                new DataObject() { Name = "cloud1.txt"},
-                new DataObject() { Name = "cloud2.txt"},
-            };
-            cloudData.Heading = "Cloud Data";
-
-            /*
-            var dummy_data = new List<DataList>()
-            {
-                localData,
-                cloudData
-            };
-
-            // Load data into bound property
-            LocalData = dummy_data;
-            */
         }
     }
 }
