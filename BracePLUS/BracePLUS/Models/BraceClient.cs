@@ -40,7 +40,7 @@ namespace BracePLUS.Models
         StackLayout stack;
 
         // DATA SIZE FOR MAGBOARD (+HEADER)
-        byte[] buffer = new byte[Constants.BUF_SIZE];
+        byte[] buffer = new byte[128];
         byte[] SDBuf = new byte[512];
 
         public static ObservableCollection<string> files;
@@ -62,7 +62,7 @@ namespace BracePLUS.Models
 
         MessageHandler handler;
 
-        int packetIndex ;
+        int packetIndex;
         #endregion
 
         #region Model Instanciation
@@ -94,7 +94,7 @@ namespace BracePLUS.Models
                     Debug.WriteLine(String.Format("Discovered device: {0}", name));
                     write(String.Format("Discovered device: {0}", name), info);
 
-                    if (e.Device.Name == Constants.BRACE)
+                    if (e.Device.Name == Constants.DEV_NAME)
                     {
                         brace = e.Device;
                         await Connect();
@@ -103,7 +103,6 @@ namespace BracePLUS.Models
             };
             adapter.DeviceConnectionLost += (s, e) => write("Disconnected from " + e.Device.Name, info);
             adapter.DeviceDisconnected += (s, e) => write("Disconnected from " + e.Device.Name, info);
-            adapter.DeviceConnected += (s, e) => write("Connected to " + e.Device.Name, info);
         }
 
         public void RegisterStack(StackLayout s)
@@ -150,9 +149,9 @@ namespace BracePLUS.Models
                 if (service != null)
                 {
                     Debug.WriteLine("Connected, scan for devices stopped.");
-                    // Register characteristics.
                     try
                     {
+                        // Register characteristics
                         menuCharacteristic = await service.GetCharacteristicAsync(menuGUID);
                         menuCharacteristic.ValueUpdated += async (o, args) =>
                         {
@@ -164,8 +163,11 @@ namespace BracePLUS.Models
                             {
                                 switch (STATUS)
                                 {
-                                    case Constants.SYS_STREAM:
-                                        await RUN_BLE_WRITE(menuCharacteristic, "S");
+                                    // Do action according to current status of system...
+                                    case Constants.SYS_INIT:
+                                        write(msg, info);
+                                        break;
+                                    default:
                                         break;
                                 }
                             }
@@ -175,12 +177,21 @@ namespace BracePLUS.Models
                         streamCharacteristic = await service.GetCharacteristicAsync(streamGUID);
                         streamCharacteristic.ValueUpdated += async (o, args) =>
                         {
+                            // extract data
                             var bytes = args.Characteristic.Value;
 
+                            // add to local array
+                            bytes.CopyTo(buffer, packetIndex);
+                            packetIndex += bytes.Length;
+
                             // check for packet footer
-                            if ((bytes.Length > 4) && (STATUS == Constants.SYS_STREAM))
+                            if ((bytes[0] == 'X')&&
+                                (bytes[1] == 'Y')&&
+                                (bytes[2] == 'Z')&&
+                                (STATUS == Constants.SYS_STREAM))
                             {
-                                //await RUN_BLE_WRITE(menuCharacteristic, "S");
+                                buffer = RELEASE_DATA(buffer);
+                                while (!await RUN_BLE_WRITE(menuCharacteristic, "S")) { }
                             }
                         };
 
@@ -248,7 +259,7 @@ namespace BracePLUS.Models
 
             if (!App.isConnected)
             {
-                write("Device not found, stopping scan.", info);
+                await Application.Current.MainPage.DisplayAlert(Constants.DEV_NAME + " not found.", "Unable to find " + Constants.DEV_NAME, "OK");
                 await StopScan();
             }
         }
@@ -264,12 +275,12 @@ namespace BracePLUS.Models
             {
                 if (isStreaming)
                 {
+                    // Stop stream from menu (any character apart from "S")
+                    await RUN_BLE_WRITE(menuCharacteristic, ".");
                     // Stop data stream
                     await RUN_BLE_STOP_UPDATES(streamCharacteristic);
                     write("Stopping data stream.", info);
                     isStreaming = false;
-                    STATUS = Constants.IDLE;
-                    await PutToIdleState();
                 }
                 else
                 {
@@ -283,7 +294,6 @@ namespace BracePLUS.Models
                     }
                     isStreaming = true;
                     STATUS = Constants.SYS_STREAM;
-
                     // Start characteristic updates
                     await RUN_BLE_START_UPDATES(streamCharacteristic);
                     // Request stream from menu
@@ -315,7 +325,7 @@ namespace BracePLUS.Models
                     isSaving = true;
                     STATUS = Constants.LOGGING;
 
-                    await SaveToSD();
+                    //await SaveToSD();
                 }
             }
         }
@@ -323,13 +333,12 @@ namespace BracePLUS.Models
         public async Task TestLogging()
         {
             STATUS = Constants.LOG_TEST;
-            await TestSDDataLog();
+            //await TestSDDataLog();
         }
-
         public async Task GetSDInfo()
         {
             STATUS = Constants.SD_TEST;
-            await GetSDCardStatus();
+            //await GetSDCardStatus();
         }
         #endregion
 
@@ -343,283 +352,50 @@ namespace BracePLUS.Models
             Debug.WriteLine("Written sys init bytes.");
         }
 
-        private async Task SaveToSD()
-        {
-            commsByte = Encoding.ASCII.GetBytes("L");
-
-            await RUN_BLE_WRITE(menuCharacteristic, commsByte);
-            await RUN_BLE_START_UPDATES(menuCharacteristic);
-
-            App.characteristic.ValueUpdated += async (o, a) =>
-            {
-                if (STATUS == Constants.LOGGING)
-                {
-                    raw = Encoding.ASCII.GetString(App.characteristic.Value);
-
-                    if (raw == "l")
-                    {
-                        await WriteFilename(DateTime.Now);
-                    }
-                    else if (raw == "L")
-                    {
-                        // Received 'L' => reading finished.
-                        if (isSaving)
-                        {
-                            await RUN_BLE_WRITE(menuCharacteristic, commsByte);
-                        }
-                        else
-                        {
-                            await RUN_BLE_STOP_UPDATES(menuCharacteristic);
-                            await PutToIdleState();
-                        }
-                    }
-                }
-            };
-        }
-
-        private async Task TestSDDataLog()
-        {
-            commsByte = Encoding.ASCII.GetBytes("T");
-
-            await RUN_BLE_WRITE(menuCharacteristic, commsByte);
-            await RUN_BLE_START_UPDATES(menuCharacteristic);
-
-            App.characteristic.ValueUpdated += async (o, a) =>
-            {
-                if (STATUS == Constants.LOG_TEST)
-                {
-                    // Inspect connection data
-                    raw = Encoding.ASCII.GetString(App.characteristic.Value);
-                    msg = handler.translate(raw);
-
-                    write(msg, info);
-
-                    if (raw == "t")
-                    {
-                        await WriteFilename(DateTime.Now);
-                    }
-                    else if (raw == "T")
-                    {
-                        STATUS = Constants.SD_TEST;
-
-                        await RUN_BLE_STOP_UPDATES(menuCharacteristic);
-                        await GetSDCardStatus();
-                    }
-                }
-            };
-        }
-
-        private async Task GetSDCardStatus()
-        {
-            commsByte = Encoding.ASCII.GetBytes("C");
-            await RUN_BLE_WRITE(menuCharacteristic, commsByte);
-            await RUN_BLE_START_UPDATES(menuCharacteristic);
-
-            App.characteristic.ValueUpdated += async (o, a) =>
-            {
-                if (STATUS == Constants.SD_TEST)
-                {
-                    string[] cardInfo = handler.DecodeSDStatus(App.characteristic.Value);
-
-                    foreach (string str in cardInfo)
-                        write(str, info);
-
-                    raw = Encoding.ASCII.GetString(App.characteristic.Value);
-
-                    if (raw == "C")
-                    {
-                        await RUN_BLE_STOP_UPDATES(menuCharacteristic);
-                        await PutToIdleState();
-                        write("SD info checks done.", debug);
-                    }
-                }
-            };
-        }
-
         private async Task PutToIdleState()
         {
             await RUN_BLE_WRITE(menuCharacteristic, "^");
-        }
-
-        private async Task GetFiles()
-        {
-            commsByte = Encoding.ASCII.GetBytes("F");
-            await RUN_BLE_WRITE(menuCharacteristic, commsByte);
-
-            string[] _files = new string[1];
-
-            App.characteristic.ValueUpdated += async (o, a) =>
-            {
-                if (STATUS == Constants.GET_FILES)
-                {
-                    var str = Encoding.ASCII.GetString(App.characteristic.Value);
-
-                    if (str == "F")
-                    {
-						foreach (string file in _files)
-                        {
-                            if (file != null)
-                            {
-                                Debug.WriteLine("Adding " + file);
-
-                                var dataObj = new DataObject();
-                                dataObj.Name = file;
-
-                                App.dataList.Add(dataObj);
-
-                                //await App.Database.SaveDataAsync(dataObj);
-                            }
-                        }
-
-                        STATUS = Constants.IDLE;
-                        await RUN_BLE_STOP_UPDATES(menuCharacteristic);
-	                }
-                    else
-                    {
-                        Debug.WriteLine("Received file: " + str);
-
-                        // Add to end of array and make length one longer.
-                        _files[_files.Length - 1] = str;
-                        Array.Resize(ref _files, _files.Length + 1);
-                    }
-                }
-            };
-        }
-
-        public async Task DownloadFile(DataObject dataObject)
-        {
-            commsByte = Encoding.ASCII.GetBytes("G");
-            await RUN_BLE_WRITE(menuCharacteristic, commsByte);
-
-            int i;
-
-            App.characteristic.ValueUpdated += async (o, a) =>
-            {
-                if (STATUS == Constants.DOWNLOAD)
-                {
-                    byte[] bytes = App.characteristic.Value;
-
-                    raw = Encoding.ASCII.GetString(bytes);
-                    Debug.WriteLine(raw); 
-
-                    if (bytes.Length < 4)
-                    {
-                        if (raw == "g")
-                        {
-                            Debug.WriteLine("Starting data download...");
-                            var filename = handler.DecodeFilename(dataObject.Name);
-
-                            await WriteFilename(filename);
-                        }
-                        else if (raw == "G")
-                        {
-                            await RUN_BLE_STOP_UPDATES(menuCharacteristic);
-                            Debug.WriteLine("Data download complete.");
-
-                            await PutToIdleState();
-                        }
-                    }
-                    else
-                    {
-                        // If required number of bytes received, release data and
-                        // request next reading.
-                        if (packetIndex >= 512)
-                        {
-                            packetIndex = 0;
-                            //dataObject.binaryData.Add(SDBuf);
-                            //Debug.WriteLine("Adding line: " + dataObject.binaryData.Count.ToString());
-                            SDBuf = CLEAR_BUFER(SDBuf);
-                        }
-
-                        // Add data to packet
-                        for (i = 0; i < bytes.Length; i++)
-                        {
-                            SDBuf[i + packetIndex] = bytes[i];
-                        }
-
-                        // Increment packet index
-                        packetIndex += bytes.Length;
-                    }
-                }    
-            };
-
-            if (dataObject.IsDownloaded)
-            {
-                return;
-            }
-        }
-
-        private async Task WriteFilename(DateTime dateTime)
-        {
-            // Retrieve current DateTime, cast to byte and build array
-            byte month = (byte)dateTime.Month;
-            byte day = (byte)dateTime.Day;
-            byte hour = (byte)dateTime.Hour;
-            byte minute = (byte)dateTime.Minute;
-
-            byte[] filename = { hour, minute, day, month };
-            await RUN_BLE_WRITE(menuCharacteristic, filename);
-
-            string name = handler.getFileName(filename);
-
-            print("Writing file: " + name + ".dat", info);
         }
         #endregion
 
         byte[] RELEASE_DATA(byte[] bytes)
         {
+            // Reset packet index
             packetIndex = 0;
-
+            // Save data
             App.InputData.Add(bytes);
-
-            // Change 16 to App.config.Nodes
-            var data = handler.DecodeData(buffer, 16);
-
-            double[] time = data[0];
-            double[] values = data[App.NODE_INDEX];
-
-            //App.AddData(time[0], values);
-
-            print(string.Format("t:{0} x:{1} y:{2} z{3}",
-                time[0], values[0], values[1], values[2]), info);
-
-            //dataObject.Name = DateTime.Now.ToBinary().ToString();
-            //dataObject.binaryData.Add(bytes);
-  
-
-            return CLEAR_BUFER(bytes);
-        }
-
-        byte[] CLEAR_BUFER(byte[] bytes)
-        {
+            // Return empty array of same size
             return new byte[bytes.Length];
         }
 
-        async Task RUN_BLE_WRITE(ICharacteristic c, byte[] b)
+        async Task<bool> RUN_BLE_WRITE(ICharacteristic c, byte[] b)
         {
             try
             {
                 await c.WriteAsync(b);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(String.Format("BLE write failed with exception: " + ex.Message));
-            }
-        }
-
-        async Task RUN_BLE_WRITE(ICharacteristic c, string s)
-        {
-            var d = Encoding.ASCII.GetBytes(s);
-
-            try
-            {
-                await c.WriteAsync(d);
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Characteristic {c.Uuid} write failed with exception: {ex.Message}");
-
             }
+            return false;
+        }
+
+        async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
+        {
+            var b = Encoding.ASCII.GetBytes(s);
+
+            try
+            {
+                await c.WriteAsync(b);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Characteristic {c.Uuid} write failed with exception: {ex.Message}");
+            }
+            return false;
         }
 
 

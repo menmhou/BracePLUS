@@ -48,11 +48,6 @@ namespace BracePLUS.ViewModels
             NodeList = new List<string>();
             for (int i = 0; i < 16; i++)
                 NodeList.Add((i + 1).ToString());
-
-            Random rand = new Random();
-
-            for (int i = 0; i < rand.Next(10); i++)
-                AddRandomData(Constants.BUF_SIZE);
         }
 
         public async Task Save()

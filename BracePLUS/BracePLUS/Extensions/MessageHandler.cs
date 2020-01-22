@@ -28,7 +28,7 @@ namespace BracePLUS.Extensions
             switch (status)
             {
                 case Constants.SYS_INIT:
-                    if (str == "^") msg = "System Initialised and Active.";
+                    if (str == "^") msg = Constants.DEV_NAME + " Connected and Active.";
                     else if (str == ".") msg = "System Initialisation Failed.";
                     else if (str == "i") msg = "Initalising system.";
                     break;

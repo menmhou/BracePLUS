@@ -17,7 +17,7 @@ namespace BracePLUS.Models
         public const int MAGTRIX =      100;	// 6bytes * 16nodes + 4 time bytes
         public const int MAGBOARD =     388;	// 6bytes * 64nodes + 4 time bytes
 
-        public const int BUF_SIZE =     512;     // Constant for DataObject.list data object sizes
+        public const int BUF_SIZE =     128;     // Constant for DataObject.list data object sizes
         public const string LOCAL =     "Saved locally";      // Define file location on app
         public const string BRACE_SD =  "Saved on Brace+";    // Define file location on brace+
 
@@ -27,7 +27,7 @@ namespace BracePLUS.Models
 
         public const string SyncFusionLicense = "MTg4MzI4QDMxMzcyZTM0MmUzMG9LVEN5VU1xaFMxT3FLVGFoYVFwUzdydU1ZRFB4VjBkbEJOQmNOU0tsUFE9";
 
-        public const string BRACE = "MagDevice";
+        public const string DEV_NAME = "Brace+";
 
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
 
