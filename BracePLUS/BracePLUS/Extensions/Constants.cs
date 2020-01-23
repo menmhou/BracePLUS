@@ -21,13 +21,12 @@ namespace BracePLUS.Models
         public const string LOCAL =     "Saved locally";      // Define file location on app
         public const string BRACE_SD =  "Saved on Brace+";    // Define file location on brace+
 
-        public const string serviceUUID = "AD11CF40-063F-11E5-BE3E-0002A5D5C51B";
-        public const string menuCharUUID = "BF3FBD80-063F-11E5-9E69-0002A5D5C502";
-        public const string streamCharUUID = "BF3FBD80-063F-11E5-9E69-0002A5D5C501";
+        public const string uartServiceUUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
+        public const string uartTxCharUUID = "49535343-1e4d-4bd9-ba61-23c647249616";
 
         public const string SyncFusionLicense = "MTg4MzI4QDMxMzcyZTM0MmUzMG9LVEN5VU1xaFMxT3FLVGFoYVFwUzdydU1ZRFB4VjBkbEJOQmNOU0tsUFE9";
 
-        public const string DEV_NAME = "Brace+";
+        public const string DEV_NAME = "RN_BLE";
 
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
 

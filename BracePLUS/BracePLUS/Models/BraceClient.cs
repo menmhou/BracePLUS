@@ -26,8 +26,7 @@ namespace BracePLUS.Models
         public IBluetoothLE ble;
         public IDevice brace;
         public IService service;
-        public ICharacteristic menuCharacteristic;
-        public ICharacteristic streamCharacteristic;
+        public ICharacteristic uartTx;
 
         public bool isStreaming;
         public bool isSaving;
@@ -46,9 +45,8 @@ namespace BracePLUS.Models
         public static ObservableCollection<string> files;
 
         // Bluetooth Definitions
-        public Guid serviceGUID = Guid.Parse(Constants.serviceUUID);
-        public Guid menuGUID = Guid.Parse(Constants.menuCharUUID);
-        public Guid streamGUID = Guid.Parse(Constants.streamCharUUID);
+        public Guid uartServiceGUID = Guid.Parse(Constants.uartServiceUUID);
+        public Guid uartTxCharGUID = Guid.Parse(Constants.uartTxCharUUID);
 
         static Color debug = Color.Red;
         static Color info = Color.Blue;
@@ -131,6 +129,9 @@ namespace BracePLUS.Models
                     await adapter.ConnectToDeviceAsync(brace);
                     await adapter.StopScanningForDevicesAsync();
 
+                    Debug.WriteLine("Connected, scan for devices stopped.");
+                    write("Connected, scan for devices stopped.", debug);
+
                     App.ConnectedDevice = brace.Name;
                     App.DeviceID = brace.Id.ToString();
                     App.RSSI = brace.Rssi.ToString();
@@ -144,56 +145,42 @@ namespace BracePLUS.Models
                     return;
                 }
 
-                service = await brace.GetServiceAsync(serviceGUID);
+                service = await brace.GetServiceAsync(uartServiceGUID);
 
                 if (service != null)
                 {
-                    Debug.WriteLine("Connected, scan for devices stopped.");
                     try
                     {
+                        var characteristics = await service.GetCharacteristicsAsync();
+                        foreach (var c in characteristics)
+                        {
+                            Debug.WriteLine($"Discovered characteristics {c.Id}");
+                        }
+
                         // Register characteristics
-                        menuCharacteristic = await service.GetCharacteristicAsync(menuGUID);
-                        menuCharacteristic.ValueUpdated += async (o, args) =>
+                        uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
+                        uartTx.ValueUpdated += async (o, args) =>
                         {
-                            var input = Encoding.ASCII.GetString(args.Characteristic.Value);
-                            var msg = handler.translate(input, STATUS);
-                            Debug.WriteLine(msg);
-
-                            if (input == "^")
+                            switch (STATUS)
                             {
-                                switch (STATUS)
-                                {
-                                    // Do action according to current status of system...
-                                    case Constants.SYS_INIT:
-                                        write(msg, info);
-                                        break;
-                                    default:
-                                        break;
-                                }
+                                // Do action according to current status of system...
+                                case Constants.SYS_INIT:
+                                    var input = Encoding.ASCII.GetString(args.Characteristic.Value);
+                                    var msg = handler.translate(input, STATUS);
+                                    write(msg, info);
+                                    break;
+
+                                case Constants.SYS_STREAM:
+                                    await HANDLE_STREAM(args.Characteristic.Value);
+                                    break;
+
+                                default:
+                                    break;
                             }
+                            
                         };
-                        await RUN_BLE_START_UPDATES(menuCharacteristic);
-
-                        streamCharacteristic = await service.GetCharacteristicAsync(streamGUID);
-                        streamCharacteristic.ValueUpdated += async (o, args) =>
-                        {
-                            // extract data
-                            var bytes = args.Characteristic.Value;
-
-                            // add to local array
-                            bytes.CopyTo(buffer, packetIndex);
-                            packetIndex += bytes.Length;
-
-                            // check for packet footer
-                            if ((bytes[0] == 'X')&&
-                                (bytes[1] == 'Y')&&
-                                (bytes[2] == 'Z')&&
-                                (STATUS == Constants.SYS_STREAM))
-                            {
-                                buffer = RELEASE_DATA(buffer);
-                                while (!await RUN_BLE_WRITE(menuCharacteristic, "S")) { }
-                            }
-                        };
+                        await RUN_BLE_START_UPDATES(uartTx);
+                        await Task.Delay(5000);
 
                         // Begin system
                         await SystemInit();
@@ -227,8 +214,8 @@ namespace BracePLUS.Models
 
             // Send command to put Brace in disconnected state;
             commsByte = Encoding.ASCII.GetBytes(".");
-            await RUN_BLE_WRITE(menuCharacteristic, commsByte);
-            await RUN_BLE_STOP_UPDATES(menuCharacteristic);
+            await RUN_BLE_WRITE(uartTx, commsByte);
+            await RUN_BLE_STOP_UPDATES(uartTx);
 
             // Remove all connections
             foreach (IDevice device in adapter.ConnectedDevices)
@@ -242,7 +229,6 @@ namespace BracePLUS.Models
 
             App.isConnected = false;
         }
-
         public async Task StartScan()
         {
             if (!ble.IsOn)
@@ -276,10 +262,8 @@ namespace BracePLUS.Models
                 if (isStreaming)
                 {
                     // Stop stream from menu (any character apart from "S")
-                    await RUN_BLE_WRITE(menuCharacteristic, ".");
-                    // Stop data stream
-                    await RUN_BLE_STOP_UPDATES(streamCharacteristic);
-                    write("Stopping data stream.", info);
+                    await RUN_BLE_WRITE(uartTx, ".");
+                    write("Stopping data stream.", debug);
                     isStreaming = false;
                 }
                 else
@@ -287,17 +271,15 @@ namespace BracePLUS.Models
                     // Start data strean.
                     write("Starting data stream...", debug);
                     // Stream data wirelessly
-                    if (streamCharacteristic == null)
+                    if (uartTx == null)
                     {
-                        Debug.WriteLine("Stream characteristic null, quitting.");
+                        Debug.WriteLine("UART RX characteristic null, quitting.");
                         return;
                     }
                     isStreaming = true;
                     STATUS = Constants.SYS_STREAM;
-                    // Start characteristic updates
-                    await RUN_BLE_START_UPDATES(streamCharacteristic);
                     // Request stream from menu
-                    await RUN_BLE_WRITE(menuCharacteristic, "S");
+                    await RUN_BLE_WRITE(uartTx, "S");
                 }
             }
         }
@@ -348,13 +330,41 @@ namespace BracePLUS.Models
             // Send init command
             STATUS = Constants.SYS_INIT;
             byte[] bytes = Encoding.ASCII.GetBytes("I");
-            await RUN_BLE_WRITE(menuCharacteristic, bytes);
+            await RUN_BLE_WRITE(uartTx, bytes);
             Debug.WriteLine("Written sys init bytes.");
+        }
+
+        private async Task HANDLE_STREAM(byte[] stream)
+        {
+            
+            int len = stream.Length;
+            // Check message
+            if (len < 10)
+            {
+                var input = Encoding.ASCII.GetString(stream);
+                var msg = handler.translate(input, Constants.SYS_STREAM);
+                write(msg, info);
+                return;
+            }
+            // Check for packet header
+            else if ((stream[len-1] == 0xEE) &&
+                    (stream[len-2] == 0xEE) &&
+                    (stream[len-3] == 0xEE))    
+            {
+                // Save data locally.
+                App.AddData(stream);
+                // Request next packet if header present.
+                await RUN_BLE_WRITE(uartTx, "S");
+            }
+
+            var data = BitConverter.ToString(stream);
+            Debug.WriteLine(data);
+            //print(data, debug);
         }
 
         private async Task PutToIdleState()
         {
-            await RUN_BLE_WRITE(menuCharacteristic, "^");
+            await RUN_BLE_WRITE(uartTx, "^");
         }
         #endregion
 
