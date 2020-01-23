@@ -1,19 +1,8 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
              x:Class="BracePLUS.Views.Interface">
-
-    <ContentPage.ToolbarItems>
-
-        <ToolbarItem Text="Clear"
-                     Priority="0"
-                     Clicked="OnClearMessagesButtonClicked"/>
-
-        <ToolbarItem Text="Scan"
-                     Priority="1"
-                     Clicked="OnScanButtonClicked"/>
-
-    </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
         <StackLayout Padding="8, 8, 8, 8">
@@ -42,25 +31,32 @@
                         Grid.Row="1"
                         Grid.Column="1" />
             </Grid>
+            <chart:SfChart x:Name="chart"
+                                           HeightRequest="160"
+                                           VerticalOptions="FillAndExpand"
+                                           HorizontalOptions="FillAndExpand">
 
-            <StackLayout Spacing="10"
-                         Padding="5"
-                         Orientation="Vertical"
-                         x:Name="outerStack">
+                <chart:SfChart.Series>
+                    <chart:BarSeries x:Name="barSeries" 
+                                      ItemsSource="{Binding barData}" 
+                                      Color="BlueViolet"
+                                      XBindingPath="Name"
+                                      YBindingPath="Value" />
+                </chart:SfChart.Series>
 
-                <ScrollView>
-                    <StackLayout x:Name="MessageStack"
-                                 Spacing="5"
-                                 HorizontalOptions="FillAndExpand"
-                                 VerticalOptions="FillAndExpand">
+                <chart:SfChart.PrimaryAxis>
+                    <chart:CategoryAxis IsVisible="False"/>
+                </chart:SfChart.PrimaryAxis>
 
-                    </StackLayout>
-                </ScrollView>
-
-            </StackLayout>
-
+                <chart:SfChart.SecondaryAxis>
+                    <chart:NumericalAxis IsVisible="False"  />
+                </chart:SfChart.SecondaryAxis>
+            </chart:SfChart>
+            <Label Text="{Binding Status}"
+                   FontSize="Large"
+                   HorizontalTextAlignment="End"/>
         </StackLayout>
-
+        
     </ContentPage.Content>
 
 </ContentPage>

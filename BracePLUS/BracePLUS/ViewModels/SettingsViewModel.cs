@@ -35,12 +35,14 @@ namespace BracePLUS.ViewModels
         // Add "Save data locally default" option.
         // (automatically save data when streamed).
 
-        public SettingsViewModel()
+        public SettingsViewModel(StackLayout stack)
         {
             Title = "Settings";
 
             TestSDUploadCommand = new Command(async () => await ExecuteTestSDUploadCommand());
             GetSDInfoCommand = new Command(async () => await ExecuteGetSDInfoCommand());
+
+            App.Client.RegisterStack(stack);
         }
 
         public async Task ExecuteTestSDUploadCommand()

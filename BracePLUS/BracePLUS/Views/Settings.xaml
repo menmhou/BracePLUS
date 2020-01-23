@@ -10,15 +10,15 @@
                 <TableSection x:Name="RunSystemTests"
                               Title="System Tests">
                     <ViewCell Tapped="TestLoggingCellTapped">
-                    <Frame BackgroundColor="White">
-                        <StackLayout>
-                            <Label Text="Test Data Logging"
+                        <Frame BackgroundColor="White">
+                            <StackLayout>
+                                <Label Text="Test Data Logging"
                                        VerticalOptions="CenterAndExpand"
                                        HorizontalOptions="Center"
                                        FontSize="Subtitle"
                                        TextColor="Red"/>
-                        </StackLayout>
-                    </Frame>
+                            </StackLayout>
+                        </Frame>
                     </ViewCell>
                     <ViewCell Tapped="GetSDStatusTapped">
                         <Frame BackgroundColor="White">
@@ -90,6 +90,19 @@
                                        Grid.Column="1"/>
                             </Grid>
                         </Frame>
+                    </ViewCell>
+                </TableSection>
+                <TableSection Title="Debugging"
+                              x:Name="DebugScript">
+                    <ViewCell>
+                        <ScrollView>
+                            <StackLayout x:Name="MessageStack"
+                                         BackgroundColor="White"
+                                         Spacing="5"
+                                         HorizontalOptions="FillAndExpand"
+                                         VerticalOptions="FillAndExpand">
+                            </StackLayout>
+                        </ScrollView>
                     </ViewCell>
                 </TableSection>
             </TableRoot>

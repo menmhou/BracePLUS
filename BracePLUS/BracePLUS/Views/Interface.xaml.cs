@@ -15,17 +15,14 @@ namespace BracePLUS.Views
         public Interface()
         {
             InitializeComponent();
-            BindingContext = viewModel = new InterfaceViewModel(MessageStack);
+            BindingContext = viewModel = new InterfaceViewModel();
         }
 
-        async void OnScanButtonClicked(object sender, EventArgs args)
+        protected override async void OnAppearing()
         {
-            await viewModel.ExecuteScanCommand();
-        }
+            base.OnAppearing();
 
-        void OnClearMessagesButtonClicked(object sender, EventArgs args)
-        {
-            viewModel.ExecuteClearMessagesCommand();
+            await App.Client.StartScan();
         }
     }
 }

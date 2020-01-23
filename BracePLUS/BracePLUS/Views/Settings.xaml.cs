@@ -14,7 +14,7 @@ namespace BracePLUS.Views
         public Settings()
         {
             InitializeComponent();
-            BindingContext = viewModel = new SettingsViewModel();
+            BindingContext = viewModel = new SettingsViewModel(MessageStack);
         }
 
         private async void TestLoggingCellTapped(object sender, EventArgs e)

@@ -25,15 +25,16 @@ namespace BracePLUS.ViewModels
         public string StreamButtonText { get; set; }
         public string SaveButtonText { get; set; }
 
+        public string Status { get; set; }
+
         // Commands
         public Command ConnectCommand { get; set; }
         public Command StreamCommand { get; set; }
         public Command SaveCommand { get; set; }
 
-        public InterfaceViewModel(StackLayout stack)
+        public InterfaceViewModel()
         {       
             App.Client = new BraceClient();
-            App.Client.RegisterStack(stack);
 
             ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
@@ -42,6 +43,8 @@ namespace BracePLUS.ViewModels
             ConnectText = "Connect";
             StreamButtonText = "Stream Data";
             SaveButtonText = "Save to SD";
+
+            Status = "Unconnected.";
         }
 
         public async Task ExecuteConnectCommand()
@@ -53,6 +56,11 @@ namespace BracePLUS.ViewModels
             }
             else
             {
+                // Start scan
+                await App.Client.StartScan();
+                // Give system a few seconds to find brace+
+                await Task.Delay(3000);
+
                 ConnectText = "Disconnect";
                 await App.Client.Connect();
             }
@@ -80,16 +88,6 @@ namespace BracePLUS.ViewModels
             {
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to save data.", "OK");
             }
-        }
-
-        public void ExecuteClearMessagesCommand()
-        {
-            App.Client.clear_messages();
-        }
-
-        public async Task ExecuteScanCommand()
-        {
-            await App.Client.StartScan();
         }
     }
 }
