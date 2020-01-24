@@ -10,6 +10,7 @@ using System.Collections.ObjectModel;
 using Syncfusion.SfChart.XForms;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BracePLUS.Extensions;
 
 namespace BracePLUS
 {
@@ -18,6 +19,7 @@ namespace BracePLUS
         // Models
         public static BraceClient Client;
         public static Configuration Config;
+        private static MessageHandler handler;
 
         // Global Members
         public static Random generator;
@@ -27,15 +29,13 @@ namespace BracePLUS
         public static string ConnectedDevice { get; set; }
         public static string DeviceID { get; set; }
         public static string RSSI { get; set; }
+        public static double NormalPressure { get; set; }
 
         // Global variables
         public static int NODE_INDEX = 4;
         public static bool isConnected;
         public static ICharacteristic characteristic;
         public static List<DataObject> dataList;
-        public static ObservableCollection<ChartDataPoint> chart_x_data { get; set; }
-        public static ObservableCollection<ChartDataPoint> chart_y_data { get; set; }
-        public static ObservableCollection<ChartDataPoint> chart_z_data { get; set; }
 
         public App()
         {
@@ -45,14 +45,8 @@ namespace BracePLUS
 
             InitializeComponent();
 
-            generator = new Random();
-            isConnected = false;
-
+            handler = new MessageHandler();
             InputData = new List<byte[]>();
-
-            chart_x_data = new ObservableCollection<ChartDataPoint>();
-            chart_y_data = new ObservableCollection<ChartDataPoint>();
-            chart_z_data = new ObservableCollection<ChartDataPoint>();
 
             MainPage = new MainPage();
         }
@@ -60,6 +54,7 @@ namespace BracePLUS
         protected override async void OnStart()
         {
             // Handle when your app starts
+            isConnected = false;
             await App.Client.StartScan();
         }
 
@@ -75,19 +70,55 @@ namespace BracePLUS
 
         static public void AddData(byte[] bytes)
         {
-            for (int i = 7; i < bytes.Length-3; i += 6)
+            // Extract highest Z value
+            for (int i = 4; i < 100; i += 6)
             {
-                var x = (bytes[i] * 256 + bytes[i + 1]) * 0.00906;
-                var y = (bytes[i+2] * 256 + bytes[i + 3]) * 0.00906;
-                var z = (bytes[i+4] * 256 + bytes[i + 5]) * 0.02636;
-
-                chart_x_data.Add(new ChartDataPoint(i, x));
-                chart_y_data.Add(new ChartDataPoint(i, y));
-                chart_z_data.Add(new ChartDataPoint(i, z));
+                var z = (bytes[i + 4] * 256 + bytes[i + 5]) * 0.02636;
+                if (z > NormalPressure) NormalPressure = z;
             }
-                        
-            
+
             InputData.Add(bytes);
+        }
+
+        static public async Task SaveDataLocally()
+        {
+            // Create filename - MMDDHHmm.dat
+            var name = handler.getFileName(DateTime.Now);
+            Debug.WriteLine("Filename: " + name);
+
+            // Create file instance
+            var filename = Path.Combine(FolderPath, name);
+            FileStream file = new FileStream(filename, FileMode.Append, FileAccess.Write);
+
+            bool writeFile = true;
+            // Check if app has data.
+            if (App.InputData.Count == 0)
+            {
+                writeFile = await Current.MainPage.DisplayAlert("Empty File", "No data received, stored file will be empty. Do you wish to continue?", "Yes", "No");
+            }
+
+            // If app has data/user has requested to continue with writing, fill file with all data available + header.
+            if (writeFile)
+            {
+                // File header
+                byte[] b = new byte[3];
+                b[0] = 0x0A; 
+                b[1] = 0x0B; 
+                b[2] = 0x0C;
+                file.Write(b, 0, b.Length);
+
+                // Write file data
+                foreach (var bytes in InputData)
+                {
+                    file.Write(bytes, 0, bytes.Length);
+                };
+
+                // File footer and close.
+                file.Write(b, 0, b.Length);
+                file.Close();
+
+                Debug.WriteLine($"Wrote {InputData.Count*128 + 6} bytes to file.");
+            }
         }
     }
 }

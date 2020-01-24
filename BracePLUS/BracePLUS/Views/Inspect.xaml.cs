@@ -18,14 +18,12 @@ namespace BracePLUS.Views
     public partial class Inspect : ContentPage
     {
         DataObject dataObject;
-        MessageHandler handler;
 
         public Inspect()
         {
             InitializeComponent();
             // Initalize as empty data object.
             dataObject = new DataObject();
-            handler = new MessageHandler();
 
             chart = new SfChart();
         }

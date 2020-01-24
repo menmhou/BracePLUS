@@ -6,6 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ViewModels\VisualizeViewModel.cs" />
+    <Compile Remove="Views\Visualize.xaml.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Views\Visualize.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AiForms.SettingsView" Version="0.5.2" />
     <PackageReference Include="Plugin.BLE" Version="2.1.1" />
     <PackageReference Include="Syncfusion.Xamarin.SfChart" Version="17.4.0.40" />
@@ -31,9 +40,6 @@
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Views\Settings.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Views\Visualize.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
   </ItemGroup>

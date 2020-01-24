@@ -184,7 +184,7 @@ namespace BracePLUS.Extensions
             return oDate;
         }
 
-        public string getFileName(byte[] rawFileName)
+        public string getFileName(byte[] rawFileName, string extension = ".txt")
         {
             var month = rawFileName[0];
             var day = rawFileName[1];
@@ -193,17 +193,39 @@ namespace BracePLUS.Extensions
 
             string mon_fmt, day_fmt, hr_fmt, min_fmt;
 
-            if (month < 10) mon_fmt = "0{3:d}";
-            else mon_fmt = "{3:d}";
-            if (day < 10) day_fmt = "0{2:d}";
-            else day_fmt = "{2:d}";
-            if (hour < 10) hr_fmt = "0{0:d}";
-            else hr_fmt = "{0:d}";
-            if (minute < 10) min_fmt = "0{1:d}";
-            else min_fmt = "{1:d}";
+            if (month < 10) mon_fmt = "0{0:d}";
+            else mon_fmt = "{0:d}";
+            if (day < 10) day_fmt = "0{1:d}";
+            else day_fmt = "{1:d}";
+            if (hour < 10) hr_fmt = "0{2:d}";
+            else hr_fmt = "{2:d}";
+            if (minute < 10) min_fmt = "0{3:d}";
+            else min_fmt = "{3:d}";
 
-            string format = hr_fmt + min_fmt + day_fmt + mon_fmt;
-            return string.Format(format, hour, minute, day, month);
+            string format = mon_fmt + day_fmt + hr_fmt + min_fmt + extension;
+            return string.Format(format, month, day, hour, minute);
+        }
+
+        public string getFileName(DateTime dateTime, string extension = ".txt")
+        {
+            var month = dateTime.Month;
+            var day = dateTime.Day;
+            var hour = dateTime.Hour;
+            var minute = dateTime.Minute;
+
+            string mon_fmt, day_fmt, hr_fmt, min_fmt;
+
+            if (month < 10) mon_fmt = "0{0:d}";
+            else mon_fmt = "{0:d}";
+            if (day < 10) day_fmt = "0{1:d}";
+            else day_fmt = "{1:d}";
+            if (hour < 10) hr_fmt = "0{2:d}";
+            else hr_fmt = "{2:d}";
+            if (minute < 10) min_fmt = "0{3:d}";
+            else min_fmt = "{3:d}";
+
+            string format = mon_fmt + day_fmt + hr_fmt + min_fmt + extension;
+            return string.Format(format, month, day, hour, minute);
         }
 
         public List<double[]> DecodeData(byte[] bytes, int nodes)

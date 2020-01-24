@@ -39,7 +39,7 @@ namespace BracePLUS.Models
         StackLayout stack;
 
         // DATA SIZE FOR MAGBOARD (+HEADER)
-        byte[] buffer = new byte[128];
+        byte[] buffer = new byte[256];
         byte[] SDBuf = new byte[512];
 
         public static ObservableCollection<string> files;
@@ -228,6 +228,11 @@ namespace BracePLUS.Models
             App.RSSI = "-";
 
             App.isConnected = false;
+
+            if (await Application.Current.MainPage.DisplayAlert("Save?", "App will disconnect. Do you wish to save the data locally?", "Yes", "No"))
+            {
+                await App.SaveDataLocally();
+            }
         }
         public async Task StartScan()
         {
@@ -252,6 +257,7 @@ namespace BracePLUS.Models
         public async Task StopScan()
         {
             Debug.WriteLine("Stopping scan.");
+            write("Stopping scan.", debug);
             await adapter.StopScanningForDevicesAsync();
         }
 
@@ -284,44 +290,6 @@ namespace BracePLUS.Models
             }
         }
 
-        public async Task Save()
-        {
-            if (App.isConnected)
-            {
-                if (isSaving)
-                {
-                    saveButtonText = "Log To SD Card";
-                    // Stop saving data
-                    isSaving = false;
-                    STATUS = Constants.IDLE;
-
-                    await PutToIdleState();
-
-                    write("SD Card Logging Finished.", info);
-                }
-                else
-                {
-                    saveButtonText = "Stop Saving";
-
-                    // Save data to SD card on Teensy board
-                    isSaving = true;
-                    STATUS = Constants.LOGGING;
-
-                    //await SaveToSD();
-                }
-            }
-        }
-
-        public async Task TestLogging()
-        {
-            STATUS = Constants.LOG_TEST;
-            //await TestSDDataLog();
-        }
-        public async Task GetSDInfo()
-        {
-            STATUS = Constants.SD_TEST;
-            //await GetSDCardStatus();
-        }
         #endregion
 
         #region Model Backend 
@@ -346,20 +314,20 @@ namespace BracePLUS.Models
                 write(msg, info);
                 return;
             }
+
+            // Add buffer to local array
+            stream.CopyTo(buffer, packetIndex);
+            packetIndex += stream.Length;
+
             // Check for packet header
-            else if ((stream[len-1] == 0xEE) &&
-                    (stream[len-2] == 0xEE) &&
-                    (stream[len-3] == 0xEE))    
-            {
-                // Save data locally.
-                App.AddData(stream);
+            if ((stream[len-1] == 0xEE) &&
+                (stream[len-2] == 0xEE) &&
+                (stream[len-3] == 0xEE))    
+            {   
+                buffer = RELEASE_DATA(buffer);
                 // Request next packet if header present.
                 await RUN_BLE_WRITE(uartTx, "S");
             }
-
-            var data = BitConverter.ToString(stream);
-            Debug.WriteLine(data);
-            //print(data, debug);
         }
 
         private async Task PutToIdleState()

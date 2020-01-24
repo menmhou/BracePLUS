@@ -5,7 +5,8 @@
              x:Class="BracePLUS.Views.Interface">
 
     <ContentPage.Content>
-        <StackLayout Padding="8, 8, 8, 8">
+        <StackLayout Padding="8, 8, 8, 8"
+                     BackgroundColor="White">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40"/>
@@ -32,16 +33,17 @@
                         Grid.Column="1" />
             </Grid>
             <chart:SfChart x:Name="chart"
-                                           HeightRequest="160"
-                                           VerticalOptions="FillAndExpand"
-                                           HorizontalOptions="FillAndExpand">
+                           Margin="40, 10"
+                           VerticalOptions="FillAndExpand"
+                           HorizontalOptions="FillAndExpand">
 
                 <chart:SfChart.Series>
-                    <chart:BarSeries x:Name="barSeries" 
-                                      ItemsSource="{Binding barData}" 
-                                      Color="BlueViolet"
-                                      XBindingPath="Name"
-                                      YBindingPath="Value" />
+                    <chart:ColumnSeries ItemsSource="{Binding Data}"
+                                        XBindingPath="Name"
+                                        YBindingPath="Value"
+                                        CornerRadius="20"
+                                        Color="Blue"
+                                        ListenPropertyChange="True"/>
                 </chart:SfChart.Series>
 
                 <chart:SfChart.PrimaryAxis>
@@ -49,7 +51,8 @@
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis IsVisible="False"  />
+                    <chart:NumericalAxis IsVisible="True"
+                                         ShowMinorGridLines="True"/>
                 </chart:SfChart.SecondaryAxis>
             </chart:SfChart>
             <Label Text="{Binding Status}"

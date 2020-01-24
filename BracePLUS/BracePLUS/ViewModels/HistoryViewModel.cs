@@ -18,23 +18,18 @@ namespace BracePLUS.ViewModels
         // Public Properties
         public bool IsRefreshing { get; set; }
 
-        // Private Properties
-        MessageHandler handler;
-
         public ObservableCollection<DataObject> DataObjects { get; set; }
 
         public HistoryViewModel()
         {
             Title = "History";
-            DataObjects = new ObservableCollection<DataObject>();
-            handler = new MessageHandler();
         }
 
         public void LoadLocalFiles()
         {
             var tempData = new ObservableCollection<DataObject>();
 
-            var files = Directory.EnumerateFiles(App.FolderPath, "*.dat");
+            var files = Directory.EnumerateFiles(App.FolderPath, "*");
             foreach (var filename in files)
             {
                 // Get info about file
@@ -61,7 +56,7 @@ namespace BracePLUS.ViewModels
             DataObjects.Clear();
 
             // Clear files from memory
-            var files = Directory.EnumerateFiles(App.FolderPath, "*.dat");
+            var files = Directory.EnumerateFiles(App.FolderPath, "*");
             foreach (var filename in files)
             {
                 File.Delete(filename);

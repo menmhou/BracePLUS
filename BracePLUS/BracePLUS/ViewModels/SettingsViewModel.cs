@@ -54,7 +54,7 @@ namespace BracePLUS.ViewModels
             else
             {
                 // Perform SD Card Tests
-                await App.Client.TestLogging();
+                //await App.Client.TestLogging();
             }
         }
 
@@ -67,7 +67,7 @@ namespace BracePLUS.ViewModels
             else
             {
                 // Get SD Card Info
-                await App.Client.GetSDInfo();
+                //await App.Client.GetSDInfo();
             }
         }
 

@@ -23,19 +23,6 @@
             </x:Arguments>
         </NavigationPage>
 
-        <!-- Data Visualisation page -->
-        <NavigationPage Title="Data">
-            <NavigationPage.Icon>
-                <OnPlatform x:TypeArguments="FileImageSource">
-                    <On Platform="iOS" Value="LiveDataLogo.png" />
-                    <On Platform="Android" Value="DataLogoWhite.png" />
-                </OnPlatform>
-            </NavigationPage.Icon>
-            <x:Arguments>
-                <views:Visualize />
-            </x:Arguments>
-        </NavigationPage>
-
         <!-- Browse page -->
         <NavigationPage Title="History">
             <NavigationPage.Icon>

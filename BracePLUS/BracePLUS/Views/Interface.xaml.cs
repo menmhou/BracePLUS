@@ -17,12 +17,5 @@ namespace BracePLUS.Views
             InitializeComponent();
             BindingContext = viewModel = new InterfaceViewModel();
         }
-
-        protected override async void OnAppearing()
-        {
-            base.OnAppearing();
-
-            await App.Client.StartScan();
-        }
     }
 }

@@ -8,6 +8,12 @@
              Title="Inspect File"
              x:Class="BracePLUS.Views.Inspect">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Share"
+                     Order="Primary"
+                     Command="{Binding ShareCommand}"/>
+    </ContentPage.ToolbarItems>
+   
     <ContentPage.Content>
         <TableView x:Name="tableView"
                    HasUnevenRows="True"
@@ -51,25 +57,14 @@
                                            HeightRequest="160"
                                            VerticalOptions="FillAndExpand"
                                            HorizontalOptions="FillAndExpand">
-
+<!--
                                 <chart:SfChart.Series>
-                                    <chart:LineSeries x:Name="lineSeries1" 
-                                      ItemsSource="{Binding LineData1}" 
-                                      Color="Red"
-                                      XBindingPath="Name"
-                                      YBindingPath="Value" />
-                                    <chart:LineSeries x:Name="lineSeries2" 
-                                      ItemsSource="{Binding LineData2}" 
-                                      Color="Blue"
-                                      XBindingPath="Name"
-                                      YBindingPath="Value" />
-                                    <chart:LineSeries x:Name="lineSeries3" 
-                                      ItemsSource="{Binding LineData3}" 
-                                      Color="Green"
-                                      XBindingPath="Name"
-                                      YBindingPath="Value" />
+                                    <chart:LineSeries ItemsSource="{Binding LineData1}" 
+                                                      Color="Red"
+                                                      XBindingPath="Name"
+                                                      YBindingPath="Value" />
                                 </chart:SfChart.Series>
-
+-->
                                 <chart:SfChart.PrimaryAxis>
                                     <chart:CategoryAxis />
                                 </chart:SfChart.PrimaryAxis>

@@ -83,12 +83,7 @@ namespace BracePLUS.ViewModels
             }         
         }
 
-        public void ExecuteClearDataCommand()
-        {
-            App.chart_x_data.Clear();
-            App.chart_y_data.Clear();
-            App.chart_z_data.Clear();
-        }
+
 
         void AddRandomData(int range)
         {

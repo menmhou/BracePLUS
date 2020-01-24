@@ -7,6 +7,7 @@ using Xamarin.Forms;
 using BracePLUS.Extensions;
 using System.Diagnostics;
 using System.IO;
+using Xamarin.Essentials;
 
 namespace BracePLUS.Models
 {
@@ -14,9 +15,7 @@ namespace BracePLUS.Models
     {
         private MessageHandler handler;
 
-        private ObservableCollection<ChartDataModel> LineData1;
-        private ObservableCollection<ChartDataModel> LineData2;
-        private ObservableCollection<ChartDataModel> LineData3;
+        ObservableCollection<ChartDataModel> LineData1;
 
         public bool IsDownloaded { get; set; }
         public string Name { get; set; }
@@ -35,33 +34,50 @@ namespace BracePLUS.Models
             set { }
         }
 
-        public string DataString 
-        {
-            get { return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "..."); }
-            set { }
-        }
+        public string DataString { get; set; }
 
         public byte[] Data { get; set; }
+
+        public Command ShareCommand { get; set; }
         
         public DataObject()
         {
             handler = new MessageHandler();
 
             LineData1 = new ObservableCollection<ChartDataModel>();
-            LineData2 = new ObservableCollection<ChartDataModel>();
-            LineData3 = new ObservableCollection<ChartDataModel>();
+
+            ShareCommand = new Command(async () => await ExecuteShareCommand());
+        }
+
+        public async Task ExecuteShareCommand()
+        {
+            var file = Path.Combine(App.FolderPath, Filename);
+
+            await Share.RequestAsync(new ShareFileRequest
+            {
+                Title = Name,
+                File = new ShareFile(file)
+            });
         }
 
         public bool DownloadData(string path)
         {
             try
             {
-                this.IsDownloaded = true;
-                this.Data = File.ReadAllBytes(path);
+                IsDownloaded = true;
+                Data = File.ReadAllBytes(path);
+                if (Data.Length > 100)
+                {
+                    DataString = BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
+                }
+                else
+                {
+                    DataString = BitConverter.ToString(Data);
+                }
             }
             catch (Exception ex)
             {
-                this.IsDownloaded = false;
+                IsDownloaded = false;
                 Debug.WriteLine("Data download failed with exception: " + ex.Message);
             }
 
@@ -70,20 +86,16 @@ namespace BracePLUS.Models
 
         public void InitChart(SfChart chart)
         {
-            double _x, _y, _z;
+            double _z;
 
             chart = new SfChart();
 
             try
             {
                 for (int i = 0; i < 100; i++)
-                {
-                    _x = ((Data[(i * 6) + 4] << 8) + Data[(i * 6) + 5]) * 0.00906;
-                    _y = ((Data[(i * 6) + 6] << 8) + Data[(i * 6) + 7]) * 0.00906;
+                {                   
                     _z = ((Data[(i * 6) + 8] << 8) + Data[(i * 6) + 9]) * 0.02636;
 
-                    LineData1.Add(new ChartDataModel(i.ToString(), _x));
-                    LineData1.Add(new ChartDataModel(i.ToString(), _y));
                     LineData1.Add(new ChartDataModel(i.ToString(), _z));
                 }
             }

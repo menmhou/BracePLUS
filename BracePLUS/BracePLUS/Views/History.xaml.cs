@@ -32,9 +32,6 @@ namespace BracePLUS.Views
             viewModel.LoadLocalFiles();
 
             listView.ItemsSource = viewModel.DataObjects;
-            /*
-                .OrderBy(d => d.Date)
-                .ToList(); */
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
@@ -44,20 +41,25 @@ namespace BracePLUS.Views
             if (item == null)
                 return;
 
-            Debug.WriteLine("Reading all bytes...");
-
             // Read all data into object
             item.Data = File.ReadAllBytes(item.Filename);
             item.IsDownloaded = true;
 
-            Debug.WriteLine("Byte reading completed.");
-            Debug.Write(item.Data.Length); Debug.WriteLine(" bytes read.");
+            Debug.WriteLine($"{item.Data.Length} bytes read.");
 
             // Inspect file...
-            await Navigation.PushAsync(new Inspect
+            try
             {
-                BindingContext = item
-            });
+                await Navigation.PushAsync(new Inspect
+                {
+                    BindingContext = item
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Async nav push to new file inspect page failed: {ex.Message}");
+            }
+            
    
 
             listView.SelectedItem = null;

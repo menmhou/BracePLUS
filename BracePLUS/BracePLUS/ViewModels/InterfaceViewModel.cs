@@ -5,25 +5,19 @@ using Xamarin.Forms;
 using BracePLUS.Models;
 
 using System.Diagnostics;
+using Syncfusion.SfChart.XForms;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace BracePLUS.ViewModels
 {
     public class InterfaceViewModel
     {
-        // Private properties
-        private string _connectText;
-
         // Public Properties
-        public string ConnectText 
-        {
-            get => _connectText;
-            set
-            {
-                _connectText = value;
-            }
-        }
+        public string ConnectText { get; set; }
         public string StreamButtonText { get; set; }
         public string SaveButtonText { get; set; }
+        public ObservableCollection<ChartDataModel> Data { get; set; }
 
         public string Status { get; set; }
 
@@ -33,18 +27,21 @@ namespace BracePLUS.ViewModels
         public Command SaveCommand { get; set; }
 
         public InterfaceViewModel()
-        {       
+        {
             App.Client = new BraceClient();
 
             ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
-            SaveCommand = new Command(async () => await ExecuteSaveCommand());
+            SaveCommand = new Command(async () => await App.SaveDataLocally());
+
+            Data = new ObservableCollection<ChartDataModel>()
+            {
+                new ChartDataModel("Input Data", App.NormalPressure)
+            };
 
             ConnectText = "Connect";
-            StreamButtonText = "Stream Data";
-            SaveButtonText = "Save to SD";
-
-            Status = "Unconnected.";
+            StreamButtonText = "Stream";
+            SaveButtonText = "Save";
         }
 
         public async Task ExecuteConnectCommand()
@@ -75,18 +72,6 @@ namespace BracePLUS.ViewModels
             else
             {
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to stream data.", "OK");
-            }
-        }
-
-        public async Task ExecuteSaveCommand()
-        {
-            if (App.isConnected)
-            {
-                await App.Client.Save();
-            }
-            else
-            {
-                await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to save data.", "OK");
             }
         }
     }
