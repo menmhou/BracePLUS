@@ -42,8 +42,7 @@
                                         XBindingPath="Name"
                                         YBindingPath="Value"
                                         CornerRadius="20"
-                                        Color="Blue"
-                                        ListenPropertyChange="True"/>
+                                        Color="Blue"/>
                 </chart:SfChart.Series>
 
                 <chart:SfChart.PrimaryAxis>

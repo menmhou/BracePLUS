@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿#define SIMULATION
+
+using System.Threading.Tasks;
 
 using Xamarin.Forms;
 
@@ -11,15 +13,22 @@ using System.Collections.ObjectModel;
 
 namespace BracePLUS.ViewModels
 {
-    public class InterfaceViewModel
+    public class InterfaceViewModel : BaseViewModel
     {
         // Public Properties
         public string ConnectText { get; set; }
         public string StreamButtonText { get; set; }
         public string SaveButtonText { get; set; }
-        public ObservableCollection<ChartDataModel> Data { get; set; }
-
-        public string Status { get; set; }
+        public ChartDataModel Data 
+        { 
+            get { return App.NormalData; }
+            set { } 
+        }
+        public string Status
+        { 
+            get { return App.Status; }
+            set { }
+        }
 
         // Commands
         public Command ConnectCommand { get; set; }
@@ -34,14 +43,30 @@ namespace BracePLUS.ViewModels
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SaveCommand = new Command(async () => await App.SaveDataLocally());
 
-            Data = new ObservableCollection<ChartDataModel>()
-            {
-                new ChartDataModel("Input Data", App.NormalPressure)
-            };
-
             ConnectText = "Connect";
             StreamButtonText = "Stream";
             SaveButtonText = "Save";
+
+#if SIMULATION
+            // Add random values to simulate a connected device
+            for (int i = 0; i < App.generator.Next(200); i++)
+            {
+                byte[] values = new byte[128];
+
+                // Add random values for rest of data
+                App.generator.NextBytes(values);
+
+                // Simulate time bytes
+                values[0] = 0;
+                values[1] = 0;
+                values[2] = 0;
+                values[3] = 0;
+
+                for (int j = 100; j < 128; j++) values[i] = 0xEE;
+
+                App.AddData(values);
+            }
+#endif
         }
 
         public async Task ExecuteConnectCommand()
@@ -53,18 +78,18 @@ namespace BracePLUS.ViewModels
             }
             else
             {
+                ConnectText = "Disconnect";
                 // Start scan
                 await App.Client.StartScan();
                 // Give system a few seconds to find brace+
                 await Task.Delay(3000);
-
-                ConnectText = "Disconnect";
                 await App.Client.Connect();
             }
         }
 
         public async Task ExecuteStreamCommand()
         {
+            StreamButtonText = "VALUE!£$";
             if (App.isConnected)
             {
                 await App.Client.Stream();

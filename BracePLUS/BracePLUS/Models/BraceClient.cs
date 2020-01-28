@@ -37,10 +37,10 @@ namespace BracePLUS.Models
 
         //DataObject dataObject;
         StackLayout stack;
+        MessageHandler handler;
 
         // DATA SIZE FOR MAGBOARD (+HEADER)
-        byte[] buffer = new byte[256];
-        byte[] SDBuf = new byte[512];
+        byte[] buffer = new byte[128];
 
         public static ObservableCollection<string> files;
 
@@ -54,11 +54,9 @@ namespace BracePLUS.Models
         public int STATUS = Constants.IDLE;
 
         byte[] commsByte = new byte[64];
-        string raw, msg = "";
 
         public List<string> messages;
 
-        MessageHandler handler;
 
         int packetIndex;
         #endregion
@@ -120,6 +118,7 @@ namespace BracePLUS.Models
 
             try
             {
+                App.Status = "Attempting connection...";
                 Debug.WriteLine("Attempting connection...");
 
                 if (brace != null)
@@ -132,6 +131,8 @@ namespace BracePLUS.Models
                     Debug.WriteLine("Connected, scan for devices stopped.");
                     write("Connected, scan for devices stopped.", debug);
 
+                    App.Status = "Connected to Brace+";
+
                     App.ConnectedDevice = brace.Name;
                     App.DeviceID = brace.Id.ToString();
                     App.RSSI = brace.Rssi.ToString();
@@ -141,6 +142,7 @@ namespace BracePLUS.Models
                 else
                 {
                     App.isConnected = false;
+                    App.Status = "Brace+ not found.";
                     write("Brace+ not found.", info);
                     return;
                 }
@@ -203,6 +205,7 @@ namespace BracePLUS.Models
             {
                 Debug.WriteLine("Connection failed with exception: " + e.Message);
                 write("Failed to connect.", info);
+                App.Status = "Failed to connected.";
                 return;
             }
         }
@@ -271,6 +274,7 @@ namespace BracePLUS.Models
                     await RUN_BLE_WRITE(uartTx, ".");
                     write("Stopping data stream.", debug);
                     isStreaming = false;
+                    STATUS = Constants.IDLE;
                 }
                 else
                 {
@@ -323,7 +327,7 @@ namespace BracePLUS.Models
             if ((stream[len-1] == 0xEE) &&
                 (stream[len-2] == 0xEE) &&
                 (stream[len-3] == 0xEE))    
-            {   
+            {
                 buffer = RELEASE_DATA(buffer);
                 // Request next packet if header present.
                 await RUN_BLE_WRITE(uartTx, "S");
@@ -336,14 +340,14 @@ namespace BracePLUS.Models
         }
         #endregion
 
-        byte[] RELEASE_DATA(byte[] bytes)
+        byte[] RELEASE_DATA(byte[] b)
         {
             // Reset packet index
             packetIndex = 0;
             // Save data
-            App.InputData.Add(bytes);
+            App.AddData(b);
             // Return empty array of same size
-            return new byte[bytes.Length];
+            return new byte[b.Length];
         }
 
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, byte[] b)
@@ -415,19 +419,6 @@ namespace BracePLUS.Models
                 {
                     stack.Children.RemoveAt(200);
                 }
-            });
-        }
-
-        void print(string text, Color color)
-        {
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                stack.Children.RemoveAt(0);
-                stack.Children.Insert(0, new Label
-                {
-                    Text = text,
-                    TextColor = color
-                });
             });
         }
 

@@ -30,8 +30,9 @@ namespace BracePLUS.Views
         {
             base.OnAppearing();
             viewModel.LoadLocalFiles();
-
-            listView.ItemsSource = viewModel.DataObjects;
+            listView.ItemsSource = viewModel.DataObjects
+                .OrderBy(d => d.Date)
+                .ToList();
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
@@ -60,8 +61,6 @@ namespace BracePLUS.Views
                 Debug.WriteLine($"Async nav push to new file inspect page failed: {ex.Message}");
             }
             
-   
-
             listView.SelectedItem = null;
         }
 
@@ -73,7 +72,9 @@ namespace BracePLUS.Views
             if (clear) viewModel.ClearObjects();
 
             // Reload data in listview
-            listView.ItemsSource = null;
+            listView.ItemsSource = viewModel.DataObjects
+               .OrderBy(d => d.Date)
+               .ToList();
         }
     }
 }

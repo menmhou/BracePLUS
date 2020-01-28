@@ -9,7 +9,7 @@
              x:Class="BracePLUS.Views.Inspect">
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Share"
+        <ToolbarItem IconImageSource="ShareIconWhite.png"
                      Order="Primary"
                      Command="{Binding ShareCommand}"/>
     </ContentPage.ToolbarItems>
@@ -57,14 +57,14 @@
                                            HeightRequest="160"
                                            VerticalOptions="FillAndExpand"
                                            HorizontalOptions="FillAndExpand">
-<!--
+
                                 <chart:SfChart.Series>
-                                    <chart:LineSeries ItemsSource="{Binding LineData1}" 
+                                    <chart:LineSeries ItemsSource="{Binding ChartData}"
                                                       Color="Red"
                                                       XBindingPath="Name"
                                                       YBindingPath="Value" />
                                 </chart:SfChart.Series>
--->
+
                                 <chart:SfChart.PrimaryAxis>
                                     <chart:CategoryAxis />
                                 </chart:SfChart.PrimaryAxis>

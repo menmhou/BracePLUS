@@ -41,9 +41,14 @@ namespace BracePLUS.Views
             Debug.WriteLine("Graph tapped.");
         }
 
-        private void RawDataTapped(object sender, EventArgs e)
+        private async void RawDataTapped(object sender, EventArgs e)
         {
             Debug.WriteLine("Data string tapped.");
+
+            await Navigation.PushAsync(new RawDataView
+            {
+                BindingContext = dataObject
+            });
         }
     }
 }

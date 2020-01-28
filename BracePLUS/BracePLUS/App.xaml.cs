@@ -24,12 +24,15 @@ namespace BracePLUS
         // Global Members
         public static Random generator;
         public static List<byte[]> InputData;
+        public static string Status { get; set; }
         public static string FolderPath { get; private set; }
         // BLE Status
         public static string ConnectedDevice { get; set; }
         public static string DeviceID { get; set; }
         public static string RSSI { get; set; }
         public static double NormalPressure { get; set; }
+
+        public static ChartDataModel NormalData { get; set; }
 
         // Global variables
         public static int NODE_INDEX = 4;
@@ -45,14 +48,19 @@ namespace BracePLUS
 
             InitializeComponent();
 
+            generator = new Random();
             handler = new MessageHandler();
             InputData = new List<byte[]>();
-
+            NormalData = new ChartDataModel("Normal Pressure", 0.0);
+            
             MainPage = new MainPage();
         }
 
         protected override async void OnStart()
         {
+            ConnectedDevice = "-";
+            DeviceID = "-";
+            RSSI = "-";
             // Handle when your app starts
             isConnected = false;
             await App.Client.StartScan();
@@ -76,7 +84,9 @@ namespace BracePLUS
                 var z = (bytes[i + 4] * 256 + bytes[i + 5]) * 0.02636;
                 if (z > NormalPressure) NormalPressure = z;
             }
-
+            // Add to graph
+            NormalData.Value = NormalPressure;
+            // Save to array of input data
             InputData.Add(bytes);
         }
 

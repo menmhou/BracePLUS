@@ -15,7 +15,7 @@ namespace BracePLUS.Models
     {
         private MessageHandler handler;
 
-        ObservableCollection<ChartDataModel> LineData1;
+        public ObservableCollection<ChartDataModel> ChartData { get; set; }
 
         public bool IsDownloaded { get; set; }
         public string Name { get; set; }
@@ -33,9 +33,17 @@ namespace BracePLUS.Models
             get { return string.Format("{0}, {1}", FormattedSize, Date); }
             set { }
         }
-
-        public string DataString { get; set; }
-
+        public string DataString
+        { 
+            get { return getDataString(); }
+            set { }
+        }
+        public string Text
+        {
+            get { return BitConverter.ToString(Data); }
+            set { }
+        }
+        
         public byte[] Data { get; set; }
 
         public Command ShareCommand { get; set; }
@@ -43,8 +51,7 @@ namespace BracePLUS.Models
         public DataObject()
         {
             handler = new MessageHandler();
-
-            LineData1 = new ObservableCollection<ChartDataModel>();
+            ChartData = new ObservableCollection<ChartDataModel>();
 
             ShareCommand = new Command(async () => await ExecuteShareCommand());
         }
@@ -66,14 +73,6 @@ namespace BracePLUS.Models
             {
                 IsDownloaded = true;
                 Data = File.ReadAllBytes(path);
-                if (Data.Length > 100)
-                {
-                    DataString = BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
-                }
-                else
-                {
-                    DataString = BitConverter.ToString(Data);
-                }
             }
             catch (Exception ex)
             {
@@ -81,7 +80,7 @@ namespace BracePLUS.Models
                 Debug.WriteLine("Data download failed with exception: " + ex.Message);
             }
 
-            return this.IsDownloaded;
+            return IsDownloaded;
         }
 
         public void InitChart(SfChart chart)
@@ -92,17 +91,29 @@ namespace BracePLUS.Models
 
             try
             {
-                for (int i = 0; i < 100; i++)
+                for (int i = 0; i < 20; i++)
                 {                   
                     _z = ((Data[(i * 6) + 8] << 8) + Data[(i * 6) + 9]) * 0.02636;
 
-                    LineData1.Add(new ChartDataModel(i.ToString(), _z));
+                    ChartData.Add(new ChartDataModel(i.ToString(), _z));
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Chart initialisation failed with exception: " + ex.Message);
             }           
+        }
+
+        private string getDataString()
+        {
+            if (Data.Length < 100)
+            {
+                return BitConverter.ToString(Data);
+            }
+            else
+            {
+                return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
+            }
         }
     }
 }
