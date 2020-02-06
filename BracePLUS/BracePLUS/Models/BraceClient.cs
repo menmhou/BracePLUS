@@ -35,12 +35,18 @@ namespace BracePLUS.Models
         public string streamButtonText = "Stream";
         public string saveButtonText = "Save To SD";
 
+            /* LOOK UP ERROR:
+            * 
+            * 'Only the original thread that created a view hierarchy can touch its views'
+            * 
+            */
+
         //DataObject dataObject;
         StackLayout stack;
         MessageHandler handler;
 
         // DATA SIZE FOR MAGBOARD (+HEADER)
-        byte[] buffer = new byte[128];
+        byte[] buffer = new byte[256];
 
         public static ObservableCollection<string> files;
 
@@ -56,7 +62,6 @@ namespace BracePLUS.Models
         byte[] commsByte = new byte[64];
 
         public List<string> messages;
-
 
         int packetIndex;
         #endregion
@@ -318,6 +323,7 @@ namespace BracePLUS.Models
                 write(msg, info);
                 return;
             }
+
 
             // Add buffer to local array
             stream.CopyTo(buffer, packetIndex);

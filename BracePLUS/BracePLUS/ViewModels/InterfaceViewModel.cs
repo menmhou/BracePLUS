@@ -1,4 +1,4 @@
-﻿#define SIMULATION
+﻿//#define SIMULATION
 
 using System.Threading.Tasks;
 
@@ -19,11 +19,7 @@ namespace BracePLUS.ViewModels
         public string ConnectText { get; set; }
         public string StreamButtonText { get; set; }
         public string SaveButtonText { get; set; }
-        public ChartDataModel Data 
-        { 
-            get { return App.NormalData; }
-            set { } 
-        }
+        public ObservableCollection<ChartDataModel> ChartData { get; set; }
         public string Status
         { 
             get { return App.Status; }
@@ -39,6 +35,8 @@ namespace BracePLUS.ViewModels
         {
             App.Client = new BraceClient();
 
+            ChartData = new ObservableCollection<ChartDataModel>();
+
             ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SaveCommand = new Command(async () => await App.SaveDataLocally());
@@ -47,9 +45,15 @@ namespace BracePLUS.ViewModels
             StreamButtonText = "Stream";
             SaveButtonText = "Save";
 
+            MessagingCenter.Subscribe<BraceClient, double>(this, "NormalPressure", (sender, arg) =>
+            {
+                Debug.WriteLine("Received message: " + arg);
+                ChartData.Add(new ChartDataModel("Normal Pressure", arg));
+            });
+
 #if SIMULATION
             // Add random values to simulate a connected device
-            for (int i = 0; i < App.generator.Next(200); i++)
+            for (int i = 0; i < App.generator.Next(2000); i++)
             {
                 byte[] values = new byte[128];
 
@@ -62,7 +66,7 @@ namespace BracePLUS.ViewModels
                 values[2] = 0;
                 values[3] = 0;
 
-                for (int j = 100; j < 128; j++) values[i] = 0xEE;
+                for (int j = 100; j < values.Length; j++) values[j] = 0xEE;
 
                 App.AddData(values);
             }
@@ -89,7 +93,6 @@ namespace BracePLUS.ViewModels
 
         public async Task ExecuteStreamCommand()
         {
-            StreamButtonText = "VALUE!£$";
             if (App.isConnected)
             {
                 await App.Client.Stream();

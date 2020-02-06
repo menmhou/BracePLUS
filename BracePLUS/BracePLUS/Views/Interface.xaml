@@ -17,41 +17,37 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Button x:Name="ConnectionButton"
-                        Text="{Binding ConnectText}"
+                <Button Text="{Binding ConnectText}"
                         Command="{Binding ConnectCommand}"
                         Grid.ColumnSpan="2"/>
-                <Button x:Name="StreamButton"
-                        Text="{Binding StreamButtonText}"
+                <Button Text="{Binding StreamButtonText}"
                         Command="{Binding StreamCommand}"
                         Grid.Row="1"
                         Grid.Column="0"/>
-                <Button x:Name="SaveSDCardButton"
-                        Text="{Binding SaveButtonText}"
+                <Button Text="{Binding SaveButtonText}"
                         Command="{Binding SaveCommand}"
                         Grid.Row="1"
                         Grid.Column="1" />
             </Grid>
-            <chart:SfChart x:Name="chart"
-                           Margin="40, 10"
+            <chart:SfChart Margin="40, 10"
                            VerticalOptions="FillAndExpand"
                            HorizontalOptions="FillAndExpand">
 
                 <chart:SfChart.Series>
-                    <chart:ColumnSeries ItemsSource="{Binding Data}"
+                    <chart:ColumnSeries ItemsSource="{Binding ChartData}"
+                                        ListenPropertyChange="True"
+                                        Color="#3838F8"
                                         XBindingPath="Name"
-                                        YBindingPath="Value"
-                                        CornerRadius="20"
-                                        Color="Blue"/>
+                                        YBindingPath="Value" 
+                                        CornerRadius="16"/>
                 </chart:SfChart.Series>
 
                 <chart:SfChart.PrimaryAxis>
-                    <chart:CategoryAxis IsVisible="False"/>
+                    <chart:CategoryAxis IsVisible="True"/>
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis IsVisible="True"
-                                         ShowMinorGridLines="True"/>
+                    <chart:NumericalAxis IsVisible="True"/>
                 </chart:SfChart.SecondaryAxis>
             </chart:SfChart>
             <Label Text="{Binding Status}"

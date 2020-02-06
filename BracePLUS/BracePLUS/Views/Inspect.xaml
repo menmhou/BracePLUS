@@ -10,8 +10,10 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem IconImageSource="ShareIconWhite.png"
-                     Order="Primary"
                      Command="{Binding ShareCommand}"/>
+        <ToolbarItem IconImageSource="BinIconWhite.png"
+                     Command="{Binding DeleteCommand}"/>
+        
     </ContentPage.ToolbarItems>
    
     <ContentPage.Content>

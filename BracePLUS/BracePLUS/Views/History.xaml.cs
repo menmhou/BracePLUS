@@ -43,18 +43,13 @@ namespace BracePLUS.Views
                 return;
 
             // Read all data into object
-            item.Data = File.ReadAllBytes(item.Filename);
-            item.IsDownloaded = true;
-
+            item.DownloadData(item.Filename);
             Debug.WriteLine($"{item.Data.Length} bytes read.");
 
             // Inspect file...
             try
             {
-                await Navigation.PushAsync(new Inspect
-                {
-                    BindingContext = item
-                });
+                await Navigation.PushAsync(new Inspect(item));
             }
             catch (Exception ex)
             {

@@ -26,13 +26,12 @@ namespace BracePLUS
         public static List<byte[]> InputData;
         public static string Status { get; set; }
         public static string FolderPath { get; private set; }
+        public static ObservableCollection<ChartDataModel> ChartData { get; set; }
+
         // BLE Status
         public static string ConnectedDevice { get; set; }
         public static string DeviceID { get; set; }
         public static string RSSI { get; set; }
-        public static double NormalPressure { get; set; }
-
-        public static ChartDataModel NormalData { get; set; }
 
         // Global variables
         public static int NODE_INDEX = 4;
@@ -51,8 +50,7 @@ namespace BracePLUS
             generator = new Random();
             handler = new MessageHandler();
             InputData = new List<byte[]>();
-            NormalData = new ChartDataModel("Normal Pressure", 0.0);
-            
+
             MainPage = new MainPage();
         }
 
@@ -63,7 +61,7 @@ namespace BracePLUS
             RSSI = "-";
             // Handle when your app starts
             isConnected = false;
-            await App.Client.StartScan();
+            await Client.StartScan();
         }
 
         protected override void OnSleep()
@@ -77,17 +75,24 @@ namespace BracePLUS
         }
 
         static public void AddData(byte[] bytes)
-        {
-            // Extract highest Z value
-            for (int i = 4; i < 100; i += 6)
+        {           
+            try
             {
-                var z = (bytes[i + 4] * 256 + bytes[i + 5]) * 0.02636;
-                if (z > NormalPressure) NormalPressure = z;
+                var z_max = 0.0;
+                // Extract highest Z value
+                for (int i = 8; i < 100; i += 6)
+                {
+                    var z = (bytes[i] * 256 + bytes[i + 1]) * 0.02636;
+                    if (z > z_max) z_max = z;
+                }
+                MessagingCenter.Send(Client, "NormalPressure", z_max);
+                // Save to array of input data
+                InputData.Add(bytes);
             }
-            // Add to graph
-            NormalData.Value = NormalPressure;
-            // Save to array of input data
-            InputData.Add(bytes);
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to write {BitConverter.ToString(bytes)} to app with exception: {ex.Message}");
+            }
         }
 
         static public async Task SaveDataLocally()

@@ -5,30 +5,16 @@ using System.Text;
 
 namespace BracePLUS.Models
 {
-    class ChartLineViewModel
-    {
-        public ObservableCollection<ChartDataModel> LineData1 { get; set; }
-        public ChartLineViewModel()
-        {
-            LineData1 = new ObservableCollection<ChartDataModel>();            
-        }
-    }
     public class ChartDataModel
     {
         public string Name { get; set; }
         public string Label { get; set; }
         public DateTime Date { get; set; }
-
         public double Value { get; set; }
-
         public double Value1 { get; set; }
-
         public double Size { get; set; }
-
         public double High { get; set; }
-
         public double Low { get; set; }
-
         public bool IsSummary { get; set; }
 
         public ChartDataModel(string name, double value)

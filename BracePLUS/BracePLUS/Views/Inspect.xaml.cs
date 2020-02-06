@@ -1,5 +1,6 @@
 ﻿using BracePLUS.Extensions;
 using BracePLUS.Models;
+using BracePLUS.ViewModels;
 using Syncfusion.SfChart.XForms;
 using System;
 using System.Collections.Generic;
@@ -18,33 +19,29 @@ namespace BracePLUS.Views
     public partial class Inspect : ContentPage
     {
         DataObject dataObject;
+        InspectViewModel viewModel;
 
-        public Inspect()
+        public Inspect(DataObject obj)
         {
             InitializeComponent();
-            // Initalize as empty data object.
-            dataObject = new DataObject();
+            dataObject = obj;
 
-            chart = new SfChart();
+            BindingContext = viewModel = new InspectViewModel(obj)
+            {
+                nav = Navigation
+            };
         }
 
-        protected override void OnAppearing()
+        private async void GridTapped(object sender, EventArgs e)
         {
-            base.OnAppearing();
-            dataObject = (DataObject)BindingContext;
-            dataObject.InitChart(chart);
-            dataObject.DownloadData(dataObject.Filename);
-        }
-
-        private void GridTapped(object sender, EventArgs e)
-        {
-            Debug.WriteLine("Graph tapped.");
+            await Navigation.PushAsync(new GraphView
+            {
+                BindingContext = dataObject
+            });
         }
 
         private async void RawDataTapped(object sender, EventArgs e)
         {
-            Debug.WriteLine("Data string tapped.");
-
             await Navigation.PushAsync(new RawDataView
             {
                 BindingContext = dataObject
