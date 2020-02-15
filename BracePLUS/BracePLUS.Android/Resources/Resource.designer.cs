@@ -8587,10 +8587,16 @@ namespace BracePLUS.Droid
 			public const int ShareIconWhite = 2131165339;
 			
 			// aapt resource value: 0x7F07009C
-			public const int tooltip_frame_dark = 2131165340;
+			public const int StarFilled = 2131165340;
 			
 			// aapt resource value: 0x7F07009D
-			public const int tooltip_frame_light = 2131165341;
+			public const int StarUnfilled = 2131165341;
+			
+			// aapt resource value: 0x7F07009E
+			public const int tooltip_frame_dark = 2131165342;
+			
+			// aapt resource value: 0x7F07009F
+			public const int tooltip_frame_light = 2131165343;
 			
 			static Drawable()
 			{

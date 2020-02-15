@@ -1,4 +1,4 @@
-﻿//#define SIMULATION
+﻿#define SIMULATION
 
 using System.Threading.Tasks;
 
@@ -79,7 +79,7 @@ namespace BracePLUS.ViewModels
         }
 
         public async Task ExecuteConnectCommand()
-        {
+        { 
             if (App.isConnected)
             {
                 ConnectText = "Connect";
@@ -108,6 +108,9 @@ namespace BracePLUS.ViewModels
 
         public async Task ExecuteSaveCommand()
         {
+#if SIMULATION
+            await App.SaveDataLocally();
+#endif
             if (App.isConnected)
             {
                 await App.Client.Save();

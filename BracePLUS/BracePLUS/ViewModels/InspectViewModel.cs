@@ -57,42 +57,9 @@ namespace BracePLUS.Views
             ChartData = new ObservableCollection<ChartDataModel>();
             handler = new MessageHandler();
 
-            DataObj.DownloadData(DataObj.Filename);
+            //DataObj.DownloadData(DataObj.Filename);
 
-            /*
-            for (int i = 3; i < DataObj.Data.Length; i += 128)
-            {
-                var _t0 = DataObj.Data[i];
-                var _t1 = DataObj.Data[i + 1];
-                var _t2 = DataObj.Data[i + 2];
-                var _t3 = DataObj.Data[i + 3];
-
-                var t = _t0 + (_t1 << 8) + (_t2 << 16) + (_t3 << 24);
-                Debug.WriteLine("time: " + t);
-            }
-            */
-
-            // Extract first and last time packets from file.
-            // File format: [ 0x0A | 0x0B | 0x0C | T0 | T1 | T2 | T3 | X1MSB.....| Zn | 0x0A | 0x0B | 0x0C ]
-            byte t3 = DataObj.Data[6];
-            byte t2 = DataObj.Data[5];
-            byte t1 = DataObj.Data[4];
-            byte t0 = DataObj.Data[3];
-            var t_start = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
-
-            int length = DataObj.Data.Length;
-
-            // Packet length is 128, then accomodate for file footer.
-            // Last time packet is bytes 0:3 of last packet
-            t3 = DataObj.Data[length - 128];
-            t2 = DataObj.Data[length - 129];
-            t1 = DataObj.Data[length - 130];
-            t0 = DataObj.Data[length - 131];
-
-            var t_finish = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
-
-            var time_ms = t_finish - t_start;
-            FileTime = String.Format("File duration: {0:0.00}s", time_ms / 1000);
+            FileTime = String.Format("File duration: {0:0.00}s", DataObj.Duration / 1000);
 
             var normals = handler.ExtractNormals(DataObj.Data, 50, 11);
 

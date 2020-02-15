@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:local="clr-namespace:BracePLUS.ViewModels"
+             xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
              x:Class="BracePLUS.Views.History">
 
     <ContentPage.ToolbarItems>
@@ -10,55 +10,89 @@
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
-        <StackLayout Margin="0, 0, 0, 0">
+        <StackLayout>
 
             <ListView x:Name="listView"
                       ItemSelected="OnListViewItemSelected"
                       HasUnevenRows="True"
+                      
+                      SeparatorVisibility="None"
                       IsPullToRefreshEnabled="False"
                       BackgroundColor="#EEEEEE">
-                
+
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <ViewCell>
-                            <StackLayout Margin="6, 6, 6, 6">
-                                <Label Text="{Binding Name}"
-                                       FontSize="Subtitle"
+                            <Frame BackgroundColor="White"
+                                   Padding="10"
+                                   Margin="4, 8"
+                                   CornerRadius="20">
+                                <StackLayout>
+                                    <Label Text="{Binding Name}"
+                                       FontSize="Large"
                                        TextColor="Black"/>
-                                <Label Text="{Binding Detail}"
-                                       FontSize="Small"
+                                    <Label Text="{Binding Detail}"
+                                       FontSize="Medium"
                                        TextColor="DimGray"/>
-                            </StackLayout>
+                                    <Label Text="{Binding FormattedAvgPressure}"
+                                       FontSize="Medium"
+                                       TextColor="DimGray"/>
+                                    <Label Text="{Binding FormattedMaxPressure}"
+                                       FontSize="Medium"
+                                       TextColor="DimGray"/>
+
+                                    <chart:SfChart x:Name="chart"
+                                           HeightRequest="160"
+                                           VerticalOptions="FillAndExpand"
+                                           HorizontalOptions="FillAndExpand">
+
+                                        <chart:SfChart.Series>
+                                            <chart:LineSeries ItemsSource="{Binding NormalData}"
+                                                              Color="Red"
+                                                              XBindingPath="Name"
+                                                              YBindingPath="Value" />
+                                        </chart:SfChart.Series>
+
+                                        <chart:SfChart.PrimaryAxis>
+                                            <chart:CategoryAxis />
+                                        </chart:SfChart.PrimaryAxis>
+
+                                        <chart:SfChart.SecondaryAxis>
+                                            <chart:NumericalAxis />
+                                        </chart:SfChart.SecondaryAxis>
+                                    </chart:SfChart>
+                                    
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <Button Grid.Row="0"
+                                                Grid.Column="0"
+                                                Grid.ColumnSpan="1"
+                                                VerticalOptions="CenterAndExpand"
+                                                HorizontalOptions="CenterAndExpand"
+                                                BackgroundColor="White"
+                                                ImageSource="{Binding FavIcon}"
+                                                Command="{Binding FavouriteClicked}"/>
+                                        <Button Grid.Row="0"
+                                                Grid.Column="1"
+                                                Grid.ColumnSpan="1"
+                                                VerticalOptions="CenterAndExpand"
+                                                HorizontalOptions="CenterAndExpand"
+                                                BackgroundColor="White"
+                                                Text="Share"
+                                                TextColor="Black"
+                                                Command="{Binding ShareClicked}"/>
+                                    </Grid>
+                                </StackLayout>
+                            </Frame>
                         </ViewCell>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-
-            <!--
-            <ListView x:Name="HistoryListView"
-                      ItemSelected="OnItemSelected"
-                      IsPullToRefreshEnabled="False"
-                      RefreshCommand="{Binding RefreshCommand}"
-                      IsRefreshing="{Binding IsRefreshing, Mode=OneWay}"
-                      IsGroupingEnabled="True">
-
-                <ListView.GroupHeaderTemplate>
-                    <DataTemplate>
-                        <ViewCell>
-                            <Label Text="{Binding Location}"
-                                   FontSize="Medium"/>
-                        </ViewCell>
-                    </DataTemplate>
-                </ListView.GroupHeaderTemplate>
-  
-
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <TextCell Text="Test" />
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-            -->
         </StackLayout>
     </ContentPage.Content>    
 

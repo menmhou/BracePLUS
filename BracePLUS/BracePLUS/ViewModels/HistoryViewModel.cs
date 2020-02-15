@@ -39,15 +39,17 @@ namespace BracePLUS.ViewModels
                 // Create new data object
                 tempData.Add(new DataObject
                 {
-                    Name = fi.Name,
                     Size = fi.Length,
                     Date = File.GetCreationTime(filename),
+                    ShortFilename = fi.Name,
                     Filename = filename,
                     Location = "Local",
                     IsDownloaded = false,
-                }); ;  
+                });  
             }
             DataObjects = tempData;
+
+            foreach (DataObject obj in DataObjects) obj.DownloadData(obj.Filename);
         }
 
         public void ClearObjects()
