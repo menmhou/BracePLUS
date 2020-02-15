@@ -36,7 +36,7 @@
                 <chart:SfChart.Series>
                     <chart:ColumnSeries ItemsSource="{Binding ChartData}"
                                         ListenPropertyChange="True"
-                                        Color="#3838F8"
+                                        Color="#167BEA"
                                         XBindingPath="Name"
                                         YBindingPath="Value" 
                                         CornerRadius="16"/>
@@ -47,9 +47,29 @@
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis IsVisible="True"/>
+                    <chart:NumericalAxis IsVisible="True"
+                                         Maximum="150"
+                                         Minimum="80">
+                        <chart:NumericalAxis.StripLines>
+
+                            <chart:NumericalStripLine Start="80" 
+                                                      Width ="20" 
+                                                      Text="Low Pressure" 
+                                                      FillColor="#CAD6FE"/>
+                            <chart:NumericalStripLine Start="100" 
+                                                      Width ="32" 
+                                                      Text="Correct Pressure" 
+                                                      FillColor="#ACC0FE"/>
+                            <chart:NumericalStripLine Start="132" 
+                                                      Width ="18" 
+                                                      Text="High Pressure" 
+                                                      FillColor="#7F9DFD"/>
+
+                        </chart:NumericalAxis.StripLines>
+                    </chart:NumericalAxis>
                 </chart:SfChart.SecondaryAxis>
             </chart:SfChart>
+            
             <Label Text="{Binding Status}"
                    FontSize="Large"
                    HorizontalTextAlignment="End"/>

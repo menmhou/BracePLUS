@@ -10,7 +10,7 @@ namespace BracePLUS.Extensions
 {
     public class MessageHandler
     {
-        private static Random random = new Random();
+        private static readonly Random random = new Random();
 
         // Taken from :
         // https://stackoverflow.com/a/1344242/12383548
@@ -21,7 +21,7 @@ namespace BracePLUS.Extensions
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        public string translate(string str, int status = 0)
+        public string Translate(string str, int status = 0)
         {
             string msg = "";
 
@@ -37,6 +37,12 @@ namespace BracePLUS.Extensions
                     if (str == "s") msg = "Stream incoming...";
                     else if (str == ".") msg = "Stream failed.";
                     else if (str == "^") msg = "Stream complete.";
+                    break;
+
+                case Constants.LOGGING:
+                    if (str == "d") msg = "Logging started.";
+                    else if (str == ".") msg = "Logging failed.";
+                    else if (str == "^") msg = "Logging complete.";
                     break;
 
                 default:
@@ -184,7 +190,7 @@ namespace BracePLUS.Extensions
             return oDate;
         }
 
-        public string getFileName(byte[] rawFileName, string extension = ".txt")
+        public string GetFileName(byte[] rawFileName, string extension = ".txt")
         {
             var month = rawFileName[0];
             var day = rawFileName[1];
@@ -206,7 +212,7 @@ namespace BracePLUS.Extensions
             return string.Format(format, month, day, hour, minute);
         }
 
-        public string getFileName(DateTime dateTime, string extension = ".txt")
+        public string GetFileName(DateTime dateTime, string extension = ".txt")
         {
             var month = dateTime.Month;
             var day = dateTime.Day;
@@ -263,9 +269,42 @@ namespace BracePLUS.Extensions
             return data;
         }
 
+        public List<double> ExtractNormals(byte[] data, int maxIndex = 100, int startIndex = 8)
+        {
+            List<double> normals = new List<double>();
+
+            long Zmsb, Zlsb;
+            double z, z_max;
+
+            z_max = 0.0;
+
+            // Extract normals
+            for (int packet = 0; packet < maxIndex; packet++)
+            {
+                for (int _byte = startIndex; _byte < 100; _byte += 6)
+                {
+                    // Find current Z value
+                    Zmsb = data[packet * 128 + _byte] << 8;
+                    Zlsb = data[packet * 128 + _byte + 1];
+                    z = (Zmsb + Zlsb) * 0.02636;
+
+                    bool skip = (Zmsb == 0xFF00) && (Zlsb == 0xFF);
+
+                    // If greater than previous Z, previous Z becomes new Z
+                    if ((z > z_max) && !skip) z_max = z;
+                }
+
+                // Add maximum Z to chart
+                normals.Add(z_max);
+                z_max = 0.0;
+            }
+
+            return normals;
+        }
+
         public string FormattedFileSize(long len)
         {
-            string filesize = "";
+            string filesize;
             if (len < 1000)
             {
                 filesize = string.Format("{0} Bytes", len);

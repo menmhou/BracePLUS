@@ -22,7 +22,7 @@ namespace BracePLUS.ViewModels
 
         public HistoryViewModel()
         {
-            Title = "History";
+
         }
 
         public void LoadLocalFiles()
@@ -34,19 +34,19 @@ namespace BracePLUS.ViewModels
             {
                 // Get info about file
                 FileInfo fi = new FileInfo(filename);
+                Debug.WriteLine($"Reading file: {fi.Name}");
 
                 // Create new data object
                 tempData.Add(new DataObject
                 {
                     Name = fi.Name,
                     Size = fi.Length,
-                    Date = File.GetCreationTime(filename).ToString(),
+                    Date = File.GetCreationTime(filename),
                     Filename = filename,
                     Location = "Local",
                     IsDownloaded = false,
-                });  
+                }); ;  
             }
-
             DataObjects = tempData;
         }
 

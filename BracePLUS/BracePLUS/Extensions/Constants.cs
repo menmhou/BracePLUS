@@ -23,10 +23,11 @@ namespace BracePLUS.Models
 
         public const string uartServiceUUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
         public const string uartTxCharUUID = "49535343-1e4d-4bd9-ba61-23c647249616";
+        public const string uartRxCharUUID = "49535343-8841-43f4-a8d4-ecbe34729bb3";
 
         public const string SyncFusionLicense = "MTg4MzI4QDMxMzcyZTM0MmUzMG9LVEN5VU1xaFMxT3FLVGFoYVFwUzdydU1ZRFB4VjBkbEJOQmNOU0tsUFE9";
 
-        public const string DEV_NAME = "RN_BLE";
+        public const string DEV_NAME = "Brace+";
 
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
 

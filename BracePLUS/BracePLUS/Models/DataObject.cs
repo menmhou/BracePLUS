@@ -17,7 +17,7 @@ namespace BracePLUS.Models
 
         public bool IsDownloaded { get; set; }
         public string Name { get; set; }
-        public string Date { get; set; }
+        public DateTime Date { get; set; }
         public string Filename { get; set; }
         public string Location { get; set; }
         public long Size { get; set; }
@@ -41,7 +41,7 @@ namespace BracePLUS.Models
 
         public string Detail
         {
-            get { return string.Format("{0}, {1}", FormattedSize, Date); }
+            get { return string.Format("{0}, {1} {2}", FormattedSize, Date.ToShortTimeString(), Date.ToShortDateString()); }
             set { }
         }
         public DataObject()
@@ -52,18 +52,33 @@ namespace BracePLUS.Models
         
         public bool DownloadData(string path)
         {
-            try
+            if (!IsDownloaded)
             {
-                IsDownloaded = true;
-                Data = File.ReadAllBytes(path);
+                try
+                {
+                    Data = File.ReadAllBytes(path);
 
-                prepareChartData();
+                    int packets = (Data.Length - 6) / 128;
+
+                    // Prepare chart data
+                    var normals = handler.ExtractNormals(Data, packets, 11);
+                    Debug.WriteLine("Packets available: " + packets);
+
+                    //Date
+
+                    for (int i = 0; i < packets; i++)
+                    {
+                        NormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                    }
+                    IsDownloaded = true;
+                }
+                catch (Exception ex)
+                {
+                    IsDownloaded = false;
+                    Debug.WriteLine("Data download failed with exception: " + ex.Message);
+                }
             }
-            catch (Exception ex)
-            {
-                IsDownloaded = false;
-                Debug.WriteLine("Data download failed with exception: " + ex.Message);
-            }
+           
 
             return IsDownloaded;
         }
@@ -78,35 +93,6 @@ namespace BracePLUS.Models
             {
                 // Create 100 char string of data and append "..." 
                 return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
-            }
-        }
-
-        public void prepareChartData()
-        {
-            var len = Data.Length;
-            var packets = (len - 6)/128;
-            double Zmsb, Zlsb, z, z_max;
-
-            z_max = 0.0;
-            z = 0.0;
-
-            // Extract normals
-            for (int packet = 0; packet < packets; packet++)
-            {
-                for (int _byte = 8; _byte < 100; _byte += 6)
-                {
-                    // Find current Z value
-                    Zmsb = Data[packet*256 + _byte] << 8;
-                    Zlsb = Data[packet*256 + _byte];
-                    z = (Zmsb + Zlsb) * 0.02639;
-
-                    // If greater than previous Z, previous Z becomes new Z
-                    if (z > z_max) z_max = z;
-                }
-
-                // Add maximum Z to chart
-                NormalData.Add(new ChartDataModel(packet.ToString(), z_max));
-                z_max = 0.0;
             }
         }
     }

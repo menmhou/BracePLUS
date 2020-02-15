@@ -1,4 +1,5 @@
-﻿using BracePLUS.Models;
+﻿using BracePLUS.Extensions;
+using BracePLUS.Models;
 using Syncfusion.SfChart.XForms;
 using System;
 using System.Collections.Generic;
@@ -16,72 +17,91 @@ namespace BracePLUS.Views
     public class InspectViewModel : ContentPage
     {
         // Public Interface Members
-        public DataObject dataObject { get; set; }
-
-        public string Date 
-        { 
-            get { return dataObject.Date; }
-            set { } 
+        public DataObject DataObj { get; set; }
+        public string FileTime { get; set; }
+        public string Date
+        {
+            get { return DataObj.Date.ToString(); }
+            set { }
         }
         public string FormattedSize
         {
-            get { return dataObject.FormattedSize; }
+            get { return DataObj.FormattedSize; }
             set { }
         }
         public string Filename
         {
-            get { return dataObject.Filename; }
+            get { return DataObj.Filename; }
             set { }
         }
         public string DataString
         {
-            get { return dataObject.DataString; }
+            get { return DataObj.DataString; }
             set { }
         }
-
-        public INavigation nav { get; set; }
+        public INavigation Nav { get; set; }
         public ObservableCollection<ChartDataModel> ChartData { get; set; }
 
         public Command ShareCommand { get; set; }
         public Command DeleteCommand { get; set; }
 
+        private MessageHandler handler;
+
         public InspectViewModel(DataObject obj)
         {
-            dataObject = obj;
+            DataObj = obj;
 
             ShareCommand = new Command(async () => await ExecuteShareCommand());
             DeleteCommand = new Command(async () => await ExecuteDeleteCommand());
 
             ChartData = new ObservableCollection<ChartDataModel>();
+            handler = new MessageHandler();
 
-            dataObject.DownloadData(dataObject.Filename);
+            DataObj.DownloadData(DataObj.Filename);
+
+            /*
+            for (int i = 3; i < DataObj.Data.Length; i += 128)
+            {
+                var _t0 = DataObj.Data[i];
+                var _t1 = DataObj.Data[i + 1];
+                var _t2 = DataObj.Data[i + 2];
+                var _t3 = DataObj.Data[i + 3];
+
+                var t = _t0 + (_t1 << 8) + (_t2 << 16) + (_t3 << 24);
+                Debug.WriteLine("time: " + t);
+            }
+            */
+
+            // Extract first and last time packets from file.
+            // File format: [ 0x0A | 0x0B | 0x0C | T0 | T1 | T2 | T3 | X1MSB.....| Zn | 0x0A | 0x0B | 0x0C ]
+            byte t3 = DataObj.Data[6];
+            byte t2 = DataObj.Data[5];
+            byte t1 = DataObj.Data[4];
+            byte t0 = DataObj.Data[3];
+            var t_start = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
+
+            int length = DataObj.Data.Length;
+
+            // Packet length is 128, then accomodate for file footer.
+            // Last time packet is bytes 0:3 of last packet
+            t3 = DataObj.Data[length - 128];
+            t2 = DataObj.Data[length - 129];
+            t1 = DataObj.Data[length - 130];
+            t0 = DataObj.Data[length - 131];
+
+            var t_finish = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
+
+            var time_ms = t_finish - t_start;
+            FileTime = String.Format("File duration: {0:0.00}s", time_ms / 1000);
+
+            var normals = handler.ExtractNormals(DataObj.Data, 50, 11);
 
             // Add chart data
             try
             {
-                var len = dataObject.Data.Length;
-                var packets = (len - 6) / 128;
-                double Zmsb, Zlsb, Z, Zold;
-
-                // Extract normals
-                for (int packet = 0; packet < 10; packet++)
+                for (int i = 0; i < 50; i++)
                 {
-                    Zold = 0;
-                    Z = 0;
-
-                    for (int _byte = 8; _byte < 100; _byte += 6)
-                    {
-                        // Find current Z value
-                        Zmsb = dataObject.Data[packet * 128 + _byte] << 8;
-                        Zlsb = dataObject.Data[packet * 128 + _byte];
-                        Z = (Zmsb + Zlsb) * 0.02639;
-
-                        // If greater than previous Z, previous Z becomes new Z
-                        if ((Zlsb != 0xFF) && (Z > Zold)) Zold = Z;
-                    }
-
-                    // Add maximum Z to chart
-                    ChartData.Add(new ChartDataModel(packet.ToString(), Z));
+                    ChartData.Add(new ChartDataModel(i.ToString(), normals[i]));
                 }
             }
             catch (Exception ex)
@@ -92,11 +112,11 @@ namespace BracePLUS.Views
 
         public async Task ExecuteShareCommand()
         {
-            var file = Path.Combine(App.FolderPath, dataObject.Filename);
+            var file = Path.Combine(App.FolderPath, DataObj.Filename);
 
             await Share.RequestAsync(new ShareFileRequest
             {
-                Title = dataObject.Name,
+                Title = DataObj.Name,
                 File = new ShareFile(file)
             });
         }
@@ -109,10 +129,10 @@ namespace BracePLUS.Views
                 var files = Directory.EnumerateFiles(App.FolderPath, "*");
                 foreach (var filename in files)
                 {
-                    if (filename == dataObject.Filename) File.Delete(filename);
+                    if (filename == DataObj.Filename) File.Delete(filename);
                 }
 
-                await nav.PopAsync();
+                await Nav.PopAsync();
             }
         }
     }

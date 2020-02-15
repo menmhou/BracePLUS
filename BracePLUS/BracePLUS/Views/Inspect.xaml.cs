@@ -28,7 +28,7 @@ namespace BracePLUS.Views
 
             BindingContext = viewModel = new InspectViewModel(obj)
             {
-                nav = Navigation
+                Nav = Navigation
             };
         }
 

@@ -19,13 +19,12 @@ namespace BracePLUS.ViewModels
         public string ConnectText { get; set; }
         public string StreamButtonText { get; set; }
         public string SaveButtonText { get; set; }
-        public ObservableCollection<ChartDataModel> ChartData { get; set; }
         public string Status
-        { 
+        {
             get { return App.Status; }
             set { }
         }
-
+        public ObservableCollection<ChartDataModel> ChartData { get; set; }
         // Commands
         public Command ConnectCommand { get; set; }
         public Command StreamCommand { get; set; }
@@ -39,7 +38,7 @@ namespace BracePLUS.ViewModels
 
             ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
-            SaveCommand = new Command(async () => await App.SaveDataLocally());
+            SaveCommand = new Command(async () => await ExecuteSaveCommand());
 
             ConnectText = "Connect";
             StreamButtonText = "Stream";
@@ -47,10 +46,16 @@ namespace BracePLUS.ViewModels
 
             MessagingCenter.Subscribe<BraceClient, double>(this, "NormalPressure", (sender, arg) =>
             {
-                Debug.WriteLine("Received message: " + arg);
-                ChartData.Add(new ChartDataModel("Normal Pressure", arg));
+                Device.BeginInvokeOnMainThread(() => 
+                {
+                    if (ChartData.Count > 0) ChartData.Clear();
+                    ChartData.Add(new ChartDataModel("Pressure", arg));
+
+                    //Debug.WriteLine("Max pressure: " + arg);
+                });
             });
 
+            //ChartData.Add(new ChartDataModel("Pressure", 94.5));
 #if SIMULATION
             // Add random values to simulate a connected device
             for (int i = 0; i < App.generator.Next(2000); i++)
@@ -78,6 +83,7 @@ namespace BracePLUS.ViewModels
             if (App.isConnected)
             {
                 ConnectText = "Connect";
+                // Disconnect from device
                 await App.Client.Disconnect();
             }
             else
@@ -85,9 +91,6 @@ namespace BracePLUS.ViewModels
                 ConnectText = "Disconnect";
                 // Start scan
                 await App.Client.StartScan();
-                // Give system a few seconds to find brace+
-                await Task.Delay(3000);
-                await App.Client.Connect();
             }
         }
 
@@ -100,6 +103,18 @@ namespace BracePLUS.ViewModels
             else
             {
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to stream data.", "OK");
+            }
+        }
+
+        public async Task ExecuteSaveCommand()
+        {
+            if (App.isConnected)
+            {
+                await App.Client.Save();
+            }
+            else
+            {
+                await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to log data.", "OK");
             }
         }
     }

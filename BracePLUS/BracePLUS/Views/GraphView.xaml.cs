@@ -21,7 +21,6 @@ namespace BracePLUS.Views
         public GraphView()
         {
             InitializeComponent();
-
             dataObject = new DataObject();
         }
 

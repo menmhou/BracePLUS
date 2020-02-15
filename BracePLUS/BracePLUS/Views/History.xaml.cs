@@ -42,10 +42,6 @@ namespace BracePLUS.Views
             if (item == null)
                 return;
 
-            // Read all data into object
-            item.DownloadData(item.Filename);
-            Debug.WriteLine($"{item.Data.Length} bytes read.");
-
             // Inspect file...
             try
             {

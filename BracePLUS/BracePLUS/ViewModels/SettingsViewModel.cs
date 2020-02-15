@@ -12,21 +12,9 @@ namespace BracePLUS.ViewModels
     {
         // View properties
         public bool Autoconnect;
-        public string ConnectedDevice 
-        { 
-            get { return App.ConnectedDevice; }
-            set { } 
-        }
-        public string DeviceID
-        {
-            get { return App.DeviceID; }
-            set { }
-        }
-        public string RSSI
-        {
-            get { return App.RSSI; }
-            set { }
-        }
+        public string ConnectedDevice { get; set; }
+        public string DeviceID { get; set; }
+        public string RSSI { get; set; }
 
         // View commands
         public Command TestSDUploadCommand { get; set; }

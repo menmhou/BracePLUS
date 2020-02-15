@@ -29,9 +29,21 @@ namespace BracePLUS
         public static ObservableCollection<ChartDataModel> ChartData { get; set; }
 
         // BLE Status
-        public static string ConnectedDevice { get; set; }
-        public static string DeviceID { get; set; }
-        public static string RSSI { get; set; }
+        public static string ConnectedDevice
+        { 
+            get { return Client.brace.Name; }
+            set { } 
+        }
+        public static string DeviceID
+        { 
+            get { return Client.brace.Id.ToString(); }
+            set { }
+        }
+        public static string RSSI 
+        { 
+            get { return Client.brace.Rssi.ToString(); }
+            set { }
+        }
 
         // Global variables
         public static int NODE_INDEX = 4;
@@ -56,10 +68,12 @@ namespace BracePLUS
 
         protected override async void OnStart()
         {
-            ConnectedDevice = "-";
-            DeviceID = "-";
-            RSSI = "-";
             // Handle when your app starts
+            ConnectedDevice = "-";
+            RSSI = "-";
+            DeviceID = "-";
+            Status = "Unconnected";
+
             isConnected = false;
             await Client.StartScan();
         }
@@ -75,15 +89,24 @@ namespace BracePLUS
         }
 
         static public void AddData(byte[] bytes)
-        {           
+        {
+            //Debug.WriteLine(BitConverter.ToString(bytes));
+
             try
             {
+                double Zmsb, Zlsb, Z;
                 var z_max = 0.0;
                 // Extract highest Z value
-                for (int i = 8; i < 100; i += 6)
+                for (int _byte = 8; _byte < 100; _byte += 6)
                 {
-                    var z = (bytes[i] * 256 + bytes[i + 1]) * 0.02636;
-                    if (z > z_max) z_max = z;
+                    //Debug.WriteLine($"Chip: {(_byte-8)/6}, MSB: {bytes[_byte]}, LSB: {bytes[_byte + 1]}");
+
+                    // Find current Z value
+                    Zmsb = bytes[_byte] << 8;
+                    Zlsb = bytes[_byte+1];
+                    Z = (Zmsb + Zlsb) * 0.02636;
+                    // Check if higher than previous (sort highest)
+                    if (Z > z_max) z_max = Z;
                 }
                 MessagingCenter.Send(Client, "NormalPressure", z_max);
                 // Save to array of input data
@@ -97,43 +120,54 @@ namespace BracePLUS
 
         static public async Task SaveDataLocally()
         {
-            // Create filename - MMDDHHmm.dat
-            var name = handler.getFileName(DateTime.Now);
-            Debug.WriteLine("Filename: " + name);
-
-            // Create file instance
-            var filename = Path.Combine(FolderPath, name);
-            FileStream file = new FileStream(filename, FileMode.Append, FileAccess.Write);
-
-            bool writeFile = true;
-            // Check if app has data.
-            if (App.InputData.Count == 0)
+            try
             {
-                writeFile = await Current.MainPage.DisplayAlert("Empty File", "No data received, stored file will be empty. Do you wish to continue?", "Yes", "No");
-            }
-
-            // If app has data/user has requested to continue with writing, fill file with all data available + header.
-            if (writeFile)
-            {
-                // File header
-                byte[] b = new byte[3];
-                b[0] = 0x0A; 
-                b[1] = 0x0B; 
-                b[2] = 0x0C;
-                file.Write(b, 0, b.Length);
-
-                // Write file data
-                foreach (var bytes in InputData)
+                bool writeFile = true;
+                // Check if app has data.
+                if (InputData.Count == 0)
                 {
-                    file.Write(bytes, 0, bytes.Length);
-                };
+                    writeFile = await Current.MainPage.DisplayAlert("Empty File", "No data received, stored file will be empty. Do you wish to continue?", "Yes", "No");
+                }
 
-                // File footer and close.
-                file.Write(b, 0, b.Length);
-                file.Close();
+                // If app has data/user has requested to continue with writing, create file & fill with all data available + header/footer.
+                if (writeFile)
+                {
+                    // Create filename - MMDDHHmm.dat
+                    var name = handler.GetFileName(DateTime.Now);
+                    Debug.WriteLine("Writing file: " + name);
 
-                Debug.WriteLine($"Wrote {InputData.Count*128 + 6} bytes to file.");
+                    Status = "Writing to file " + name;
+
+                    // Create file instance
+                    var filename = Path.Combine(FolderPath, name);
+                    FileStream file = new FileStream(filename, FileMode.Append, FileAccess.Write);
+
+                    // File header
+                    byte[] b = new byte[3];
+                    b[0] = 0x0A;
+                    b[1] = 0x0B;
+                    b[2] = 0x0C;
+                    file.Write(b, 0, b.Length);
+
+                    // Write file data
+                    foreach (var bytes in InputData)
+                    {
+                        file.Write(bytes, 0, bytes.Length);
+                    };
+
+                    // File footer and close.
+                    file.Write(b, 0, b.Length);
+                    file.Close();
+
+                    // Clear app input data
+                    InputData.Clear();
+                }
             }
+            catch (Exception e)
+            {
+                await Current.MainPage.DisplayAlert("File write failed.", e.Message, "OK");
+            }
+            
         }
     }
 }

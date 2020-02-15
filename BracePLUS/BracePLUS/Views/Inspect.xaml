@@ -21,35 +21,27 @@
                    HasUnevenRows="True"
                    BackgroundColor="#EEEEEE">
             <TableRoot>
-                <TableSection Title="File Info">
+                <TableSection>
                     <ViewCell>
                         <Frame BackgroundColor="White"
                                CornerRadius="24"
                                Margin="0, 6">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                            <StackLayout>
                                 <Label Text="{Binding Date}"
                                        TextColor="Black"
-                                       FontSize="Large"
-                                       Grid.Row="0"
-                                       Grid.ColumnSpan="2"/>
+                                       FontSize="Large"/>
+                                <Label Text="{Binding FileTime}"
+                                       FontSize="Medium"/>
                                 <Label Text="{Binding FormattedSize}"
-                                       FontSize="Medium"
-                                       Grid.Row="1"
-                                       Grid.ColumnSpan="2"/>
+                                       FontSize="Medium"/>
                                 <Label Text="{Binding Filename}"
-                                       FontSize="Medium"
-                                       Grid.Row="2"
-                                       Grid.ColumnSpan="2"/>
-                            </Grid>
+                                       FontSize="Medium"/>
+                            </StackLayout>
                         </Frame>
                     </ViewCell>
                 </TableSection>
 
-                <TableSection Title="Data Chart">
+                <TableSection>
                     <ViewCell Tapped="GridTapped">
                         <Frame BackgroundColor="White"
                                HasShadow="True"
@@ -79,7 +71,7 @@
                     </ViewCell>
                 </TableSection>
 
-                <TableSection Title="Raw Data">
+                <TableSection>
                     <ViewCell Tapped="RawDataTapped">
                         <Frame BackgroundColor="White"
                                HasShadow="True"
