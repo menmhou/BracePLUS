@@ -11,6 +11,7 @@ using Syncfusion.SfChart.XForms;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BracePLUS.Extensions;
+using Xamarin.Essentials;
 
 namespace BracePLUS
 {
@@ -167,7 +168,23 @@ namespace BracePLUS
             {
                 await Current.MainPage.DisplayAlert("File write failed.", e.Message, "OK");
             }
-            
+        }
+
+        static public void Vibrate(int time)
+        {
+            try
+            {
+                var duration = TimeSpan.FromSeconds(time);
+                Vibration.Vibrate(duration);
+            }
+            catch (FeatureNotSupportedException ex)
+            {
+                Debug.WriteLine("Vibration not supported:" + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Vibration failed: " + ex.Message);
+            }
         }
     }
 }

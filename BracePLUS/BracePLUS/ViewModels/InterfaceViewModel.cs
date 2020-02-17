@@ -1,4 +1,4 @@
-﻿#define SIMULATION
+﻿//#define SIMULATION
 
 using System.Threading.Tasks;
 
@@ -51,11 +51,10 @@ namespace BracePLUS.ViewModels
                     if (ChartData.Count > 0) ChartData.Clear();
                     ChartData.Add(new ChartDataModel("Pressure", arg));
 
-                    //Debug.WriteLine("Max pressure: " + arg);
+                    if (arg > Constants.MAX_PRESSURE) App.Vibrate(1);
                 });
             });
 
-            //ChartData.Add(new ChartDataModel("Pressure", 94.5));
 #if SIMULATION
             // Add random values to simulate a connected device
             for (int i = 0; i < App.generator.Next(2000); i++)
