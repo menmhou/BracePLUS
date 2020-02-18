@@ -1,5 +1,6 @@
 ﻿using BracePLUS.Extensions;
 using BracePLUS.Models;
+using BracePLUS.ViewModels;
 using Syncfusion.SfChart.XForms;
 using System;
 using System.Collections.Generic;
@@ -14,11 +15,15 @@ using Xamarin.Forms;
 
 namespace BracePLUS.Views
 {
-    public class InspectViewModel : ContentPage
+    public class InspectViewModel : BaseViewModel
     {
         // Public Interface Members
         public DataObject DataObj { get; set; }
-        public string FileTime { get; set; }
+        public double FileTime 
+        { 
+            get { return DataObj.Duration; }
+            set { }
+        }
         public string Date
         {
             get { return DataObj.Date.ToString(); }
@@ -47,20 +52,18 @@ namespace BracePLUS.Views
 
         private MessageHandler handler;
 
-        public InspectViewModel(DataObject obj)
+        public InspectViewModel()
         {
-            DataObj = obj;
-
             ShareCommand = new Command(async () => await ExecuteShareCommand());
             DeleteCommand = new Command(async () => await ExecuteDeleteCommand());
 
+            DataObj = new DataObject();
             ChartData = new ObservableCollection<ChartDataModel>();
             handler = new MessageHandler();
+        }
 
-            //DataObj.DownloadData(DataObj.Filename);
-
-            FileTime = String.Format("File duration: {0:0.00}s", DataObj.Duration / 1000);
-
+        public void InitDataObject()
+        {
             var normals = handler.ExtractNormals(DataObj.Data, 50, 11);
 
             // Add chart data

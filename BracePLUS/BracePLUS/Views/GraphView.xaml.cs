@@ -22,6 +22,7 @@ namespace BracePLUS.Views
         {
             InitializeComponent();
             dataObject = new DataObject();
+
         }
 
         protected override void OnAppearing()

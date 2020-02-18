@@ -30,17 +30,17 @@
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis Minimum="0">
+                    <chart:NumericalAxis Minimum="110">
                         <chart:NumericalAxis.StripLines>
-                            <chart:NumericalStripLine Start="80" 
+                            <chart:NumericalStripLine Start="110" 
                                                       Width ="20" 
                                                       Text="Low Pressure" 
                                                       FillColor="#CAD6FE"/>
-                            <chart:NumericalStripLine Start="100" 
+                            <chart:NumericalStripLine Start="130" 
                                                       Width ="30" 
                                                       Text="Correct Pressure" 
                                                       FillColor="#ACC0FE"/>
-                            <chart:NumericalStripLine Start="130" 
+                            <chart:NumericalStripLine Start="160" 
                                                       Width ="20" 
                                                       Text="High Pressure" 
                                                       FillColor="#7F9DFD"/>

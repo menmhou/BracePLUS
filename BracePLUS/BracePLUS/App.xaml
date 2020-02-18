@@ -50,7 +50,7 @@
             <Setter Property="HeightRequest" Value="50" />
             <Setter Property="BackgroundColor" Value="{StaticResource ButtonBackgroundColor}" />
             <Setter Property="TextColor" Value="White" />
-            <Setter Property="BorderRadius" Value="5" />
+            <Setter Property="BorderRadius" Value="8" />
             <Setter Property="VerticalOptions" Value="StartAndExpand" />
         </Style>
 

@@ -59,7 +59,6 @@ namespace BracePLUS.Models
         #endregion
 
         #region Model Instanciation
-        // For use with DataPage Interactions
         public BraceClient()
         {
             handler = new MessageHandler();
@@ -230,7 +229,6 @@ namespace BracePLUS.Models
                 return;
             }
         }
-
         public async Task Disconnect()
         {
             isSaving = false;
@@ -248,9 +246,9 @@ namespace BracePLUS.Models
                 await adapter.DisconnectDeviceAsync(device);
             }
         }
-
         public async Task StartScan()
         {
+            // Check if device BLE is turned on.
             if (!ble.IsOn)
             {
                 await Application.Current.MainPage.DisplayAlert("Bluetooth turned off", "Please turn on bluetooth to scan for devices.", "OK");
@@ -260,7 +258,6 @@ namespace BracePLUS.Models
             // If no devices found after timeout, stop scan.
             Write("Starting scan...", info);
             await adapter.StartScanningForDevicesAsync();
-
             await Task.Delay(Constants.BLE_SCAN_TIMEOUT_MS);
 
             if (!App.isConnected)
@@ -332,25 +329,30 @@ namespace BracePLUS.Models
                     break;
 
                 case Constants.LOGGING:
-                    input = Encoding.ASCII.GetString(args);
-                    // If filename requested, send over
-                    if (input == "E")
-                    {
-                        var filename = handler.GetFileName(DateTime.Now, "");
-                        await RUN_BLE_WRITE(uartRx, filename);
-
-                        App.Status = "Logging to file: " + filename + ".dat";
-                    }
-                    else
-                    {
-                        msg = handler.Translate(input, STATUS);
-                        Debug.WriteLine(msg);
-                        Write(msg, debug);
-                    }
+                    await HANDLE_LOGGING(args);
                     break;
 
                 default:
                     break;
+            }
+        }
+
+        private async Task HANDLE_LOGGING(byte[] args)
+        {
+            var input = Encoding.ASCII.GetString(args);
+            // If filename requested, send over
+            if (input == "E")
+            {
+                var filename = handler.GetFileName(DateTime.Now, "");
+                await RUN_BLE_WRITE(uartRx, filename);
+
+                App.Status = "Logging to file: " + filename + ".dat";
+            }
+            else
+            {
+                var msg = handler.Translate(input, STATUS);
+                Debug.WriteLine(msg);
+                Write(msg, debug);
             }
         }
         
@@ -466,14 +468,6 @@ namespace BracePLUS.Models
                 {
                     stack.Children.RemoveAt(200);
                 }
-            });
-        }
-
-        public void ClearMessages()
-        {
-            Device.BeginInvokeOnMainThread(() =>
-            {
-                stack.Children.Clear();
             });
         }
     }

@@ -34,31 +34,32 @@
                                     <Label Text="{Binding Detail}"
                                        FontSize="Medium"
                                        TextColor="DimGray"/>
-                                    <Label Text="{Binding FormattedAvgPressure}"
+                                    <Label Text="{Binding AveragePressure, StringFormat='Average Pressure: {0:0.00}'}"
                                        FontSize="Medium"
                                        TextColor="DimGray"/>
-                                    <Label Text="{Binding FormattedMaxPressure}"
+                                    <Label Text="{Binding MaxPressure, StringFormat='Max Pressure: {0:0.00}'}"
                                        FontSize="Medium"
                                        TextColor="DimGray"/>
 
                                     <chart:SfChart x:Name="chart"
-                                           HeightRequest="160"
-                                           VerticalOptions="FillAndExpand"
-                                           HorizontalOptions="FillAndExpand">
+                                                   HeightRequest="160"
+                                                   VerticalOptions="FillAndExpand"
+                                                   HorizontalOptions="FillAndExpand">
 
                                         <chart:SfChart.Series>
-                                            <chart:LineSeries ItemsSource="{Binding NormalData}"
+                                            <chart:LineSeries ItemsSource="{Binding PreviewNormalData}"
                                                               Color="Red"
                                                               XBindingPath="Name"
                                                               YBindingPath="Value" />
                                         </chart:SfChart.Series>
 
                                         <chart:SfChart.PrimaryAxis>
-                                            <chart:CategoryAxis />
+                                            <chart:NumericalAxis Maximum="50" />
                                         </chart:SfChart.PrimaryAxis>
 
                                         <chart:SfChart.SecondaryAxis>
-                                            <chart:NumericalAxis />
+                                            <chart:NumericalAxis Minimum="130"
+                                                                 Maximum="160"/>
                                         </chart:SfChart.SecondaryAxis>
                                     </chart:SfChart>
                                     

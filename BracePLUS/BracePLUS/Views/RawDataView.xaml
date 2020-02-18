@@ -7,7 +7,8 @@
              x:Class="BracePLUS.Views.RawDataView"
              Title="Raw Data">
     <ContentPage.Content>
-        <ScrollView Margin="10">
+        <ScrollView Margin="10"
+                    BackgroundColor="White">
             <Label Text="{Binding Text}"
                    FontSize="Small"/>
         </ScrollView>

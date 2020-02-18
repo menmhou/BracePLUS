@@ -10,6 +10,7 @@ using System.Diagnostics;
 using Syncfusion.SfChart.XForms;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System;
 
 namespace BracePLUS.ViewModels
 {
@@ -19,11 +20,7 @@ namespace BracePLUS.ViewModels
         public string ConnectText { get; set; }
         public string StreamButtonText { get; set; }
         public string SaveButtonText { get; set; }
-        public string Status
-        {
-            get { return App.Status; }
-            set { }
-        }
+        public string Status { get; set; }
         public ObservableCollection<ChartDataModel> ChartData { get; set; }
         // Commands
         public Command ConnectCommand { get; set; }
@@ -55,6 +52,8 @@ namespace BracePLUS.ViewModels
                 });
             });
 
+            Status = "Test";
+
 #if SIMULATION
             // Add random values to simulate a connected device
             for (int i = 0; i < App.generator.Next(2000); i++)
@@ -76,7 +75,7 @@ namespace BracePLUS.ViewModels
             }
 #endif
         }
-
+        
         public async Task ExecuteConnectCommand()
         { 
             if (App.isConnected)

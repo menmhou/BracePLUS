@@ -22,7 +22,7 @@ namespace BracePLUS.Models
         public string ShortFilename { get; set; }
         public string Location { get; set; }
         public long Size { get; set; }
-        public int Duration { get; set; }
+        public double Duration { get; set; }
 
         // View Properties
         public string Text
@@ -37,7 +37,7 @@ namespace BracePLUS.Models
         }
         public string DataString
         { 
-            get { return getDataString(); }
+            get { return getPreviewDataString(); }
             set { }
         }
         public string Name 
@@ -51,9 +51,10 @@ namespace BracePLUS.Models
         public double MaxPressure { get; set; }
         public byte[] Data { get; set; }
         public ObservableCollection<ChartDataModel> NormalData { get; set; }
+        public ObservableCollection<ChartDataModel> PreviewNormalData { get; set; }
         public string Detail
         {
-            get { return string.Format("{0}, {1}s", FormattedSize, Duration); }
+            get { return string.Format("{0}, {1:0.00}s", FormattedSize, Duration); }
             set { }
         }
         public bool Favourite { get; set; }
@@ -71,16 +72,6 @@ namespace BracePLUS.Models
             }
             set { }
         }
-        public string FormattedMaxPressure
-        {
-            get { return string.Format("Max Pressure: {0:0.000}", MaxPressure); }
-            set { }
-        }
-        public string FormattedAvgPressure
-        {
-            get { return string.Format("Average Pressure: {0:0.000}", AveragePressure); }
-            set { }
-        }
 
         // Commands
         public Command FavouriteClicked { get; set; }
@@ -90,6 +81,7 @@ namespace BracePLUS.Models
         {
             handler = new MessageHandler();
             NormalData = new ObservableCollection<ChartDataModel>();
+            PreviewNormalData = new ObservableCollection<ChartDataModel>();
 
             ShareClicked = new Command(async () => await ExecuteShareCommand());
             FavouriteClicked = new Command(() => { Favourite = !Favourite; });
@@ -101,6 +93,7 @@ namespace BracePLUS.Models
             {
                 try
                 {
+                    IsDownloaded = true;
                     Data = File.ReadAllBytes(path);
 
                     int packets = (Data.Length - 6) / 128;
@@ -112,11 +105,17 @@ namespace BracePLUS.Models
                     AveragePressure = getAverage(normals);
                     MaxPressure = getMaximum(normals);
 
+                    int x = 100;
+                    if (normals.Count < x) x = normals.Count;
+
+                    for (int i = 0; i < x; i++)
+                    {
+                        PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                    }
                     for (int i = 0; i < packets; i++)
                     {
                         NormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
                     }
-                    IsDownloaded = true;
                 }
                 catch (Exception ex)
                 {
@@ -128,7 +127,7 @@ namespace BracePLUS.Models
             return IsDownloaded;
         }
 
-        public int getDuration()
+        public double getDuration()
         {
             if (IsDownloaded)
             {
@@ -151,7 +150,7 @@ namespace BracePLUS.Models
 
                 var t_finish = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
 
-                return t_finish - t_start;
+                return (t_finish - t_start) / 1000.0;
             }
             else
             {
@@ -183,7 +182,18 @@ namespace BracePLUS.Models
             return max;
         }
 
-        public string getDataString()
+        public async Task ExecuteShareCommand()
+        {
+            var file = Path.Combine(App.FolderPath, Filename);
+
+            await Share.RequestAsync(new ShareFileRequest
+            {
+                Title = ShortFilename,
+                File = new ShareFile(file)
+            });
+        }
+
+        private string getPreviewDataString()
         {
             if (Data.Length < 100)
             {
@@ -194,17 +204,6 @@ namespace BracePLUS.Models
                 // Create 100 char string of data and append "..." 
                 return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
             }
-        }
-
-        public async Task ExecuteShareCommand()
-        {
-            var file = Path.Combine(App.FolderPath, Filename);
-
-            await Share.RequestAsync(new ShareFileRequest
-            {
-                Title = ShortFilename,
-                File = new ShareFile(file)
-            });
         }
     }
 }

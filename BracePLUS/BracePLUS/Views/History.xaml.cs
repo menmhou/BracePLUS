@@ -37,7 +37,6 @@ namespace BracePLUS.Views
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
         {
-            Debug.WriteLine("Item selected.");
             var item = e.SelectedItem as DataObject;
             if (item == null)
                 return;

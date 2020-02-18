@@ -26,10 +26,17 @@ namespace BracePLUS.Views
             InitializeComponent();
             dataObject = obj;
 
-            BindingContext = viewModel = new InspectViewModel(obj)
+            BindingContext = viewModel = new InspectViewModel
             {
-                Nav = Navigation
+                Nav = Navigation,
+                DataObj = dataObject
             };
+        }
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            viewModel.InitDataObject();
         }
 
         private async void GridTapped(object sender, EventArgs e)
