@@ -20,7 +20,7 @@ namespace BracePLUS
         // Models
         public static BraceClient Client;
         public static Configuration Config;
-        private static MessageHandler handler;
+        public static MessageHandler handler;
 
         // Global Members
         public static Random generator;
@@ -32,17 +32,17 @@ namespace BracePLUS
         // BLE Status
         public static string ConnectedDevice
         { 
-            get { return Client.brace.Name; }
+            get { return Client.Device.Name; }
             set { } 
         }
         public static string DeviceID
         { 
-            get { return Client.brace.Id.ToString(); }
+            get { return Client.Device.Id.ToString(); }
             set { }
         }
         public static string RSSI 
         { 
-            get { return Client.brace.Rssi.ToString(); }
+            get { return Client.Device.Rssi.ToString(); }
             set { }
         }
 
@@ -73,7 +73,8 @@ namespace BracePLUS
             ConnectedDevice = "-";
             RSSI = "-";
             DeviceID = "-";
-            Status = "Unconnected";
+
+            MessagingCenter.Send(Client, "StatusMessage", "Unconnected");
 
             isConnected = false;
             await Client.StartScan();
@@ -92,7 +93,6 @@ namespace BracePLUS
         static public void AddData(byte[] bytes)
         {
             //Debug.WriteLine(BitConverter.ToString(bytes));
-
             try
             {
                 double Zmsb, Zlsb, Z;

@@ -19,12 +19,13 @@
 
                 <Button Text="{Binding ConnectText}"
                         Command="{Binding ConnectCommand}"
+                        BackgroundColor="{Binding ButtonColour}"
                         Grid.ColumnSpan="2"/>
-                <Button Text="{Binding StreamButtonText}"
+                <Button Text="{Binding StreamText}"
                         Command="{Binding StreamCommand}"
                         Grid.Row="1"
                         Grid.Column="0"/>
-                <Button Text="{Binding SaveButtonText}"
+                <Button Text="{Binding SaveText}"
                         Command="{Binding SaveCommand}"
                         Grid.Row="1"
                         Grid.Column="1" />

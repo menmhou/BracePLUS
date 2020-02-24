@@ -1,20 +1,53 @@
 ﻿ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using AiForms.Renderers;
 using BracePLUS.Models;
-
+using MvvmCross.ViewModels;
 using Xamarin.Forms;
 
 namespace BracePLUS.ViewModels
 {
-    public class SettingsViewModel : BaseViewModel 
+    public class SettingsViewModel : MvxViewModel
     {
         // View properties
-        public bool Autoconnect;
-        public string ConnectedDevice { get; set; }
-        public string DeviceID { get; set; }
-        public string RSSI { get; set; }
+        #region ConnectedDevice
+        private string _connectedDevice;
+        public string ConnectedDevice
+        {
+            get => _connectedDevice;
+            set
+            {
+                _connectedDevice = value;
+                RaisePropertyChanged(() => ConnectedDevice);
+            }
+        }
+        #endregion
+
+        #region DeviceID
+        private string _deviceID;
+        public string DeviceID 
+        {
+            get => _deviceID;
+            set
+            {
+                _deviceID = value;
+                RaisePropertyChanged(() => DeviceID);
+            }
+        }
+        #endregion
+
+        #region RSSI
+        private string _rssi;
+        public string RSSI
+        {
+            get => _rssi;
+            set
+            {
+                _rssi = value;
+                RaisePropertyChanged(() => RSSI);
+            }
+        }
+        #endregion
 
         // View commands
         public Command TestSDUploadCommand { get; set; }
@@ -25,8 +58,6 @@ namespace BracePLUS.ViewModels
 
         public SettingsViewModel(StackLayout stack)
         {
-            Title = "Settings";
-
             TestSDUploadCommand = new Command(async () => await ExecuteTestSDUploadCommand());
             GetSDInfoCommand = new Command(async () => await ExecuteGetSDInfoCommand());
 

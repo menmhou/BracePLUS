@@ -45,6 +45,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.Android" />
+    <Reference Include="Mono.Android.Export" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -55,6 +56,9 @@
   <ItemGroup>
     <PackageReference Include="AiForms.SettingsView">
       <Version>0.5.2</Version>
+    </PackageReference>
+    <PackageReference Include="MvvmCross.Forms">
+      <Version>6.4.2</Version>
     </PackageReference>
     <PackageReference Include="Plugin.BLE">
       <Version>2.1.1</Version>

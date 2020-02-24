@@ -47,6 +47,7 @@ namespace BracePLUS.Views
         public INavigation Nav { get; set; }
         public ObservableCollection<ChartDataModel> ChartData { get; set; }
 
+        // Public Interface Commands
         public Command ShareCommand { get; set; }
         public Command DeleteCommand { get; set; }
 
@@ -86,7 +87,7 @@ namespace BracePLUS.Views
 
             await Share.RequestAsync(new ShareFileRequest
             {
-                Title = DataObj.Name,
+                Title = DataObj.ShortFilename,
                 File = new ShareFile(file)
             });
         }

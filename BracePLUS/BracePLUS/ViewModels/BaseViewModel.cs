@@ -40,7 +40,7 @@ namespace BracePLUS.ViewModels
             if (changed == null)
                 return;
 
-            changed.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            changed?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }

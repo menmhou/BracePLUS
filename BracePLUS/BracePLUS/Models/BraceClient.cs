@@ -21,37 +21,33 @@ namespace BracePLUS.Models
     public class BraceClient
     {
         #region Model Properties
-        // Bluetooth properties
+        // Bluetooth Properties
         public IAdapter adapter;
         public IBluetoothLE ble;
-        public IDevice brace;
         public IService service;
         public ICharacteristic uartTx;
         public ICharacteristic uartRx;
-
-        public bool isStreaming;
-        public bool isSaving;
-
-        StackLayout stack;
-        private readonly MessageHandler handler;
-
-        // DATA SIZE FOR MAGBOARD (+HEADER)
-        byte[] buffer = new byte[128];
-        private int buf_len = 128;
-
-        public static ObservableCollection<string> files;
-
-        // Bluetooth Definitions
         public Guid uartServiceGUID = Guid.Parse(Constants.uartServiceUUID);
         public Guid uartTxCharGUID = Guid.Parse(Constants.uartTxCharUUID);
         public Guid uartRxCharGUID = Guid.Parse(Constants.uartRxCharUUID);
 
+        // Public Properties
+        public IDevice Device { get; set; }
+        public string Status { get; set; }
+
+        // UI Assistant
+        StackLayout stack;
+        private readonly MessageHandler handler;
         static readonly Color debug = Color.Red;
         static readonly Color info = Color.Blue;
+        public bool isStreaming;
+        public bool isSaving;
 
+        // Data Handling
+        byte[] buffer = new byte[128];
+        private readonly int buf_len = 128;       
+        
         public int STATUS = Constants.IDLE;
-
-        byte[] commsByte = new byte[64];
 
         public List<string> messages;
 
@@ -61,6 +57,8 @@ namespace BracePLUS.Models
         #region Model Instanciation
         public BraceClient()
         {
+            Status = "Booting up...";
+
             handler = new MessageHandler();
 
             ble = CrossBluetoothLE.Current;
@@ -76,7 +74,6 @@ namespace BracePLUS.Models
                     Write(string.Format($"The bluetooth state changed to {e.NewState}"), debug);
                 }
             };
-
             // New BLE device discovered event
             adapter.DeviceDiscovered += async (s, e) =>
             {
@@ -87,10 +84,11 @@ namespace BracePLUS.Models
                     Debug.WriteLine(String.Format("Discovered device: {0}", name));
                     Write(String.Format("Discovered device: {0}", name), info);
 
+                    Status = String.Format("Discovered device: {0}", name);
+
                     if (e.Device.Name == Constants.DEV_NAME || e.Device.Name == "RN_BLE")
                     {
-                        brace = e.Device;
-                        await Connect();
+                        await Connect(e.Device);
                     }
                 }
             };
@@ -101,7 +99,7 @@ namespace BracePLUS.Models
                 App.isConnected = false;
                 buffer = RELEASE_DATA(buffer, false);
 
-                Device.BeginInvokeOnMainThread( async () =>
+                Xamarin.Forms.Device.BeginInvokeOnMainThread( async () =>
                 {
                     bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                         "Store data locally?", "Yes", "No");
@@ -118,7 +116,7 @@ namespace BracePLUS.Models
                 App.isConnected = false;
                 buffer = RELEASE_DATA(buffer, false);
 
-                Device.BeginInvokeOnMainThread(async () =>
+                Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
                 {
                     bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                         "Store data locally?", "Yes", "No");
@@ -126,6 +124,8 @@ namespace BracePLUS.Models
                     if (save) await App.SaveDataLocally();
                 });
             };
+
+            Status = "Unconnected.";
         }
 
         public void RegisterStack(StackLayout s)
@@ -135,8 +135,10 @@ namespace BracePLUS.Models
         #endregion
 
         #region Model Client Logic Methods
-        public async Task Connect()
+        public async Task Connect(IDevice brace)
         {
+            Device = brace;
+
             if (!ble.IsOn)
             {
                 await Application.Current.MainPage.DisplayAlert("Bluetooth off.", "Please turn on bluetooth to connect to devices.", "OK");
@@ -145,7 +147,6 @@ namespace BracePLUS.Models
 
             try
             {
-                App.Status = "Attempting connection...";
                 Debug.WriteLine("Attempting connection...");
 
                 if (brace != null)
@@ -185,9 +186,13 @@ namespace BracePLUS.Models
                         uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
                         uartRx = await service.GetCharacteristicAsync(uartRxCharGUID);
 
-                        uartTx.ValueUpdated += async (o, args) =>
+                        uartTx.ValueUpdated += (o, args) =>
                         {
-                            await COMMS_MENU(args.Characteristic.Value);
+                            Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
+                            {
+                                await COMMS_MENU(args.Characteristic.Value);
+                            });
+                           
                         };
                         await RUN_BLE_START_UPDATES(uartTx);
 
@@ -212,7 +217,7 @@ namespace BracePLUS.Models
                 Write("Failed to connect.", info);
                 App.isConnected = false;
 
-                Device.BeginInvokeOnMainThread( async () =>
+                Xamarin.Forms.Device.BeginInvokeOnMainThread( async () =>
                 {
                     await Application.Current.MainPage.DisplayAlert("Connection failure.",
                         $"Failed to connect to Brace+", "OK");
@@ -236,8 +241,7 @@ namespace BracePLUS.Models
             App.isConnected = false;
 
             // Send command to put Brace in disconnected state;
-            commsByte = Encoding.ASCII.GetBytes(".");
-            await RUN_BLE_WRITE(uartTx, commsByte);
+            await RUN_BLE_WRITE(uartRx, ".");
             await RUN_BLE_STOP_UPDATES(uartTx);
 
             // Remove all connections
@@ -248,6 +252,8 @@ namespace BracePLUS.Models
         }
         public async Task StartScan()
         {
+            Status = "Starting scan...";
+
             // Check if device BLE is turned on.
             if (!ble.IsOn)
             {
@@ -255,15 +261,19 @@ namespace BracePLUS.Models
                 return;
             }
 
-            // If no devices found after timeout, stop scan.
+            // If already scanning, don't request second scan (will confuse BLE adapter)
+            if (adapter.IsScanning) return;
             Write("Starting scan...", info);
-            await adapter.StartScanningForDevicesAsync();
-            await Task.Delay(Constants.BLE_SCAN_TIMEOUT_MS);
 
+            await adapter.StartScanningForDevicesAsync();
+
+            // If no devices found after timeout, stop scan.
+            await Task.Delay(Constants.BLE_SCAN_TIMEOUT_MS);
             if (!App.isConnected)
             {
                 await Application.Current.MainPage.DisplayAlert(Constants.DEV_NAME + " not found.", "Unable to find " + Constants.DEV_NAME, "OK");
                 await StopScan();
+                Status = "Unconnected.";
             }
         }
         public async Task StopScan()
@@ -333,6 +343,7 @@ namespace BracePLUS.Models
                     break;
 
                 default:
+                    // NO STATUS SET
                     break;
             }
         }
@@ -346,10 +357,11 @@ namespace BracePLUS.Models
                 var filename = handler.GetFileName(DateTime.Now, "");
                 await RUN_BLE_WRITE(uartRx, filename);
 
-                App.Status = "Logging to file: " + filename + ".dat";
+                Write("Logging to file: " + filename + ".dat", debug);
             }
             else
             {
+                // If not filename, decode message and display
                 var msg = handler.Translate(input, STATUS);
                 Debug.WriteLine(msg);
                 Write(msg, debug);
@@ -400,19 +412,6 @@ namespace BracePLUS.Models
             // Return empty array of same size
             return new byte[buf_len];
         }
-        async Task<bool> RUN_BLE_WRITE(ICharacteristic c, byte[] b)
-        {
-            try
-            {
-                await c.WriteAsync(b);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Characteristic {c.Uuid} write failed with exception: {ex.Message}");
-            }
-            return false;
-        }
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
         {
             var b = Encoding.ASCII.GetBytes(s);
@@ -456,8 +455,10 @@ namespace BracePLUS.Models
 
         public void Write(string text, Color color)
         {
-            Device.BeginInvokeOnMainThread(() =>
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
             {
+                MessagingCenter.Send(this, "StatusMessage", text);
+
                 stack.Children.Insert(0, new Label
                 {
                     Text = text,
