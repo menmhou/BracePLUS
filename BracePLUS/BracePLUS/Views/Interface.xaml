@@ -73,6 +73,7 @@
             
             <Label Text="{Binding Status}"
                    FontSize="Large"
+                   MaxLines="1"
                    HorizontalTextAlignment="End"/>
         </StackLayout>
         

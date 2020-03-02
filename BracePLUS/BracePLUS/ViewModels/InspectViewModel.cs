@@ -1,76 +1,130 @@
 ﻿using BracePLUS.Extensions;
 using BracePLUS.Models;
-using BracePLUS.ViewModels;
-using Syncfusion.SfChart.XForms;
+using MvvmCross.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace BracePLUS.Views
 {
-    public class InspectViewModel : BaseViewModel
+    public class InspectViewModel : MvxViewModel
     {
         // Public Interface Members
         public DataObject DataObj { get; set; }
-        public double FileTime 
-        { 
-            get { return DataObj.Duration; }
-            set { }
-        }
+        public INavigation Nav { get; set; }
+
+        #region File Info Section
         public string Date
         {
-            get { return DataObj.Date.ToString(); }
+            get => DataObj.Date.ToString();
+            set { }
+        }
+        public string Location
+        {
+            get => DataObj.Location;
+            set { }
+        }
+        public double Duration 
+        { 
+            get => DataObj.Duration; 
             set { }
         }
         public string FormattedSize
         {
-            get { return DataObj.FormattedSize; }
+            get => DataObj.FormattedSize;
+            set { }
+        }
+        #endregion
+        #region File Analysis Section
+        public double AveragePressure
+        {
+            get => DataObj.AveragePressure;
+            set { }
+        }
+        public double AverageChange
+        {
+            get
+            {
+                return (100*AveragePressure / App.GlobalAverage)-100;
+            }
+            set {  }
+        }
+
+        public double AverageOverall
+        {
+            get => App.GlobalAverage;
+            set { }
+        }
+
+        public double MaxPressure 
+        {
+            get => DataObj.MaxPressure;
+            set { }
+        }
+
+        public double MaximumChange
+        {
+            get
+            {
+                return (100*MaxPressure / App.GlobalMax)-100;
+            }
+            set { }
+        }
+
+        public double MaximumOverall
+        {
+            get => App.GlobalMax;
+            set { }
+        }
+
+        #endregion
+        #region Chart Section 
+        public ObservableCollection<ChartDataModel> ChartData { get; set; }
+        #endregion
+        #region Debug Section
+        public string DataString
+        {
+            get => DataObj.DataString;
             set { }
         }
         public string Filename
         {
-            get { return DataObj.Filename; }
+            get => DataObj.Filename;
             set { }
         }
-        public string DataString
-        {
-            get { return DataObj.DataString; }
-            set { }
-        }
-        public INavigation Nav { get; set; }
-        public ObservableCollection<ChartDataModel> ChartData { get; set; }
-
+        #endregion       
+        
         // Public Interface Commands
         public Command ShareCommand { get; set; }
         public Command DeleteCommand { get; set; }
 
-        private MessageHandler handler;
+        private readonly MessageHandler handler;
 
         public InspectViewModel()
         {
+            handler = new MessageHandler();
             ShareCommand = new Command(async () => await ExecuteShareCommand());
             DeleteCommand = new Command(async () => await ExecuteDeleteCommand());
 
             DataObj = new DataObject();
             ChartData = new ObservableCollection<ChartDataModel>();
-            handler = new MessageHandler();
         }
 
         public void InitDataObject()
         {
-            var normals = handler.ExtractNormals(DataObj.Data, 50, 11);
-
+            if (!DataObj.IsDownloaded) return;
             // Add chart data
             try
             {
-                for (int i = 0; i < 50; i++)
+                int packets = (DataObj.Data.Length - 6) / 128;
+
+                var normals = handler.ExtractNormals(DataObj.Data, packets, 11);
+
+                for (int i = 0; i < (normals.Count > 200 ? 200 : normals.Count); i++)
                 {
                     ChartData.Add(new ChartDataModel(i.ToString(), normals[i]));
                 }

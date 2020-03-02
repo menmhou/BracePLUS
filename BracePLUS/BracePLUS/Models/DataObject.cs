@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Syncfusion.SfChart.XForms;
 using System.Threading.Tasks;
 using Xamarin.Forms;
 using BracePLUS.Extensions;
@@ -13,7 +12,7 @@ namespace BracePLUS.Models
 {
     public class DataObject : BindableObject
     {
-        private MessageHandler handler;
+        private readonly MessageHandler handler;
 
         // File Properties
         public bool IsDownloaded { get; set; }
@@ -37,7 +36,7 @@ namespace BracePLUS.Models
         }
         public string DataString
         { 
-            get { return getPreviewDataString(); }
+            get { return GetPreviewDataString(); }
             set { }
         }
         public string Name 
@@ -60,15 +59,16 @@ namespace BracePLUS.Models
         public bool Favourite { get; set; }
         public string FavIcon 
         { 
-            get { 
-                    if (Favourite)
-                    {
-                        return "StarFilled.png";
-                    }
-                    else
-                    {
-                        return "StarUnfilled.png";
-                    }
+            get 
+            { 
+                if (Favourite)
+                {
+                    return "StarFilled.png";
+                }
+                else
+                {
+                    return "StarUnfilled.png";
+                }
             }
             set { }
         }
@@ -76,6 +76,7 @@ namespace BracePLUS.Models
         // Commands
         public Command FavouriteClicked { get; set; }
         public Command ShareClicked { get; set; }
+        public Command DownloadCommand { get; set; }
 
         public DataObject()
         {
@@ -84,50 +85,64 @@ namespace BracePLUS.Models
             PreviewNormalData = new ObservableCollection<ChartDataModel>();
 
             ShareClicked = new Command(async () => await ExecuteShareCommand());
+            DownloadCommand = new Command(async () => await App.Client.DownloadFile(ShortFilename));
+            
             FavouriteClicked = new Command(() => { Favourite = !Favourite; });
         }
         
-        public bool DownloadData(string path)
+        public void DownloadData(string path)
         {
             if (!IsDownloaded)
             {
+                // Download data
                 try
                 {
-                    IsDownloaded = true;
                     Data = File.ReadAllBytes(path);
-
-                    int packets = (Data.Length - 6) / 128;
-
-                    // Prepare chart data
-                    var normals = handler.ExtractNormals(Data, packets, 11);
-
-                    Duration = getDuration();
-                    AveragePressure = getAverage(normals);
-                    MaxPressure = getMaximum(normals);
-
-                    int x = 100;
-                    if (normals.Count < x) x = normals.Count;
-
-                    for (int i = 0; i < x; i++)
-                    {
-                        PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
-                    }
-                    for (int i = 0; i < packets; i++)
-                    {
-                        NormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
-                    }
+                    IsDownloaded = true;
                 }
                 catch (Exception ex)
                 {
                     IsDownloaded = false;
                     Debug.WriteLine("Data download failed with exception: " + ex.Message);
+                    return;
                 }
-            }
 
-            return IsDownloaded;
+                // Basic analysis
+                if (Data.Length > 6) // (only contains header)
+                {
+                    int packets = (Data.Length - 6) / 128;
+
+                    // Prepare chart data
+                    var normals = handler.ExtractNormals(Data, packets, 11);
+
+                    try
+                    {
+                        Duration = GetDuration();
+                        AveragePressure = GetAverage(normals);
+                        MaxPressure = GetMaximum(normals);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine("Data analysis failed with exception: " + ex.Message);
+                    }
+
+                    try
+                    {
+                        for (int i = 0; i < (normals.Count > 50 ? 50 : normals.Count); i++)
+                        {
+                            PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine("Unable to add chart preview data: " + ex.Message);
+                    }
+                }
+                
+            }
         }
 
-        public double getDuration()
+        public double GetDuration()
         {
             if (IsDownloaded)
             {
@@ -154,13 +169,12 @@ namespace BracePLUS.Models
             }
             else
             {
-                Debug.WriteLine("Data not downloaded, unable to extract duration.");
+                Debug.WriteLine("Unable to extract duration: data not downloaded.");
+                return 0.0;
             }
-
-            return 0;
         }
 
-        public double getAverage(List<double> values)
+        public double GetAverage(List<double> values)
         {
             int length = values.Count;
             double sum = 0.0;
@@ -169,9 +183,8 @@ namespace BracePLUS.Models
             return sum / length;
         }
 
-        public double getMaximum(List<double> values)
+        public double GetMaximum(List<double> values)
         {
-            int length = values.Count;
             double max = 0.0;
 
             foreach (double val in values)
@@ -193,16 +206,24 @@ namespace BracePLUS.Models
             });
         }
 
-        private string getPreviewDataString()
+        private string GetPreviewDataString()
         {
-            if (Data.Length < 100)
+            if (IsDownloaded)
             {
-                return BitConverter.ToString(Data);
+                if (Data.Length < 100)
+                {
+                    return BitConverter.ToString(Data);
+                }
+                else
+                {
+                    // Create 100 char string of data and append "..." 
+                    return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
+                }
             }
             else
             {
-                // Create 100 char string of data and append "..." 
-                return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
+                Debug.WriteLine("Unable to get data string: data not downloaded.");
+                return null;
             }
         }
     }

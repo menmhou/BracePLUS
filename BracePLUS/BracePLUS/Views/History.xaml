@@ -5,6 +5,8 @@
              x:Class="BracePLUS.Views.History">
 
     <ContentPage.ToolbarItems>
+        <ToolbarItem IconImageSource="SyncIconWhite.png"
+                     Clicked="OnPhoneSyncButtonClicked"/>
         <ToolbarItem Text="Clear"
                      Clicked="OnClearButtonAdded" />
     </ContentPage.ToolbarItems>
@@ -14,10 +16,12 @@
 
             <ListView x:Name="listView"
                       ItemSelected="OnListViewItemSelected"
+                      ItemsSource="{Binding DataObjects}"
                       HasUnevenRows="True"
-                      
                       SeparatorVisibility="None"
-                      IsPullToRefreshEnabled="False"
+                      IsPullToRefreshEnabled="True"
+                      IsRefreshing="{Binding IsRefreshing}"
+                      RefreshCommand="{Binding RefreshCommand}"
                       BackgroundColor="#EEEEEE">
 
                 <ListView.ItemTemplate>
@@ -28,9 +32,22 @@
                                    Margin="4, 8"
                                    CornerRadius="20">
                                 <StackLayout>
-                                    <Label Text="{Binding Name}"
-                                       FontSize="Large"
-                                       TextColor="Black"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Label Text="{Binding Name}"
+                                               FontSize="Large"
+                                               HorizontalOptions="StartAndExpand"
+                                               TextColor="Black"
+                                               Grid.Column="0"/>
+                                        <Label Text="{Binding Location}"
+                                               FontSize="Medium"
+                                               HorizontalTextAlignment="End"
+                                               TextColor="DimGray"
+                                               Grid.Column="1"/>
+                                    </Grid>
                                     <Label Text="{Binding Detail}"
                                        FontSize="Medium"
                                        TextColor="DimGray"/>
@@ -47,19 +64,19 @@
                                                    HorizontalOptions="FillAndExpand">
 
                                         <chart:SfChart.Series>
-                                            <chart:LineSeries ItemsSource="{Binding PreviewNormalData}"
-                                                              Color="Red"
-                                                              XBindingPath="Name"
-                                                              YBindingPath="Value" />
+                                            <chart:SplineSeries ItemsSource="{Binding PreviewNormalData}"
+                                                                Color="Red"
+                                                                XBindingPath="Name"
+                                                                YBindingPath="Value" />
                                         </chart:SfChart.Series>
 
                                         <chart:SfChart.PrimaryAxis>
-                                            <chart:NumericalAxis Maximum="50" />
+                                            <chart:NumericalAxis />
                                         </chart:SfChart.PrimaryAxis>
 
                                         <chart:SfChart.SecondaryAxis>
-                                            <chart:NumericalAxis Minimum="130"
-                                                                 Maximum="160"/>
+                                            <chart:NumericalAxis Minimum="110"
+                                                                 Maximum="180"/>
                                         </chart:SfChart.SecondaryAxis>
                                     </chart:SfChart>
                                     
@@ -77,7 +94,7 @@
                                                 HorizontalOptions="CenterAndExpand"
                                                 BackgroundColor="White"
                                                 ImageSource="{Binding FavIcon}"
-                                                Command="{Binding FavouriteClicked}"/>
+                                                Command="{Binding DownloadCommand}"/>
                                         <Button Grid.Row="0"
                                                 Grid.Column="1"
                                                 Grid.ColumnSpan="1"

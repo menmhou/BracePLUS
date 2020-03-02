@@ -1,17 +1,13 @@
-﻿#define SIMULATION
+﻿//#define SIMULATION
 
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
 
 using BracePLUS.Models;
-
-using System.Diagnostics;
-using Syncfusion.SfChart.XForms;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System;
 using MvvmCross.ViewModels;
+using static BracePLUS.Extensions.Constants;
 
 namespace BracePLUS.ViewModels
 {
@@ -30,7 +26,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-
         #region StreamText
         private string _streamText;
         public string StreamText 
@@ -43,7 +38,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-
         #region SaveText
         private string _saveText;
         public string SaveText
@@ -56,7 +50,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-
         #region Status
         private string _status;
         public string Status 
@@ -69,7 +62,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-
         #region ButtonColour
         private Color _buttonColour;
         public Color ButtonColour
@@ -82,7 +74,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-
         public ObservableCollection<ChartDataModel> ChartData { get; set; }
 
         // Commands
@@ -102,11 +93,9 @@ namespace BracePLUS.ViewModels
 
             ConnectText = "Connect";
             StreamText = "Stream";
-            SaveText = "Save";
+            SaveText = "Log Data";
 
-            Status = "Loading..,";
-
-            ButtonColour = Color.FromHex("0078E5");
+            ButtonColour = START_COLOUR;
 
             MessagingCenter.Subscribe<BraceClient, double>(this, "NormalPressure", (sender, arg) =>
             {
@@ -117,11 +106,55 @@ namespace BracePLUS.ViewModels
 #if SIMULATION
 
 #else
-                    if (arg > Constants.MAX_PRESSURE) App.Vibrate(1);
+                    if (arg > MAX_PRESSURE)
+                    {
+                        App.Vibrate(1);
+                    }
 #endif
                 });
             });
+            MessagingCenter.Subscribe<BraceClient, int>(this, "UIEvent", (sender, arg) =>
+            {
+                switch (arg)
+                {
+                    case CONNECTED:
+                        ButtonColour = STOP_COLOUR;
+                        ConnectText = "Disconnect";
+                        break;
 
+                    case DISCONNECTED:
+                        ButtonColour = START_COLOUR;
+                        ConnectText = "Connect";
+                        break;
+
+                    case CONNECTING:
+                        ConnectText = "Connecting...";
+                        ButtonColour = WAIT_COLOUR;
+                        Status = "Initialising sytem...";
+                        break;
+
+                    case SYS_INIT:
+                        ButtonColour = WAIT_COLOUR;
+                        Status = "Initialising sytem...";
+                        break;
+
+                    case SYS_STREAM_START:
+                        StreamText = "Stop stream";
+                        break;
+
+                    case SYS_STREAM_FINISH:
+                        StreamText = "Stream";
+                        break;
+
+                    case LOGGING_START:
+                        SaveText = "Stop logging";
+                        break;
+
+                    case LOGGING_FINISH:
+                        SaveText = "Log Data";
+                        break;
+                }
+            });
             MessagingCenter.Subscribe<BraceClient, string>(this, "StatusMessage", (sender, arg) =>
             {
                 Status = arg;
@@ -153,15 +186,11 @@ namespace BracePLUS.ViewModels
         {
             if (App.isConnected)
             {
-                ConnectText = "Disconnect";
-                ButtonColour = Color.FromHex("FE0000");
                 // Disconnect from device
                 await App.Client.Disconnect();
             }
             else
             {
-                ConnectText = "Connect";
-                ButtonColour = Color.FromHex("0078E5");
                 // Start scan
                 await App.Client.StartScan();
             }
@@ -171,9 +200,14 @@ namespace BracePLUS.ViewModels
         {
             if (App.isConnected)
             {
-                if (App.Client.isStreaming) StreamText = "Stop Stream";
-                else StreamText = "Stream";
-                await App.Client.Stream();
+                if(App.Client.STATUS != SYS_STREAM_START)
+                {
+                    await App.Client.Stream();
+                }
+                else
+                {
+                    await App.Client.StopStream();
+                }
             }
             else
             {
@@ -188,7 +222,14 @@ namespace BracePLUS.ViewModels
 #endif
             if (App.isConnected)
             {
-                await App.Client.Save();
+                if (App.Client.STATUS != LOGGING_START)
+                {
+                    await App.Client.Save();
+                }
+                else
+                {
+                    await App.Client.StopStream();
+                }
             }
             else
             {

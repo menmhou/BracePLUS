@@ -22,7 +22,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-
         #region DeviceID
         private string _deviceID;
         public string DeviceID 
@@ -35,7 +34,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-
         #region RSSI
         private string _rssi;
         public string RSSI

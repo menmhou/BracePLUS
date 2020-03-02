@@ -31,12 +31,12 @@ namespace BracePLUS.Views
                 Nav = Navigation,
                 DataObj = dataObject
             };
+            viewModel.InitDataObject();
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            viewModel.InitDataObject();
         }
 
         private async void GridTapped(object sender, EventArgs e)
