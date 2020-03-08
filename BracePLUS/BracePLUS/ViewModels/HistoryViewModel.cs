@@ -11,6 +11,7 @@ using BracePLUS.Extensions;
 using MvvmCross.ViewModels;
 using System.Collections.Generic;
 using System.Text;
+using BracePLUS.Events;
 
 namespace BracePLUS.ViewModels
 {
@@ -30,7 +31,7 @@ namespace BracePLUS.ViewModels
         }
         public Command RefreshCommand { get; set; }
         #endregion
-
+        #region DataObjectsList
         private ObservableCollection<DataObject> _dataObjects;
         public ObservableCollection<DataObject> DataObjects 
         {
@@ -41,9 +42,10 @@ namespace BracePLUS.ViewModels
                 RaisePropertyChanged(() => DataObjects);
             }
         }
+        #endregion
 
+        // Private Properties
         private readonly MessageHandler handler;
-
         private readonly List<string> Files;
 
         public HistoryViewModel()
@@ -54,39 +56,74 @@ namespace BracePLUS.ViewModels
             DataObjects = new ObservableCollection<DataObject>();
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
 
-            // Receive list of filenames from App main.
-            MessagingCenter.Subscribe<BraceClient, List<string>>(this, "FilesReady", (sender, arg) =>
-            {
-                Debug.WriteLine($"Received {arg.Count} files.");
-                LoadRemoteFiles(arg);
-                ExecuteRefreshCommand();
-            });
-            MessagingCenter.Subscribe<BraceClient>(this, "FilesUpdated", (sender) =>
-            {
-                Debug.WriteLine("Files updated!");
-                ExecuteRefreshCommand();
-            });
+            // Events
+            App.Client.DownloadFinished += Client_OnDownloadFinished;
+            App.Client.FileSyncFinished += Client_OnFileSyncFinished;
+            App.Client.LocalFileListUpdated += Client_OnLocalFileListUpdated;
         }
+
+        #region Event Handlers
+        void Client_OnDownloadFinished(object sender, FileDownloadedEventArgs e)
+        {
+            Debug.WriteLine("Download finished WOOP WOOP");
+            Debug.WriteLine($"Filename; {e.Filename}, {e.Data.Count}");
+
+            UpdateObject(e.Filename);
+        }
+        void Client_OnFileSyncFinished(object sender, MobileSyncFinishedEventArgs e)
+        {
+            Debug.WriteLine("File sync finished YAY YAY WOOP");
+            AddMobileFilenames(e.Files);
+            LoadLocalFiles();
+        }
+        void Client_OnLocalFileListUpdated(object sender, EventArgs e)
+        {
+            Debug.WriteLine("Local files updated YAYAYAYAY");
+            LoadLocalFiles();
+        }
+        void Client_OnRemoveDataObject(object sender, RemoveObjectEventArgs e)
+        {
+            DataObjects.Remove(e.dataObject);
+        }
+        #endregion
 
         public void ExecuteRefreshCommand()
         {
             IsRefreshing = true;
-            LoadLocalFiles();
+            //RefreshObjects();
             IsRefreshing = false;
+        }
+
+        public void RefreshObjects()
+        {
+            App.GlobalMax = 0;
+            double avgs_sum = 0.0;
+            foreach (DataObject obj in DataObjects)
+            {
+                obj.DownloadLocalData(obj.Directory);
+
+                if (obj.IsDownloaded)
+                {
+                    avgs_sum += obj.AveragePressure;
+                    if (obj.MaxPressure > App.GlobalMax) App.GlobalMax = obj.MaxPressure;
+                }               
+            }
+
+            App.GlobalAverage = avgs_sum / DataObjects.Count;
         }
 
         public void LoadLocalFiles()
         {
-            var tempData = new ObservableCollection<DataObject>();
+            ObservableCollection<DataObject> tempData = new ObservableCollection<DataObject>();
 
             var files = Directory.EnumerateFiles(App.FolderPath, "*");
+
             foreach (var filename in files)
             {
                 // Save filenames to local storage to compare for updates
                 Files.Add(filename);
                 // Get info about file
                 FileInfo fi = new FileInfo(filename);
-                Debug.WriteLine($"Reading file: {fi.Name}");
 
                 var temp = File.ReadAllBytes(filename);
 
@@ -95,29 +132,34 @@ namespace BracePLUS.ViewModels
                 {
                     Size = fi.Length,
                     Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm),
-                    ShortFilename = fi.Name,
-                    Filename = filename,
-                    Location = (temp[0] == 0x0A) ? "Local" : "Mobile",
-                    IsDownloaded = false,
+                    Filename = fi.Name,
+                    Directory = filename,
+                    Location = (temp[0] == 0x0A) ? "Local" : "Mobile"
                 });
             }
             DataObjects = tempData;
 
-            App.GlobalMax = 0;
-            double avgs_sum = 0.0;
-            foreach (DataObject obj in DataObjects)
-            {
-                obj.DownloadData(obj.Filename);
-
-                avgs_sum += obj.AveragePressure;
-                if (obj.MaxPressure > App.GlobalMax) App.GlobalMax = obj.MaxPressure;
-            }
-
-            App.GlobalAverage = avgs_sum / DataObjects.Count;
+            RefreshObjects();
         }
 
+        public void ClearObjects()
+        {
+            // Clear files from local list
+            DataObjects.Clear();
+
+            // Clear files from memory
+            var files = Directory.EnumerateFiles(App.FolderPath, "*");
+            foreach (var filename in files)
+            {
+                File.Delete(filename);
+            }
+        }
+
+        // Request list of filenames from device.
         public async void GetMobileFileNames()
         {
+            // When list is ready, client will send a list of strings containing filenames using 
+            // "MobileFileListUpdated" identifier with MessagingCentre.
             if (App.isConnected)
             {
                 await App.Client.GetMobileFiles();
@@ -129,8 +171,8 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        // Load filenames pulled from mobile into locally stored empty files
-        private void LoadRemoteFiles(List<string> files)
+        // Load filenames pulled from mobile into locally stored empty files.
+        private void AddMobileFilenames(List<string> files)
         {
             foreach (var _file in files)
             {
@@ -139,14 +181,10 @@ namespace BracePLUS.ViewModels
                 {
                     // Add usable extension
                     var filename = Path.Combine(App.FolderPath, _file.Remove(8) + ".txt");
-                   
                     FileStream file = new FileStream(filename, FileMode.CreateNew, FileAccess.Write);
 
                     // File header
-                    byte[] header = new byte[3];
-                    header[0] = 0x0D;
-                    header[1] = 0x0E;
-                    header[2] = 0x0F;
+                    byte[] header = new byte[3] { 0x0D, 0x0E, 0x0F };
                     file.Write(header, 0, header.Length);
                     file.Close();
 
@@ -163,16 +201,18 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        public void ClearObjects()
+        private void UpdateObject(string objName)
         {
-            // Clear files from local list
-            DataObjects.Clear();
-
-            // Clear files from memory
-            var files = Directory.EnumerateFiles(App.FolderPath, "*");
-            foreach (var filename in files)
+            // Scan through all objects, if found update data and analyze.
+            foreach (var obj in DataObjects)
             {
-                File.Delete(filename);
+                if (obj.Filename == objName)
+                {
+                    obj.DownloadLocalData(obj.Directory);
+                    //Debug.WriteLine($"Downloaded data length: {obj.Data.Length}");
+                    obj.IsDownloaded = true;
+                    obj.Analyze();
+                }
             }
         }
     }

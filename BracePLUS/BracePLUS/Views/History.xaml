@@ -58,10 +58,15 @@
                                        FontSize="Medium"
                                        TextColor="DimGray"/>
 
+                                    <ProgressBar Progress="{Binding DownloadProgress}"
+                                                 IsVisible="{Binding ProgressBarEnabled}"
+                                                 Margin="10"/>
+
                                     <chart:SfChart x:Name="chart"
                                                    HeightRequest="160"
                                                    VerticalOptions="FillAndExpand"
-                                                   HorizontalOptions="FillAndExpand">
+                                                   HorizontalOptions="FillAndExpand"
+                                                   IsVisible="{Binding ChartEnabled}">
 
                                         <chart:SfChart.Series>
                                             <chart:SplineSeries ItemsSource="{Binding PreviewNormalData}"
@@ -93,7 +98,8 @@
                                                 VerticalOptions="CenterAndExpand"
                                                 HorizontalOptions="CenterAndExpand"
                                                 BackgroundColor="White"
-                                                ImageSource="{Binding FavIcon}"
+                                                Text="Download"
+                                                TextColor="Black"
                                                 Command="{Binding DownloadCommand}"/>
                                         <Button Grid.Row="0"
                                                 Grid.Column="1"

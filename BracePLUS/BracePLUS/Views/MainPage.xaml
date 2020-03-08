@@ -24,7 +24,7 @@
         </NavigationPage>
 
         <!-- Browse page -->
-        <NavigationPage Title="History">
+        <NavigationPage Title="Files">
             <NavigationPage.Icon>
                 <OnPlatform x:TypeArguments="FileImageSource">
                     <On Platform="iOS" Value="HistoryLogo.png" />

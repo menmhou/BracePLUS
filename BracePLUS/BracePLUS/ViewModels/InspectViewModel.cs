@@ -1,4 +1,5 @@
-﻿using BracePLUS.Extensions;
+﻿using BracePLUS.Events;
+using BracePLUS.Extensions;
 using BracePLUS.Models;
 using MvvmCross.ViewModels;
 using System;
@@ -93,7 +94,7 @@ namespace BracePLUS.Views
         }
         public string Filename
         {
-            get => DataObj.Filename;
+            get => DataObj.Directory;
             set { }
         }
         #endregion       
@@ -101,6 +102,7 @@ namespace BracePLUS.Views
         // Public Interface Commands
         public Command ShareCommand { get; set; }
         public Command DeleteCommand { get; set; }
+        public Command ShowDataCommand { get; set; }
 
         private readonly MessageHandler handler;
 
@@ -109,10 +111,32 @@ namespace BracePLUS.Views
             handler = new MessageHandler();
             ShareCommand = new Command(async () => await ExecuteShareCommand());
             DeleteCommand = new Command(async () => await ExecuteDeleteCommand());
+            ShowDataCommand = new Command(() => ExecuteShowDataCommand());
 
             DataObj = new DataObject();
             ChartData = new ObservableCollection<ChartDataModel>();
+
+
         }
+
+        protected virtual void OnRemoveObject(RemoveObjectEventArgs e)
+        {
+            EventHandler<RemoveObjectEventArgs> handler = RemoveObject;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public EventHandler<RemoveObjectEventArgs> RemoveObject;
+        protected virtual void OnLocalFileListUpdated(EventArgs e)
+        {
+            EventHandler handler = LocalFileListUpdated;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public event EventHandler LocalFileListUpdated;
 
         public void InitDataObject()
         {
@@ -121,9 +145,9 @@ namespace BracePLUS.Views
             try
             {
                 int packets = (DataObj.Data.Length - 6) / 128;
-
                 var normals = handler.ExtractNormals(DataObj.Data, packets, 11);
 
+                // If less than 200 data points avaible, use total number of points
                 for (int i = 0; i < (normals.Count > 200 ? 200 : normals.Count); i++)
                 {
                     ChartData.Add(new ChartDataModel(i.ToString(), normals[i]));
@@ -137,11 +161,11 @@ namespace BracePLUS.Views
 
         public async Task ExecuteShareCommand()
         {
-            var file = Path.Combine(App.FolderPath, DataObj.Filename);
+            var file = Path.Combine(App.FolderPath, DataObj.Directory);
 
             await Share.RequestAsync(new ShareFileRequest
             {
-                Title = DataObj.ShortFilename,
+                Title = DataObj.Filename,
                 File = new ShareFile(file)
             });
         }
@@ -154,11 +178,26 @@ namespace BracePLUS.Views
                 var files = Directory.EnumerateFiles(App.FolderPath, "*");
                 foreach (var filename in files)
                 {
-                    if (filename == DataObj.Filename) File.Delete(filename);
+                    if (filename == DataObj.Directory)
+                    {
+
+                        File.Delete(filename);
+                        RemoveObjectEventArgs args = new RemoveObjectEventArgs() { dataObject = DataObj };
+                        OnRemoveObject(args);
+                    }
                 }
+                OnLocalFileListUpdated(EventArgs.Empty);
 
                 await Nav.PopAsync();
             }
+        }
+
+        private async void ExecuteShowDataCommand()
+        {
+            await Nav.PushAsync(new RawDataView
+            {
+                BindingContext = DataObj
+            });
         }
     }
 }

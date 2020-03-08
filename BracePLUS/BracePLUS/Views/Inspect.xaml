@@ -121,7 +121,7 @@
                                HeightRequest="300"
                                VerticalOptions="FillAndExpand"
                                HorizontalOptions="FillAndExpand">
-
+    
                     <chart:SfChart.ChartBehaviors>
                         <chart:ChartZoomPanBehavior EnableSelectionZooming="True"
                                                     EnableDoubleTap="True"
@@ -155,7 +155,11 @@
                 <Label Text="{Binding DataString}"
                        TextColor="Black"
                        FontSize="Large"
-                       Margin="8, 8, 8, 8"/>
+                       Margin="8, 8, 8, 8">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ShowDataCommand}"/>
+                    </Label.GestureRecognizers>
+                </Label>
                 <Label Text="{Binding Filename}"
                        FontSize="Medium"/>
             </StackLayout>

@@ -7,6 +7,7 @@ using BracePLUS.Extensions;
 using System.Diagnostics;
 using System.IO;
 using Xamarin.Essentials;
+using BracePLUS.Events;
 
 namespace BracePLUS.Models
 {
@@ -17,8 +18,8 @@ namespace BracePLUS.Models
         // File Properties
         public bool IsDownloaded { get; set; }
         public DateTime Date { get; set; }
+        public string Directory { get; set; }
         public string Filename { get; set; }
-        public string ShortFilename { get; set; }
         public string Location { get; set; }
         public long Size { get; set; }
         public double Duration { get; set; }
@@ -26,24 +27,27 @@ namespace BracePLUS.Models
         // View Properties
         public string Text
         {
-            get { return BitConverter.ToString(Data); }
+            get => BitConverter.ToString(Data);
             set { }
         }
         public string FormattedSize
         {
-            get { return handler.FormattedFileSize(Size); }
+            get => handler.FormattedFileSize(Size);
             set { }
         }
         public string DataString
         { 
-            get { return GetPreviewDataString(); }
+            get => GetPreviewDataString();
             set { }
         }
         public string Name 
         { 
-            get { return String.Format($"{Date.ToShortDateString()}, {Date.ToShortTimeString()}"); }
+            get => string.Format($"{Date.ToShortDateString()}, {Date.ToShortTimeString()}");
             set { }
         }
+        public string ChartEnabled { get; set; }
+        public string ProgressBarEnabled { get; set; }
+        public float DownloadProgress { get; set; }
 
         // Data Properties
         public double AveragePressure { get; set; }
@@ -53,28 +57,11 @@ namespace BracePLUS.Models
         public ObservableCollection<ChartDataModel> PreviewNormalData { get; set; }
         public string Detail
         {
-            get { return string.Format("{0}, {1:0.00}s", FormattedSize, Duration); }
-            set { }
-        }
-        public bool Favourite { get; set; }
-        public string FavIcon 
-        { 
-            get 
-            { 
-                if (Favourite)
-                {
-                    return "StarFilled.png";
-                }
-                else
-                {
-                    return "StarUnfilled.png";
-                }
-            }
+            get => string.Format("{0}, {1:0.00}s", FormattedSize, Duration);
             set { }
         }
 
         // Commands
-        public Command FavouriteClicked { get; set; }
         public Command ShareClicked { get; set; }
         public Command DownloadCommand { get; set; }
 
@@ -85,60 +72,132 @@ namespace BracePLUS.Models
             PreviewNormalData = new ObservableCollection<ChartDataModel>();
 
             ShareClicked = new Command(async () => await ExecuteShareCommand());
-            DownloadCommand = new Command(async () => await App.Client.DownloadFile(ShortFilename));
-            
-            FavouriteClicked = new Command(() => { Favourite = !Favourite; });
+            DownloadCommand = new Command(async () => await ExecuteDownloadCommand());
+
+            ChartEnabled = "False";
+            ProgressBarEnabled = "False";
+
+            App.Client.DownloadProgress += Client_OnDownloadProgress;
         }
-        
-        public void DownloadData(string path)
+
+        void Client_OnDownloadProgress(object sender, DownloadProgressEventArgs e)
         {
-            if (!IsDownloaded)
+            if (e.Value == 1.0) ProgressBarEnabled = "False";
+            else
             {
-                // Download data
+                ProgressBarEnabled = "True";
+                DownloadProgress = e.Value;
+                Debug.WriteLine($"Progress: {DownloadProgress}");
+            }
+        }
+
+        public async Task ExecuteDownloadCommand()
+        {
+            try
+            {
+                if (Data.Length > 6)
+                {
+                    Debug.WriteLine("Data already downloaded, returning.");
+                    ChartEnabled = "True";
+                    ProgressBarEnabled = "False";
+                    IsDownloaded = true;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return;
+            }
+
+            try
+            {
+                if (Location == "Local")
+                {
+                    DownloadLocalData(Filename);
+                }
+                else if (Location == "Mobile")
+                {
+                    await App.Client.DownloadFile(Filename);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Filedownload failed: " + ex.Message);
+            }
+            
+        }
+
+        public void DownloadLocalData(string path)
+        {
+            try
+            {
+                if (Data.Length > 6)
+                {
+                    Debug.WriteLine("Data already downloaded, returning.");
+                    ChartEnabled = "True";
+                    IsDownloaded = true;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+            
+            // Download data
+            try
+            {
+                Data = File.ReadAllBytes(path);
+                if (Location == "Local") IsDownloaded = true;
+                Analyze();
+            }
+            catch (Exception ex)
+            {
+                IsDownloaded = false;
+                Debug.WriteLine("DownloadLocalData failed with exception: " + ex.Message);
+            }
+        }
+
+        public void Analyze()
+        {
+            // Basic analysis
+            if (Data.Length > 6) // (only contains header/footer)
+            {
+                int packets = (Data.Length - 6) / 128;
+
+                // Prepare chart data
+                var normals = handler.ExtractNormals(Data, packets, 11);
+
                 try
                 {
-                    Data = File.ReadAllBytes(path);
-                    IsDownloaded = true;
+                    Duration = GetDuration();
+                    AveragePressure = GetAverage(normals);
+                    MaxPressure = GetMaximum(normals);
                 }
                 catch (Exception ex)
                 {
-                    IsDownloaded = false;
-                    Debug.WriteLine("Data download failed with exception: " + ex.Message);
-                    return;
+                    Debug.WriteLine("Data analysis failed with exception: " + ex.Message);
                 }
 
-                // Basic analysis
-                if (Data.Length > 6) // (only contains header)
+                try
                 {
-                    int packets = (Data.Length - 6) / 128;
-
-                    // Prepare chart data
-                    var normals = handler.ExtractNormals(Data, packets, 11);
-
-                    try
+                    for (int i = 0; i < (normals.Count > 50 ? 50 : normals.Count); i++)
                     {
-                        Duration = GetDuration();
-                        AveragePressure = GetAverage(normals);
-                        MaxPressure = GetMaximum(normals);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine("Data analysis failed with exception: " + ex.Message);
-                    }
-
-                    try
-                    {
-                        for (int i = 0; i < (normals.Count > 50 ? 50 : normals.Count); i++)
-                        {
-                            PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine("Unable to add chart preview data: " + ex.Message);
+                        PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
                     }
                 }
-                
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Unable to add chart preview data: " + ex.Message);
+                }
+
+                ChartEnabled = "True";
+            }
+            else
+            {
+                Debug.WriteLine("Unable to analyze. Data less than 6 bytes.");
+                ChartEnabled = "False";
             }
         }
 
@@ -153,6 +212,7 @@ namespace BracePLUS.Models
                 byte t1 = Data[4];
                 byte t0 = Data[3];
                 var t_start = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
+                //Debug.WriteLine("T start: " + t_start);
 
                 int length = Data.Length;
 
@@ -164,6 +224,7 @@ namespace BracePLUS.Models
                 t0 = Data[length - 131];
 
                 var t_finish = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
+               // Debug.WriteLine("T finish: " + t_start);
 
                 return (t_finish - t_start) / 1000.0;
             }
@@ -197,11 +258,11 @@ namespace BracePLUS.Models
 
         public async Task ExecuteShareCommand()
         {
-            var file = Path.Combine(App.FolderPath, Filename);
+            var file = Path.Combine(App.FolderPath, Directory);
 
             await Share.RequestAsync(new ShareFileRequest
             {
-                Title = ShortFilename,
+                Title = Filename,
                 File = new ShareFile(file)
             });
         }
@@ -223,7 +284,7 @@ namespace BracePLUS.Models
             else
             {
                 Debug.WriteLine("Unable to get data string: data not downloaded.");
-                return null;
+                return "Data string null";
             }
         }
     }

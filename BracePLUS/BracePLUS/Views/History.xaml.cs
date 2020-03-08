@@ -12,6 +12,7 @@ using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
+
 namespace BracePLUS.Views
 {
     public partial class History : ContentPage
@@ -30,7 +31,7 @@ namespace BracePLUS.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            viewModel.LoadLocalFiles();
+            // viewModel.RefreshObjects();
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
@@ -58,22 +59,12 @@ namespace BracePLUS.Views
             var clear = await Application.Current.MainPage.DisplayAlert("Clear files?", "Clear all files from device memory. Continue?", "Yes", "Cancel");
 
             if (clear) viewModel.ClearObjects();
-
-            // Reload data in listview
-            listView.ItemsSource = viewModel.DataObjects
-               .OrderBy(d => d.Date)
-               .ToList();
         }
 
         private void OnPhoneSyncButtonClicked(object sender, EventArgs e)
         {
             // Pull file names from phone
             viewModel.GetMobileFileNames();
-
-            // Reload data in listview
-            listView.ItemsSource = viewModel.DataObjects
-               .OrderBy(d => d.Date)
-               .ToList();
         }
     }
 }

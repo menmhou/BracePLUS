@@ -36,6 +36,10 @@ namespace BracePLUS.Extensions
                 case SYS_STREAM_START:
                     if (str == "s") msg = "Stream incoming...";
                     else if (str == ".") msg = "Stream failed.";
+                    break;
+
+                case SYS_STREAM_FINISH:
+                    if (str == ".") msg = "Stream failed.";
                     else if (str == "^") msg = "Stream complete.";
                     break;
 
@@ -43,6 +47,11 @@ namespace BracePLUS.Extensions
                     if (str == "d") msg = "Logging started.";
                     else if (str == ".") msg = "Logging failed.";
                     else if (str == "^") msg = "Logging complete.";
+                    break;
+
+                case DOWNLOAD_FINISH:
+                    if (str == "^") msg = "File download complete.";
+                    else if (str == ".") msg = "File download failed.";
                     break;
 
                 default:
@@ -257,7 +266,7 @@ namespace BracePLUS.Extensions
                         if (minute < 10) min_fmt = "0{3:d}";
                         else min_fmt = "{3:d}";
 
-                        string format = mon_fmt + day_fmt + hr_fmt + min_fmt;
+                        string format = mon_fmt + day_fmt + hr_fmt + min_fmt + extension;
                         filename = string.Format(format, month, day, hour, minute);
                         break;
 

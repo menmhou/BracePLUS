@@ -8,6 +8,8 @@ using BracePLUS.Models;
 using System.Collections.ObjectModel;
 using MvvmCross.ViewModels;
 using static BracePLUS.Extensions.Constants;
+using System.Diagnostics;
+using BracePLUS.Events;
 
 namespace BracePLUS.ViewModels
 {
@@ -84,6 +86,7 @@ namespace BracePLUS.ViewModels
         public InterfaceViewModel()
         {
             App.Client = new BraceClient();
+            App.Client.PressureUpdated += Client_OnPressureUpdated;
 
             ChartData = new ObservableCollection<ChartDataModel>();
 
@@ -97,22 +100,6 @@ namespace BracePLUS.ViewModels
 
             ButtonColour = START_COLOUR;
 
-            MessagingCenter.Subscribe<BraceClient, double>(this, "NormalPressure", (sender, arg) =>
-            {
-                Device.BeginInvokeOnMainThread(() => 
-                {
-                    if (ChartData.Count > 0) ChartData.Clear();
-                    ChartData.Add(new ChartDataModel("Pressure", arg));
-#if SIMULATION
-
-#else
-                    if (arg > MAX_PRESSURE)
-                    {
-                        App.Vibrate(1);
-                    }
-#endif
-                });
-            });
             MessagingCenter.Subscribe<BraceClient, int>(this, "UIEvent", (sender, arg) =>
             {
                 switch (arg)
@@ -181,6 +168,23 @@ namespace BracePLUS.ViewModels
             }
 #endif
         }
+
+        void Client_OnPressureUpdated(object sender, PressureUpdatedEventArgs e)
+        {
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                if (ChartData.Count > 0) ChartData.Clear();
+                ChartData.Add(new ChartDataModel("Pressure", e.Value));
+#if SIMULATION
+
+#else
+                if (e.Value > MAX_PRESSURE)
+                {
+                    App.Vibrate(1);
+                }
+#endif
+            });
+        }
         
         public async Task ExecuteConnectCommand()
         {
@@ -200,13 +204,13 @@ namespace BracePLUS.ViewModels
         {
             if (App.isConnected)
             {
-                if(App.Client.STATUS != SYS_STREAM_START)
+                if(App.Client.STATUS == SYS_STREAM_START)
                 {
-                    await App.Client.Stream();
+                    await App.Client.StopStream();
                 }
                 else
                 {
-                    await App.Client.StopStream();
+                    await App.Client.Stream();
                 }
             }
             else
@@ -217,9 +221,6 @@ namespace BracePLUS.ViewModels
 
         public async Task ExecuteSaveCommand()
         {
-#if SIMULATION
-            await App.SaveDataLocally();
-#endif
             if (App.isConnected)
             {
                 if (App.Client.STATUS != LOGGING_START)
@@ -228,7 +229,7 @@ namespace BracePLUS.ViewModels
                 }
                 else
                 {
-                    await App.Client.StopStream();
+                   // await App.Client.StopStream();
                 }
             }
             else
