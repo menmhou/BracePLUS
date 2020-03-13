@@ -4,6 +4,11 @@
              xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
              x:Class="BracePLUS.Views.Interface">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem IconImageSource="SwapChartLogo.png"
+                     Clicked="ToolbarItem_Clicked"/>
+    </ContentPage.ToolbarItems>
+
     <ContentPage.Content>
         <StackLayout Padding="8, 8, 8, 8"
                      BackgroundColor="White">
@@ -30,12 +35,52 @@
                         Grid.Row="1"
                         Grid.Column="1" />
             </Grid>
+
+            <chart:SfChart Margin="10"
+                           VerticalOptions="FillAndExpand"
+                           HorizontalOptions="FillAndExpand"
+                           IsVisible="{Binding LineChartEnabled}">
+                <chart:SfChart.Series>
+                    <chart:SplineSeries ItemsSource="{Binding LineChartData}"
+                                        ListenPropertyChange="True"
+                                        Color="#167BEA"
+                                        XBindingPath="Name"
+                                        YBindingPath="Value"/>
+                </chart:SfChart.Series>
+
+                <chart:SfChart.PrimaryAxis>
+                    <chart:CategoryAxis/>
+                </chart:SfChart.PrimaryAxis>
+
+                <chart:SfChart.SecondaryAxis>
+                    <chart:NumericalAxis Maximum="180"
+                                         Minimum="110">
+                        <chart:NumericalAxis.StripLines>
+                            <chart:NumericalStripLine Start="110" 
+                                                      Width ="20" 
+                                                      Text="Low Pressure" 
+                                                      FillColor="#CAD6FE"/>
+                            <chart:NumericalStripLine Start="130" 
+                                                      Width ="30" 
+                                                      Text="Correct Pressure" 
+                                                      FillColor="#ACC0FE"/>
+                            <chart:NumericalStripLine Start="160" 
+                                                      Width ="20" 
+                                                      Text="High Pressure" 
+                                                      FillColor="#7F9DFD"/>
+
+                        </chart:NumericalAxis.StripLines>
+                    </chart:NumericalAxis>
+                </chart:SfChart.SecondaryAxis>
+            </chart:SfChart>
+            
             <chart:SfChart Margin="40, 10"
                            VerticalOptions="FillAndExpand"
-                           HorizontalOptions="FillAndExpand">
-
+                           HorizontalOptions="FillAndExpand"
+                           IsVisible="{Binding BarChartEnabled}">
+                
                 <chart:SfChart.Series>
-                    <chart:ColumnSeries ItemsSource="{Binding ChartData}"
+                    <chart:ColumnSeries ItemsSource="{Binding BarChartData}"
                                         ListenPropertyChange="True"
                                         Color="#167BEA"
                                         XBindingPath="Name"
@@ -44,15 +89,13 @@
                 </chart:SfChart.Series>
 
                 <chart:SfChart.PrimaryAxis>
-                    <chart:CategoryAxis IsVisible="True"/>
+                    <chart:CategoryAxis/>
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis IsVisible="True"
-                                         Maximum="180"
+                    <chart:NumericalAxis Maximum="180"
                                          Minimum="110">
                         <chart:NumericalAxis.StripLines>
-
                             <chart:NumericalStripLine Start="110" 
                                                       Width ="20" 
                                                       Text="Low Pressure" 

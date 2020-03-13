@@ -101,6 +101,7 @@ namespace BracePLUS.ViewModels
             foreach (DataObject obj in DataObjects)
             {
                 obj.DownloadLocalData(obj.Directory);
+                obj.Analyze();
 
                 if (obj.IsDownloaded)
                 {
@@ -140,6 +141,7 @@ namespace BracePLUS.ViewModels
             DataObjects = tempData;
 
             RefreshObjects();
+            ReorderDataObjects();
         }
 
         public void ClearObjects()
@@ -152,6 +154,50 @@ namespace BracePLUS.ViewModels
             foreach (var filename in files)
             {
                 File.Delete(filename);
+            }
+        }
+
+        private void ReorderDataObjects()
+        {
+            var data = DataObjects;
+            Debug.WriteLine("Data objects before reordering");
+            foreach (var obj in DataObjects)
+            {
+                Debug.WriteLine(obj.Filename);
+            }
+
+            for (int j = 0; j < data.Count; j++)
+            {
+                for (int i = 0; i < data.Count - 1; i++)
+                {
+                    // Get date of current and next data object
+                    int date1 = Int32.Parse(data[i].Filename.Remove(8));
+                    int date2 = Int32.Parse(data[i + 1].Filename.Remove(8));
+
+                    // If date2 > date1, respective dataobjects swap
+                    if (date2 > date1)
+                    {
+                        // Create temp data objects
+                        DataObject temp_i = data[i];
+                        DataObject temp_i1= data[i + 1];
+
+                        // Remove from collection
+                        data.Remove(temp_i);
+                        data.Remove(temp_i1);
+
+                        // Put back in opposite places
+                        data.Insert(i, temp_i1);
+                        data.Insert(i + 1, temp_i);
+                    }
+                }
+            }
+
+            DataObjects = data;
+
+            Debug.WriteLine("Data objects after reordering.");
+            foreach (var obj in DataObjects)
+            {
+                Debug.WriteLine(obj.Filename);
             }
         }
 

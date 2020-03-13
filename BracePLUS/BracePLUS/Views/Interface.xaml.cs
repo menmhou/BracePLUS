@@ -17,5 +17,10 @@ namespace BracePLUS.Views
             InitializeComponent();
             BindingContext = viewModel = new InterfaceViewModel();
         }
+
+        private void ToolbarItem_Clicked(object sender, EventArgs e)
+        {
+            viewModel.ChangeChartType();
+        }
     }
 }

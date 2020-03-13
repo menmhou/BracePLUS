@@ -76,19 +76,50 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-        public ObservableCollection<ChartDataModel> ChartData { get; set; }
+        #region BarChartEnabled
+        private bool _barChartEnabled;
+        public bool BarChartEnabled
+        {
+            get => _barChartEnabled;
+            set
+            {
+                _barChartEnabled = value;
+                RaisePropertyChanged(() => BarChartEnabled);
+            }
+        }
+        #endregion
+        #region LineChartEnabled
+        private bool _lineChartEnabled;
+        public bool LineChartEnabled
+        {
+            get => _lineChartEnabled;
+            set
+            {
+                _lineChartEnabled = value;
+                RaisePropertyChanged(() => LineChartEnabled);
+            }
+        }
+        #endregion
+        public ObservableCollection<ChartDataModel> BarChartData { get; set; }
+        public ObservableCollection<ChartDataModel> LineChartData { get; set; }
 
         // Commands
         public Command ConnectCommand { get; set; }
         public Command StreamCommand { get; set; }
         public Command SaveCommand { get; set; }
 
+        // Private Properties
+        double chartCounter = 0;
+
         public InterfaceViewModel()
         {
             App.Client = new BraceClient();
             App.Client.PressureUpdated += Client_OnPressureUpdated;
 
-            ChartData = new ObservableCollection<ChartDataModel>();
+            BarChartData = new ObservableCollection<ChartDataModel>();
+            LineChartData = new ObservableCollection<ChartDataModel>();
+            BarChartEnabled = true;
+            LineChartEnabled = false;
 
             ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
@@ -112,6 +143,9 @@ namespace BracePLUS.ViewModels
                     case DISCONNECTED:
                         ButtonColour = START_COLOUR;
                         ConnectText = "Connect";
+                        chartCounter = 0;
+                        BarChartData.Clear();
+                        LineChartData.Clear();
                         break;
 
                     case CONNECTING:
@@ -169,12 +203,19 @@ namespace BracePLUS.ViewModels
 #endif
         }
 
+        public void ChangeChartType()
+        {
+            LineChartEnabled = !LineChartEnabled;
+            BarChartEnabled = !BarChartEnabled;
+        }
+
         void Client_OnPressureUpdated(object sender, PressureUpdatedEventArgs e)
         {
             Device.BeginInvokeOnMainThread(() =>
             {
-                if (ChartData.Count > 0) ChartData.Clear();
-                ChartData.Add(new ChartDataModel("Pressure", e.Value));
+                if (BarChartData.Count > 0) BarChartData.Clear();
+                BarChartData.Add(new ChartDataModel("Pressure", e.Value));
+                LineChartData.Add(new ChartDataModel(chartCounter, e.Value));
 #if SIMULATION
 
 #else

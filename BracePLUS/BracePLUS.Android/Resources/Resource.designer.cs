@@ -17303,7 +17303,7 @@ namespace BracePLUS.Droid
 			public const int design_snackbar_background = 2131165314;
 			
 			// aapt resource value: 0x7F070083
-			public const int history_icon = 2131165315;
+			public const int FilesIcon = 2131165315;
 			
 			// aapt resource value: 0x7F070084
 			public const int ic_audiotrack_dark = 2131165316;
@@ -17981,13 +17981,16 @@ namespace BracePLUS.Droid
 			public const int StarUnfilled = 2131165540;
 			
 			// aapt resource value: 0x7F070165
-			public const int SyncIconWhite = 2131165541;
+			public const int SwapChartLogo = 2131165541;
 			
 			// aapt resource value: 0x7F070166
-			public const int tooltip_frame_dark = 2131165542;
+			public const int SyncIconWhite = 2131165542;
 			
 			// aapt resource value: 0x7F070167
-			public const int tooltip_frame_light = 2131165543;
+			public const int tooltip_frame_dark = 2131165543;
+			
+			// aapt resource value: 0x7F070168
+			public const int tooltip_frame_light = 2131165544;
 			
 			static Drawable()
 			{

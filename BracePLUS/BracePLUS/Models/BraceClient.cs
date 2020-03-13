@@ -160,6 +160,7 @@ namespace BracePLUS.Models
         #endregion
 
         #region Events
+
         protected virtual void OnDownloadFinished(FileDownloadedEventArgs e)
         {
             EventHandler<FileDownloadedEventArgs> handler = DownloadFinished;
