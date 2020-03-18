@@ -14,8 +14,8 @@
             </Style>
             <OnPlatform x:TypeArguments="x:String"
                         x:Key="RegularFontSize"
-                        iOS = "Medium"
-                        Android = "Small" />
+                        iOS = "16"
+                        Android = "14" />
                         
         </ResourceDictionary>
 

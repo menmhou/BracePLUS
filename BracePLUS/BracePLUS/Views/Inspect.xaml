@@ -116,24 +116,28 @@
                          HeightRequest="1"
                          WidthRequest="100"/>
                 
-                <!-- Chart Section -->
-                <chart:SfChart x:Name="chart"
-                               HeightRequest="300"
+                <!-- Max normal pressure chart Section -->
+
+                <chart:SfChart HeightRequest="300"
                                VerticalOptions="FillAndExpand"
                                HorizontalOptions="FillAndExpand">
-    
+
+                    <chart:SfChart.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ShowGraphCommand}"/>
+                    </chart:SfChart.GestureRecognizers>
+
                     <chart:SfChart.ChartBehaviors>
                         <chart:ChartZoomPanBehavior EnableSelectionZooming="True"
-                                                    EnableDoubleTap="True"
-                                                    MaximumZoomLevel="25"
-                                                    ZoomMode="X"/>
+                                                EnableDoubleTap="True"
+                                                MaximumZoomLevel="25"
+                                                ZoomMode="X"/>
                     </chart:SfChart.ChartBehaviors>
 
                     <chart:SfChart.Series>
                         <chart:SplineSeries ItemsSource="{Binding ChartData}"
-                                            Color="Red"
-                                            XBindingPath="Name"
-                                            YBindingPath="Value" />
+                                        Color="Red"
+                                        XBindingPath="Name"
+                                        YBindingPath="Value" />
                     </chart:SfChart.Series>
 
                     <chart:SfChart.PrimaryAxis>
@@ -141,11 +145,43 @@
                     </chart:SfChart.PrimaryAxis>
 
                     <chart:SfChart.SecondaryAxis>
-                        <chart:NumericalAxis Minimum="110"
-                                             Maximum="160"/>
+                        <chart:NumericalAxis Minimum="240"
+                                            Maximum="300"/>
                     </chart:SfChart.SecondaryAxis>
                 </chart:SfChart>
+
+                <BoxView BackgroundColor="LightGray"
+                         Margin="0, 12"
+                         HeightRequest="1"
+                         WidthRequest="100"/>
                 
+                <!-- All pressure chart section -->
+
+                <chart:SfChart VerticalOptions="FillAndExpand"
+                               HorizontalOptions="FillAndExpand"
+                               HeightRequest="300"
+>
+
+                    <chart:SfChart.Series>
+                        <chart:ColumnSeries ItemsSource="{Binding AllNodesData}"
+                                            XBindingPath="Name"
+                                            YBindingPath="Value" 
+                                            ListenPropertyChange="True"/>
+                    </chart:SfChart.Series>
+
+                    <chart:SfChart.PrimaryAxis>
+                        <chart:CategoryAxis />
+                    </chart:SfChart.PrimaryAxis>
+
+                    <chart:SfChart.SecondaryAxis>
+                        <chart:NumericalAxis Minimum="240"
+                                            Maximum="300"/>
+                    </chart:SfChart.SecondaryAxis>
+
+                </chart:SfChart>
+                <Slider Maximum="{Binding Packets}"
+                        Value="{Binding SliderValue}"/>
+
                 <!-- Debug Section -->
                 <BoxView BackgroundColor="LightGray"
                          Margin="0, 12"

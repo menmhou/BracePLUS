@@ -83,8 +83,31 @@ namespace BracePLUS.Views
         }
 
         #endregion
-        #region Chart Section 
+        #region Charts Section 
         public ObservableCollection<ChartDataModel> ChartData { get; set; }
+        public ObservableCollection<ChartDataModel> AllNodesData { get; set; }
+        private double _sliderValue;
+        public double SliderValue
+        {
+            get => _sliderValue;
+            set
+            {
+                _sliderValue = value;
+                RaisePropertyChanged(() => SliderValue);
+                SliderValueUpdated(value);
+            }
+        }
+        private int _packets = 30;
+        public int Packets
+        {
+            get => _packets;
+            set
+            {
+                _packets = value;
+                Debug.WriteLine("Packets: " +Packets);
+                RaisePropertyChanged(() => Packets);
+            }
+        }
         #endregion
         #region Debug Section
         public string DataString
@@ -97,12 +120,14 @@ namespace BracePLUS.Views
             get => DataObj.Directory;
             set { }
         }
-        #endregion       
-        
+        #endregion
+        #region Commands
         // Public Interface Commands
         public Command ShareCommand { get; set; }
         public Command DeleteCommand { get; set; }
         public Command ShowDataCommand { get; set; }
+        public Command ShowGraphCommand { get; set; }
+        #endregion
 
         private readonly MessageHandler handler;
 
@@ -112,13 +137,14 @@ namespace BracePLUS.Views
             ShareCommand = new Command(async () => await ExecuteShareCommand());
             DeleteCommand = new Command(async () => await ExecuteDeleteCommand());
             ShowDataCommand = new Command(() => ExecuteShowDataCommand());
+            ShowGraphCommand = new Command(() => ExecuteShowGraphCommand());
 
             DataObj = new DataObject();
             ChartData = new ObservableCollection<ChartDataModel>();
-
-
+            AllNodesData = new ObservableCollection<ChartDataModel>();
         }
 
+        #region Events
         protected virtual void OnRemoveObject(RemoveObjectEventArgs e)
         {
             EventHandler<RemoveObjectEventArgs> handler = RemoveObject;
@@ -130,32 +156,44 @@ namespace BracePLUS.Views
         public EventHandler<RemoveObjectEventArgs> RemoveObject;
         protected virtual void OnLocalFileListUpdated(EventArgs e)
         {
-            EventHandler handler = LocalFileListUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            LocalFileListUpdated?.Invoke(this, e);
         }
         public event EventHandler LocalFileListUpdated;
+        #endregion
 
         public void InitDataObject()
         {
             if (!DataObj.IsDownloaded) return;
+            Packets = (DataObj.Data.Length - 6) / 128;
             // Add chart data
             try
             {
-                int packets = (DataObj.Data.Length - 6) / 128;
-                var normals = handler.ExtractNormals(DataObj.Data, packets, 11);
+                var normals = handler.ExtractNormals(DataObj.Data, Packets, 11);
+                var times = handler.ExtractTimes(DataObj.StartTime, DataObj.Data, Packets);
 
                 // If less than 200 data points avaible, use total number of points
                 for (int i = 0; i < (normals.Count > 200 ? 200 : normals.Count); i++)
                 {
-                    ChartData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                    //Debug.WriteLine(times[i].ToString());
+                    ChartData.Add(new ChartDataModel(times[i].ToShortTimeString(), normals[i]));
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Chart initialisation failed with exception: " + ex.Message);
+                Debug.WriteLine("Max normals initialisation failed with exception: " + ex.Message);
+            }
+
+            try
+            {
+                var nodes = handler.ExtractNodes(DataObj.Data, 0);
+                for (int i = 0; i < 16; i++)
+                {
+                    AllNodesData.Add(new ChartDataModel((i+1).ToString(), nodes[i]));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("All nodes chart initialisation failed with exception: " + ex.Message);
             }
         }
 
@@ -192,12 +230,36 @@ namespace BracePLUS.Views
             }
         }
 
+        private async void ExecuteShowGraphCommand()
+        {
+            Debug.WriteLine("Graph tapped.");
+
+            await Nav.PushAsync(new GraphView
+            {
+                BindingContext = DataObj
+            });
+        }
+
         private async void ExecuteShowDataCommand()
         {
             await Nav.PushAsync(new RawDataView
             {
                 BindingContext = DataObj
             });
+        }
+
+        private void SliderValueUpdated(double value)
+        {
+            int val = (int)value;
+
+            var nodes = handler.ExtractNodes(DataObj.Data, val-1);
+            for (int i = 0; i < 16; i++)
+            {
+                AllNodesData[i].Name = (i + 1).ToString();
+                AllNodesData[i].Value = nodes[i];
+
+                //Debug.WriteLine(AllNodesData[i]);
+            }
         }
     }
 }

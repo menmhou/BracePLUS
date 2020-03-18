@@ -107,6 +107,7 @@ namespace BracePLUS.ViewModels
         public Command ConnectCommand { get; set; }
         public Command StreamCommand { get; set; }
         public Command SaveCommand { get; set; }
+        public Command SwapChartTypeCommand { get; set; }
 
         // Private Properties
         double chartCounter = 0;
@@ -115,6 +116,8 @@ namespace BracePLUS.ViewModels
         {
             App.Client = new BraceClient();
             App.Client.PressureUpdated += Client_OnPressureUpdated;
+            App.Client.StatusUpdated += Client_OnStatusUpdated;
+            App.Client.UIUpdated += Client_OnUIUpdated;
 
             BarChartData = new ObservableCollection<ChartDataModel>();
             LineChartData = new ObservableCollection<ChartDataModel>();
@@ -124,62 +127,13 @@ namespace BracePLUS.ViewModels
             ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SaveCommand = new Command(async () => await ExecuteSaveCommand());
+            SwapChartTypeCommand = new Command(() => ExecuteSwapChartsCommand());
 
             ConnectText = "Connect";
             StreamText = "Stream";
             SaveText = "Log Data";
 
             ButtonColour = START_COLOUR;
-
-            MessagingCenter.Subscribe<BraceClient, int>(this, "UIEvent", (sender, arg) =>
-            {
-                switch (arg)
-                {
-                    case CONNECTED:
-                        ButtonColour = STOP_COLOUR;
-                        ConnectText = "Disconnect";
-                        break;
-
-                    case DISCONNECTED:
-                        ButtonColour = START_COLOUR;
-                        ConnectText = "Connect";
-                        chartCounter = 0;
-                        BarChartData.Clear();
-                        LineChartData.Clear();
-                        break;
-
-                    case CONNECTING:
-                        ConnectText = "Connecting...";
-                        ButtonColour = WAIT_COLOUR;
-                        Status = "Initialising sytem...";
-                        break;
-
-                    case SYS_INIT:
-                        ButtonColour = WAIT_COLOUR;
-                        Status = "Initialising sytem...";
-                        break;
-
-                    case SYS_STREAM_START:
-                        StreamText = "Stop stream";
-                        break;
-
-                    case SYS_STREAM_FINISH:
-                        StreamText = "Stream";
-                        break;
-
-                    case LOGGING_START:
-                        SaveText = "Stop logging";
-                        break;
-
-                    case LOGGING_FINISH:
-                        SaveText = "Log Data";
-                        break;
-                }
-            });
-            MessagingCenter.Subscribe<BraceClient, string>(this, "StatusMessage", (sender, arg) =>
-            {
-                Status = arg;
-            });
 
 #if SIMULATION
             // Add random values to simulate a connected device
@@ -203,10 +157,55 @@ namespace BracePLUS.ViewModels
 #endif
         }
 
-        public void ChangeChartType()
+        void Client_OnStatusUpdated(object sender, StatusEventArgs e)
         {
-            LineChartEnabled = !LineChartEnabled;
-            BarChartEnabled = !BarChartEnabled;
+            Status = e.Status;
+        }
+
+        void Client_OnUIUpdated(object sender, UIUpdatedEventArgs e)
+        {
+            switch (e.Status)
+            {
+                case CONNECTED:
+                    ButtonColour = STOP_COLOUR;
+                    ConnectText = "Disconnect";
+                    break;
+
+                case DISCONNECTED:
+                    ButtonColour = START_COLOUR;
+                    ConnectText = "Connect";
+                    chartCounter = 0;
+                    BarChartData.Clear();
+                    LineChartData.Clear();
+                    break;
+
+                case CONNECTING:
+                    ConnectText = "Connecting...";
+                    ButtonColour = WAIT_COLOUR;
+                    Status = "Initialising sytem...";
+                    break;
+
+                case SYS_INIT:
+                    ButtonColour = WAIT_COLOUR;
+                    Status = "Initialising sytem...";
+                    break;
+
+                case SYS_STREAM_START:
+                    StreamText = "Stop stream";
+                    break;
+
+                case SYS_STREAM_FINISH:
+                    StreamText = "Stream";
+                    break;
+
+                case LOGGING_START:
+                    SaveText = "Stop logging";
+                    break;
+
+                case LOGGING_FINISH:
+                    SaveText = "Log Data";
+                    break;
+            }
         }
 
         void Client_OnPressureUpdated(object sender, PressureUpdatedEventArgs e)
@@ -216,6 +215,7 @@ namespace BracePLUS.ViewModels
                 if (BarChartData.Count > 0) BarChartData.Clear();
                 BarChartData.Add(new ChartDataModel("Pressure", e.Value));
                 LineChartData.Add(new ChartDataModel(chartCounter, e.Value));
+                chartCounter += 1;
 #if SIMULATION
 
 #else
@@ -277,6 +277,12 @@ namespace BracePLUS.ViewModels
             {
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to log data.", "OK");
             }
+        }
+
+        public void ExecuteSwapChartsCommand()
+        {
+            LineChartEnabled = !LineChartEnabled;
+            BarChartEnabled = !BarChartEnabled;
         }
     }
 }

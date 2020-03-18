@@ -6,9 +6,9 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem IconImageSource="SyncIconWhite.png"
-                     Clicked="OnPhoneSyncButtonClicked"/>
+                     Command="{Binding GetFilenamesCommand}"/>
         <ToolbarItem Text="Clear"
-                     Clicked="OnClearButtonAdded" />
+                     Command="{Binding ClearListCommand}" />
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
@@ -80,8 +80,8 @@
                                         </chart:SfChart.PrimaryAxis>
 
                                         <chart:SfChart.SecondaryAxis>
-                                            <chart:NumericalAxis Minimum="110"
-                                                                 Maximum="180"/>
+                                            <chart:NumericalAxis Minimum="290"
+                                                                 Maximum="260"/>
                                         </chart:SfChart.SecondaryAxis>
                                     </chart:SfChart>
                                     

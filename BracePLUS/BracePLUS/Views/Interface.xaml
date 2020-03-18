@@ -6,7 +6,7 @@
 
     <ContentPage.ToolbarItems>
         <ToolbarItem IconImageSource="SwapChartLogo.png"
-                     Clicked="ToolbarItem_Clicked"/>
+                     Command="{Binding SwapChartTypeCommand}"/>
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
@@ -53,18 +53,18 @@
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis Maximum="180"
-                                         Minimum="110">
+                    <chart:NumericalAxis Maximum="310"
+                                         Minimum="240">
                         <chart:NumericalAxis.StripLines>
-                            <chart:NumericalStripLine Start="110" 
+                            <chart:NumericalStripLine Start="240" 
                                                       Width ="20" 
                                                       Text="Low Pressure" 
                                                       FillColor="#CAD6FE"/>
-                            <chart:NumericalStripLine Start="130" 
+                            <chart:NumericalStripLine Start="260" 
                                                       Width ="30" 
                                                       Text="Correct Pressure" 
                                                       FillColor="#ACC0FE"/>
-                            <chart:NumericalStripLine Start="160" 
+                            <chart:NumericalStripLine Start="290" 
                                                       Width ="20" 
                                                       Text="High Pressure" 
                                                       FillColor="#7F9DFD"/>
@@ -93,18 +93,18 @@
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis Maximum="180"
-                                         Minimum="110">
+                    <chart:NumericalAxis Maximum="310"
+                                         Minimum="240">
                         <chart:NumericalAxis.StripLines>
-                            <chart:NumericalStripLine Start="110" 
+                            <chart:NumericalStripLine Start="240" 
                                                       Width ="20" 
                                                       Text="Low Pressure" 
                                                       FillColor="#CAD6FE"/>
-                            <chart:NumericalStripLine Start="130" 
+                            <chart:NumericalStripLine Start="260" 
                                                       Width ="30" 
                                                       Text="Correct Pressure" 
                                                       FillColor="#ACC0FE"/>
-                            <chart:NumericalStripLine Start="160" 
+                            <chart:NumericalStripLine Start="290" 
                                                       Width ="20" 
                                                       Text="High Pressure" 
                                                       FillColor="#7F9DFD"/>
@@ -113,11 +113,12 @@
                     </chart:NumericalAxis>
                 </chart:SfChart.SecondaryAxis>
             </chart:SfChart>
-            
+
             <Label Text="{Binding Status}"
-                   FontSize="Large"
-                   MaxLines="1"
-                   HorizontalTextAlignment="End"/>
+                       FontSize="Large"
+                       MaxLines="1"
+                       HorizontalTextAlignment="End"/>
+
         </StackLayout>
         
     </ContentPage.Content>

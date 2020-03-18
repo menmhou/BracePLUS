@@ -358,6 +358,49 @@ namespace BracePLUS.Extensions
             return normals;
         }
 
+        public double[] ExtractNodes(byte[] data, int index)
+        {
+            double[] values = new double[16];
+
+            // First normal data byte is 11th
+            for (int i = 0; i < 16; i++)
+            {
+                var Zmsb = data[11 + (index * 128) + (i * 6)] << 8;
+                var Zlsb = data[12 + (index * 128) + (i * 6)];
+                values[i] = (Zmsb + Zlsb) * 0.02636;
+                //Debug.WriteLine(values[i]);
+            }
+
+            return values;
+        }
+
+        public List<DateTime> ExtractTimes(DateTime start, byte[] data, int packets)
+        {
+            List<DateTime> times = new List<DateTime>();
+            times.Add(start);
+
+            DateTime t_old = start;
+
+            for (int i = 1; i < packets-1; i++)
+            {
+                // Get time between adjacent packets
+                byte t3 = data[i * 128 + 6];
+                byte t2 = data[i * 128 + 5];
+                byte t1 = data[i * 128 + 4];
+                byte t0 = data[i * 128 + 3];
+                int millis = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
+
+                // Create new datetime with added difference in milliseconds
+                DateTime t_new = t_old.AddMilliseconds(millis);
+                times.Add(t_new);
+                
+                // old time reference for nex
+                t_old = t_new;
+            }
+
+            return times;
+        }
+
         public string FormattedFileSize(long len)
         {
             string filesize;

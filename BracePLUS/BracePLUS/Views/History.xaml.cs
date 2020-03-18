@@ -52,19 +52,5 @@ namespace BracePLUS.Views
             
             listView.SelectedItem = null;
         }
-
-        private async void OnClearButtonAdded(object sender, EventArgs e)
-        {
-            // Check with user to clear all files
-            var clear = await Application.Current.MainPage.DisplayAlert("Clear files?", "Clear all files from device memory. Continue?", "Yes", "Cancel");
-
-            if (clear) viewModel.ClearObjects();
-        }
-
-        private void OnPhoneSyncButtonClicked(object sender, EventArgs e)
-        {
-            // Pull file names from phone
-            viewModel.GetMobileFileNames();
-        }
     }
 }

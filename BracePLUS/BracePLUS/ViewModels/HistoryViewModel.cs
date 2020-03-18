@@ -12,6 +12,7 @@ using MvvmCross.ViewModels;
 using System.Collections.Generic;
 using System.Text;
 using BracePLUS.Events;
+using System.Threading.Tasks;
 
 namespace BracePLUS.ViewModels
 {
@@ -44,6 +45,10 @@ namespace BracePLUS.ViewModels
         }
         #endregion
 
+        // Public Commands
+        public Command ClearListCommand { get; set; }
+        public Command GetFilenamesCommand { get; set; }
+
         // Private Properties
         private readonly MessageHandler handler;
         private readonly List<string> Files;
@@ -55,6 +60,8 @@ namespace BracePLUS.ViewModels
 
             DataObjects = new ObservableCollection<DataObject>();
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
+            ClearListCommand = new Command(async () => await ExecuteClearListCommand());
+            GetFilenamesCommand = new Command(async () => await ExecuteGetFilenamesCommand());
 
             // Events
             App.Client.DownloadFinished += Client_OnDownloadFinished;
@@ -94,6 +101,40 @@ namespace BracePLUS.ViewModels
             IsRefreshing = false;
         }
 
+        public async Task ExecuteClearListCommand()
+        {
+            // Check with user to clear all files
+            var clear = await Application.Current.MainPage.DisplayAlert("Clear files?", "Clear all files from device memory. Continue?", "Yes", "Cancel");
+
+            if (clear) 
+            {
+                // Clear files from local list
+                DataObjects.Clear();
+
+                // Clear files from memory
+                var files = Directory.EnumerateFiles(App.FolderPath, "*");
+                foreach (var filename in files)
+                {
+                    File.Delete(filename);
+                }
+            }
+        }
+
+        public async Task ExecuteGetFilenamesCommand()
+        {
+            // When list is ready, client will send a list of strings containing filenames using 
+            // "MobileFileListUpdated" identifier with MessagingCentre.
+            if (App.isConnected)
+            {
+                await App.Client.GetMobileFiles();
+            }
+            else
+            {
+                await Application.Current.MainPage.DisplayAlert
+                    ("Not Connected", "Please connect to Brace+ to sync files.", "OK");
+            }
+        }
+
         public void RefreshObjects()
         {
             App.GlobalMax = 0;
@@ -126,17 +167,26 @@ namespace BracePLUS.ViewModels
                 // Get info about file
                 FileInfo fi = new FileInfo(filename);
 
-                var temp = File.ReadAllBytes(filename);
+                var data = File.ReadAllBytes(filename);
 
-                // Create new data object
-                tempData.Add(new DataObject
+                DataObject dataObject = new DataObject();
+                dataObject.Size = fi.Length;
+                dataObject.Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm);
+                dataObject.Filename = fi.Name;
+                dataObject.Directory = filename;
+                dataObject.Location = (data[0] == 0x0A) ? "Local" : "Mobile";
+                dataObject.Data = data;
+
+                if (data.Length > 6)
                 {
-                    Size = fi.Length,
-                    Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm),
-                    Filename = fi.Name,
-                    Directory = filename,
-                    Location = (temp[0] == 0x0A) ? "Local" : "Mobile"
-                });
+                    dataObject.IsDownloaded = true;
+                }
+                else
+                {
+                    dataObject.IsDownloaded = false;
+                }
+         
+                tempData.Add(dataObject);
             }
             DataObjects = tempData;
 
@@ -144,33 +194,15 @@ namespace BracePLUS.ViewModels
             ReorderDataObjects();
         }
 
-        public void ClearObjects()
-        {
-            // Clear files from local list
-            DataObjects.Clear();
-
-            // Clear files from memory
-            var files = Directory.EnumerateFiles(App.FolderPath, "*");
-            foreach (var filename in files)
-            {
-                File.Delete(filename);
-            }
-        }
-
         private void ReorderDataObjects()
         {
             var data = DataObjects;
-            Debug.WriteLine("Data objects before reordering");
-            foreach (var obj in DataObjects)
-            {
-                Debug.WriteLine(obj.Filename);
-            }
 
             for (int j = 0; j < data.Count; j++)
             {
                 for (int i = 0; i < data.Count - 1; i++)
                 {
-                    // Get date of current and next data object
+                    // Get date of current and next object
                     int date1 = Int32.Parse(data[i].Filename.Remove(8));
                     int date2 = Int32.Parse(data[i + 1].Filename.Remove(8));
 
@@ -193,28 +225,6 @@ namespace BracePLUS.ViewModels
             }
 
             DataObjects = data;
-
-            Debug.WriteLine("Data objects after reordering.");
-            foreach (var obj in DataObjects)
-            {
-                Debug.WriteLine(obj.Filename);
-            }
-        }
-
-        // Request list of filenames from device.
-        public async void GetMobileFileNames()
-        {
-            // When list is ready, client will send a list of strings containing filenames using 
-            // "MobileFileListUpdated" identifier with MessagingCentre.
-            if (App.isConnected)
-            {
-                await App.Client.GetMobileFiles();
-            }
-            else
-            {
-                await Application.Current.MainPage.DisplayAlert
-                    ("Not Connected", "Please connect to Brace+ to sync files.", "OK");
-            }
         }
 
         // Load filenames pulled from mobile into locally stored empty files.

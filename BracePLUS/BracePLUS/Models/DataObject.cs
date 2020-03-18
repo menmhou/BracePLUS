@@ -15,7 +15,7 @@ namespace BracePLUS.Models
     {
         private readonly MessageHandler handler;
 
-        // File Properties
+        #region File Properties
         public bool IsDownloaded { get; set; }
         public DateTime Date { get; set; }
         public string Directory { get; set; }
@@ -23,8 +23,8 @@ namespace BracePLUS.Models
         public string Location { get; set; }
         public long Size { get; set; }
         public double Duration { get; set; }
-
-        // View Properties
+        #endregion
+        #region View Properties
         public string Text
         {
             get => BitConverter.ToString(Data);
@@ -45,14 +45,6 @@ namespace BracePLUS.Models
             get => string.Format($"{Date.ToShortDateString()}, {Date.ToShortTimeString()}");
             set { }
         }
-        public string ChartEnabled { get; set; }
-        public string ProgressBarEnabled { get; set; }
-        public float DownloadProgress { get; set; }
-
-        // Data Properties
-        public double AveragePressure { get; set; }
-        public double MaxPressure { get; set; }
-        public byte[] Data { get; set; }
         public ObservableCollection<ChartDataModel> NormalData { get; set; }
         public ObservableCollection<ChartDataModel> PreviewNormalData { get; set; }
         public string Detail
@@ -60,6 +52,16 @@ namespace BracePLUS.Models
             get => string.Format("{0}, {1:0.00}s", FormattedSize, Duration);
             set { }
         }
+        public string ChartEnabled { get; set; }
+        public string ProgressBarEnabled { get; set; }
+        public float DownloadProgress { get; set; }
+        #endregion
+        #region Data Properties
+        public double AveragePressure { get; set; }
+        public double MaxPressure { get; set; }
+        public byte[] Data { get; set; }
+        public DateTime StartTime { get; set; }
+        #endregion
 
         // Commands
         public Command ShareClicked { get; set; }
@@ -134,7 +136,6 @@ namespace BracePLUS.Models
             {
                 if (Data.Length > 6)
                 {
-                    Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
                     IsDownloaded = true;
                     return;
@@ -142,7 +143,7 @@ namespace BracePLUS.Models
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex);
+                Debug.WriteLine("Check for download failed with exception: " + ex.Message);
             }
             
             // Download data
@@ -174,6 +175,10 @@ namespace BracePLUS.Models
                     Duration = GetDuration();
                     AveragePressure = GetAverage(normals);
                     MaxPressure = GetMaximum(normals);
+
+                    var t_finish = handler.DecodeFilename(Filename);
+                    DateTime t_start = t_finish.AddSeconds(Duration * -1.0);
+                    StartTime = new DateTime(t_start.Year, t_start.Month, t_start.Day, t_start.Hour, t_start.Minute, t_start.Second);
                 }
                 catch (Exception ex)
                 {

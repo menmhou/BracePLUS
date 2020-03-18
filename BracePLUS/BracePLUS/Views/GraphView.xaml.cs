@@ -1,12 +1,4 @@
 ﻿using BracePLUS.Models;
-using BracePLUS.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
@@ -22,7 +14,6 @@ namespace BracePLUS.Views
         {
             InitializeComponent();
             dataObject = new DataObject();
-
         }
 
         protected override void OnAppearing()

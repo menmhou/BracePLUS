@@ -1,22 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using BracePLUS.Extensions;
-using static BracePLUS.Extensions.Constants;
-using BracePLUS.Views;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
 using Plugin.BLE.Abstractions.Exceptions;
-using Plugin.BLE.Abstractions.Utils;
-using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
 using BracePLUS.Events;
+
+using static BracePLUS.Extensions.Constants;
 
 namespace BracePLUS.Models
 {
@@ -160,7 +155,6 @@ namespace BracePLUS.Models
         #endregion
 
         #region Events
-
         protected virtual void OnDownloadFinished(FileDownloadedEventArgs e)
         {
             EventHandler<FileDownloadedEventArgs> handler = DownloadFinished;
@@ -170,7 +164,6 @@ namespace BracePLUS.Models
             }
         }
         public event EventHandler<FileDownloadedEventArgs> DownloadFinished;
-
         protected virtual void OnFileSyncFinished(MobileSyncFinishedEventArgs e)
         {
             EventHandler<MobileSyncFinishedEventArgs> handler = FileSyncFinished;
@@ -180,7 +173,6 @@ namespace BracePLUS.Models
             }
         }
         public event EventHandler<MobileSyncFinishedEventArgs> FileSyncFinished;
-
         protected virtual void OnLocalFileListUpdated(EventArgs e)
         {
             EventHandler handler = LocalFileListUpdated;
@@ -190,7 +182,6 @@ namespace BracePLUS.Models
             }
         }
         public event EventHandler LocalFileListUpdated;
-
         protected virtual void OnPressureUpdated(PressureUpdatedEventArgs e)
         {
             EventHandler<PressureUpdatedEventArgs> handler = PressureUpdated;
@@ -200,7 +191,6 @@ namespace BracePLUS.Models
             }
         }
         public EventHandler<PressureUpdatedEventArgs> PressureUpdated;
-
         protected virtual void OnDownloadProgress(DownloadProgressEventArgs e)
         {
             EventHandler<DownloadProgressEventArgs> handler = DownloadProgress;
@@ -210,6 +200,25 @@ namespace BracePLUS.Models
             }
         }
         public EventHandler<DownloadProgressEventArgs> DownloadProgress;
+        protected virtual void OnStatusUpdate(StatusEventArgs e)
+        {
+            EventHandler<StatusEventArgs> handler = StatusUpdated;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+
+        }
+        public EventHandler<StatusEventArgs> StatusUpdated;
+        protected virtual void OnUIUpdated(UIUpdatedEventArgs e)
+        {
+            EventHandler<UIUpdatedEventArgs> handler = UIUpdated;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public EventHandler<UIUpdatedEventArgs> UIUpdated;
         #endregion
 
         #region Model Client Logic Methods
@@ -383,7 +392,7 @@ namespace BracePLUS.Models
         }
         #endregion
 
-        #region BLE Functions
+        #region Backend Functions
         private void COMMS_MENU(ICharacteristic c)
         {
             c.ValueUpdated += async (o, args) =>
@@ -424,7 +433,6 @@ namespace BracePLUS.Models
                 }
             };
         }
-
         private void HANDLE_INIT(byte[] args)
         {
             var input = Encoding.ASCII.GetString(args);
@@ -595,7 +603,6 @@ namespace BracePLUS.Models
             // Return empty array of same size
             return new byte[buf_len];
         }
-
         private void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
         {
             // Create file instance
@@ -641,7 +648,6 @@ namespace BracePLUS.Models
 
             DATA_IN.Clear();
         }
-
         private void FILE_DOWNLOAD_FINISHED(byte[] bytes)
         {
             // Write header for mobile file
@@ -664,15 +670,20 @@ namespace BracePLUS.Models
 
         public void EVENT(int e, string msg = "")
         {
-            MessagingCenter.Send(this, "UIEvent", e);
+            UIUpdatedEventArgs a = new UIUpdatedEventArgs();
+            a.Status = e;
+            OnUIUpdated(a);
 
             if (!string.IsNullOrWhiteSpace(msg))
             {
-                MessagingCenter.Send(this, "StatusMessage", msg);
+                StatusEventArgs args = new StatusEventArgs();
+                args.Status = msg;
+                OnStatusUpdate(args);
+
                 Write(msg, _event);
             }
 
-            STATUS = e;
+            STATUS = e;           
         }
 
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
@@ -714,7 +725,6 @@ namespace BracePLUS.Models
                 Debug.WriteLine($"Characteristic {c.Uuid} stop updates failed with exception: {ex.Message}");
             }
         }
-        #endregion
 
         public void Write(string text, Color color)
         {
@@ -737,5 +747,6 @@ namespace BracePLUS.Models
                 }
             });
         }
+        #endregion
     }
 }
