@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Application xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:sv="clr-namespace:AiForms.Renderers;assembly=SettingsView"
              x:Class="BracePLUS.App">
     
     <Application.Resources>
@@ -54,20 +53,6 @@
             <Setter Property="VerticalOptions" Value="StartAndExpand" />
         </Style>
 
-        <Style TargetType="sv:SettingsView">
-            <Setter Property="SeparatorColor" Value="{StaticResource DisabledColor}" />
-            <Setter Property="BackgroundColor" Value="{StaticResource ListBackgroundColor}" />
-            <Setter Property="HeaderBackgroundColor" Value="{StaticResource ListBackgroundColor }" />
-            <Setter Property="CellBackgroundColor" Value="{StaticResource AppBackgroundColor }" />
-            <Setter Property="CellTitleFontSize" Value="{StaticResource BaseFontSize++}" />
-            <Setter Property="CellValueTextFontSize" Value="{StaticResource BaseFontSize+}" />
-            <Setter Property="CellDescriptionFontSize" Value="{StaticResource BaseFontSize-}" />
-            <Setter Property="CellAccentColor" Value="{StaticResource AccentColor}" />
-            <Setter Property="SelectedColor" Value="#CECECE" />
-            <Setter Property="HeaderTextColor" Value="{StaticResource TitleTextColor}" />
-            <Setter Property="FooterFontSize" Value="{StaticResource BaseFontSize-}" />
-            <Setter Property="FooterTextColor" Value="{StaticResource PaleTextColor}" />
-        </Style>
 
     </Application.Resources>
 </Application>

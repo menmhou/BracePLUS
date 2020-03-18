@@ -1,7 +1,8 @@
 ﻿using System;
+using Xamarin.Forms;
 using System.Drawing;
 
-namespace BracePLUS.Models
+namespace BracePLUS.Extensions
 {
     public static class Constants
     {
@@ -33,14 +34,32 @@ namespace BracePLUS.Models
 
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
 
-        public const int CLIENT_CONNECT = 0;
-        public const int SYS_INIT = 1;
-        public const int SD_TEST = 2;
-        public const int LOG_TEST = 3;
-        public const int SYS_STREAM = 4;
-        public const int GET_FILES = 5;
-        public const int LOGGING = 6;
-        public const int DOWNLOAD = 7;
-        public const int IDLE = -1;
+        // UI EVENTS
+        public const int CONNECTED = 0;
+        public const int DISCONNECTED = 1;
+        public const int CONNECTING = 2;
+        public const int SCAN_START = 3;
+        public const int SCAN_FINISH = 4;
+        public const int SYS_INIT = 5;
+        public const int LOGGING_START = 6;
+        public const int LOGGING_FINISH = 7;
+        public const int SYS_STREAM_START = 8;
+        public const int SYS_STREAM_FINISH = 9;
+
+        // STATUS MESSAGES
+        public const int DEVICE_FOUND = 10;
+        public const int DOWNLOAD_START = 11;
+        public const int DOWNLOAD_FINISH = 12;
+        public const int IDLE = 13;
+        public const int SYNC_START = 14;
+        public const int SYNC_FINISH = 15;
+        public const int FILE_WRITTEN = 16;
+
+        public const int FILE_FORMAT_MMDDHHmm = 0;
+        public const int FILE_FORMAT_UTC = 1;
+
+        public static Xamarin.Forms.Color START_COLOUR = Xamarin.Forms.Color.FromHex("#0078E5");
+        public static Xamarin.Forms.Color WAIT_COLOUR = Xamarin.Forms.Color.FromHex("#005096");
+        public static Xamarin.Forms.Color STOP_COLOUR = Xamarin.Forms.Color.FromHex("#FE0000");
     }
 }

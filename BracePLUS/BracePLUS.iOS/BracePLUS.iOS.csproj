@@ -132,6 +132,9 @@
     <PackageReference Include="AiForms.SettingsView">
       <Version>0.5.2</Version>
     </PackageReference>
+    <PackageReference Include="MvvmCross.Forms">
+      <Version>6.4.2</Version>
+    </PackageReference>
     <PackageReference Include="Plugin.BLE">
       <Version>2.1.1</Version>
     </PackageReference>

@@ -30,7 +30,8 @@
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis Minimum="110">
+                    <chart:NumericalAxis Minimum="110"
+                                         Maximum="180">
                         <chart:NumericalAxis.StripLines>
                             <chart:NumericalStripLine Start="110" 
                                                       Width ="20" 

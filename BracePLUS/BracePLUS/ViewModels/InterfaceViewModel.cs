@@ -5,54 +5,181 @@ using System.Threading.Tasks;
 using Xamarin.Forms;
 
 using BracePLUS.Models;
-
-using System.Diagnostics;
-using Syncfusion.SfChart.XForms;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System;
+using MvvmCross.ViewModels;
+using static BracePLUS.Extensions.Constants;
+using System.Diagnostics;
+using BracePLUS.Events;
 
 namespace BracePLUS.ViewModels
 {
-    public class InterfaceViewModel : BaseViewModel
+    public class InterfaceViewModel : MvxViewModel
     {
         // Public Properties
-        public string ConnectText { get; set; }
-        public string StreamButtonText { get; set; }
-        public string SaveButtonText { get; set; }
-        public string Status { get; set; }
-        public ObservableCollection<ChartDataModel> ChartData { get; set; }
+        #region ConnecText
+        private string _connectText;
+        public string ConnectText
+        {
+            get => _connectText;
+            set
+            {
+                _connectText = value;
+                RaisePropertyChanged(() => ConnectText);
+            }
+        }
+        #endregion
+        #region StreamText
+        private string _streamText;
+        public string StreamText 
+        {
+            get => _streamText;
+            set
+            {
+                _streamText = value;
+                RaisePropertyChanged(() => StreamText);
+            }
+        }
+        #endregion
+        #region SaveText
+        private string _saveText;
+        public string SaveText
+        {
+            get => _saveText;
+            set
+            {
+                _saveText = value;
+                RaisePropertyChanged(() => SaveText);
+            }
+        }
+        #endregion
+        #region Status
+        private string _status;
+        public string Status 
+        {
+            get => _status;
+            set
+            {
+                _status = value;
+                RaisePropertyChanged(() => Status);
+            }
+        }
+        #endregion
+        #region ButtonColour
+        private Color _buttonColour;
+        public Color ButtonColour
+        {
+            get => _buttonColour;
+            set
+            {
+                _buttonColour = value;
+                RaisePropertyChanged(() => ButtonColour);
+            }
+        }
+        #endregion
+        #region BarChartEnabled
+        private bool _barChartEnabled;
+        public bool BarChartEnabled
+        {
+            get => _barChartEnabled;
+            set
+            {
+                _barChartEnabled = value;
+                RaisePropertyChanged(() => BarChartEnabled);
+            }
+        }
+        #endregion
+        #region LineChartEnabled
+        private bool _lineChartEnabled;
+        public bool LineChartEnabled
+        {
+            get => _lineChartEnabled;
+            set
+            {
+                _lineChartEnabled = value;
+                RaisePropertyChanged(() => LineChartEnabled);
+            }
+        }
+        #endregion
+        public ObservableCollection<ChartDataModel> BarChartData { get; set; }
+        public ObservableCollection<ChartDataModel> LineChartData { get; set; }
+
         // Commands
         public Command ConnectCommand { get; set; }
         public Command StreamCommand { get; set; }
         public Command SaveCommand { get; set; }
 
+        // Private Properties
+        double chartCounter = 0;
+
         public InterfaceViewModel()
         {
             App.Client = new BraceClient();
+            App.Client.PressureUpdated += Client_OnPressureUpdated;
 
-            ChartData = new ObservableCollection<ChartDataModel>();
+            BarChartData = new ObservableCollection<ChartDataModel>();
+            LineChartData = new ObservableCollection<ChartDataModel>();
+            BarChartEnabled = true;
+            LineChartEnabled = false;
 
             ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SaveCommand = new Command(async () => await ExecuteSaveCommand());
 
             ConnectText = "Connect";
-            StreamButtonText = "Stream";
-            SaveButtonText = "Save";
+            StreamText = "Stream";
+            SaveText = "Log Data";
 
-            MessagingCenter.Subscribe<BraceClient, double>(this, "NormalPressure", (sender, arg) =>
+            ButtonColour = START_COLOUR;
+
+            MessagingCenter.Subscribe<BraceClient, int>(this, "UIEvent", (sender, arg) =>
             {
-                Device.BeginInvokeOnMainThread(() => 
+                switch (arg)
                 {
-                    if (ChartData.Count > 0) ChartData.Clear();
-                    ChartData.Add(new ChartDataModel("Pressure", arg));
+                    case CONNECTED:
+                        ButtonColour = STOP_COLOUR;
+                        ConnectText = "Disconnect";
+                        break;
 
-                    if (arg > Constants.MAX_PRESSURE) App.Vibrate(1);
-                });
+                    case DISCONNECTED:
+                        ButtonColour = START_COLOUR;
+                        ConnectText = "Connect";
+                        chartCounter = 0;
+                        BarChartData.Clear();
+                        LineChartData.Clear();
+                        break;
+
+                    case CONNECTING:
+                        ConnectText = "Connecting...";
+                        ButtonColour = WAIT_COLOUR;
+                        Status = "Initialising sytem...";
+                        break;
+
+                    case SYS_INIT:
+                        ButtonColour = WAIT_COLOUR;
+                        Status = "Initialising sytem...";
+                        break;
+
+                    case SYS_STREAM_START:
+                        StreamText = "Stop stream";
+                        break;
+
+                    case SYS_STREAM_FINISH:
+                        StreamText = "Stream";
+                        break;
+
+                    case LOGGING_START:
+                        SaveText = "Stop logging";
+                        break;
+
+                    case LOGGING_FINISH:
+                        SaveText = "Log Data";
+                        break;
+                }
             });
-
-            Status = "Test";
+            MessagingCenter.Subscribe<BraceClient, string>(this, "StatusMessage", (sender, arg) =>
+            {
+                Status = arg;
+            });
 
 #if SIMULATION
             // Add random values to simulate a connected device
@@ -75,18 +202,40 @@ namespace BracePLUS.ViewModels
             }
 #endif
         }
+
+        public void ChangeChartType()
+        {
+            LineChartEnabled = !LineChartEnabled;
+            BarChartEnabled = !BarChartEnabled;
+        }
+
+        void Client_OnPressureUpdated(object sender, PressureUpdatedEventArgs e)
+        {
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                if (BarChartData.Count > 0) BarChartData.Clear();
+                BarChartData.Add(new ChartDataModel("Pressure", e.Value));
+                LineChartData.Add(new ChartDataModel(chartCounter, e.Value));
+#if SIMULATION
+
+#else
+                if (e.Value > MAX_PRESSURE)
+                {
+                    App.Vibrate(1);
+                }
+#endif
+            });
+        }
         
         public async Task ExecuteConnectCommand()
-        { 
+        {
             if (App.isConnected)
             {
-                ConnectText = "Connect";
                 // Disconnect from device
                 await App.Client.Disconnect();
             }
             else
             {
-                ConnectText = "Disconnect";
                 // Start scan
                 await App.Client.StartScan();
             }
@@ -96,7 +245,14 @@ namespace BracePLUS.ViewModels
         {
             if (App.isConnected)
             {
-                await App.Client.Stream();
+                if(App.Client.STATUS == SYS_STREAM_START)
+                {
+                    await App.Client.StopStream();
+                }
+                else
+                {
+                    await App.Client.Stream();
+                }
             }
             else
             {
@@ -106,12 +262,16 @@ namespace BracePLUS.ViewModels
 
         public async Task ExecuteSaveCommand()
         {
-#if SIMULATION
-            await App.SaveDataLocally();
-#endif
             if (App.isConnected)
             {
-                await App.Client.Save();
+                if (App.Client.STATUS != LOGGING_START)
+                {
+                    await App.Client.Save();
+                }
+                else
+                {
+                   // await App.Client.StopStream();
+                }
             }
             else
             {

@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using BracePLUS.Extensions;
+using static BracePLUS.Extensions.Constants;
 using BracePLUS.Views;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
@@ -15,47 +16,50 @@ using Plugin.BLE.Abstractions.Exceptions;
 using Plugin.BLE.Abstractions.Utils;
 using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
+using BracePLUS.Events;
 
 namespace BracePLUS.Models
 {
     public class BraceClient
     {
         #region Model Properties
-        // Bluetooth properties
+        // Bluetooth Properties
         public IAdapter adapter;
         public IBluetoothLE ble;
-        public IDevice brace;
         public IService service;
         public ICharacteristic uartTx;
         public ICharacteristic uartRx;
+        public Guid uartServiceGUID = Guid.Parse(uartServiceUUID);
+        public Guid uartTxCharGUID = Guid.Parse(uartTxCharUUID);
+        public Guid uartRxCharGUID = Guid.Parse(uartRxCharUUID);
 
+        // Public Properties
+        public IDevice Device { get; set; }
+        public string Status { get; set; }
+        public static List<byte[]> DATA_IN;
+
+        // UI Assistant
+        StackLayout stack;
+        private readonly MessageHandler handler;
+        static readonly Color debug = Color.Red;
+        static readonly Color info = Color.Blue;
+        static readonly Color _event = Color.Green;
         public bool isStreaming;
         public bool isSaving;
 
-        StackLayout stack;
-        private readonly MessageHandler handler;
-
-        // DATA SIZE FOR MAGBOARD (+HEADER)
+        // Data Handling
         byte[] buffer = new byte[128];
-        private int buf_len = 128;
-
-        public static ObservableCollection<string> files;
-
-        // Bluetooth Definitions
-        public Guid uartServiceGUID = Guid.Parse(Constants.uartServiceUUID);
-        public Guid uartTxCharGUID = Guid.Parse(Constants.uartTxCharUUID);
-        public Guid uartRxCharGUID = Guid.Parse(Constants.uartRxCharUUID);
-
-        static readonly Color debug = Color.Red;
-        static readonly Color info = Color.Blue;
-
-        public int STATUS = Constants.IDLE;
-
-        byte[] commsByte = new byte[64];
+        private readonly int buf_len = 128;       
+        
+        public int STATUS = IDLE;
 
         public List<string> messages;
+        public List<string> MobileFileList;
+
+        string downloadFilename = "";
 
         int packetIndex;
+        float downloadProgress;
         #endregion
 
         #region Model Instanciation
@@ -67,7 +71,10 @@ namespace BracePLUS.Models
             adapter = CrossBluetoothLE.Current.Adapter;
 
             messages = new List<string>();
+            MobileFileList = new List<string>();
+            DATA_IN = new List<byte[]>();
 
+            // BLE State changed
             ble.StateChanged += (s, e) =>
             {
                 if (e.NewState.ToString() != "On")
@@ -76,67 +83,141 @@ namespace BracePLUS.Models
                     Write(string.Format($"The bluetooth state changed to {e.NewState}"), debug);
                 }
             };
-
             // New BLE device discovered event
             adapter.DeviceDiscovered += async (s, e) =>
             {
                 string name = e.Device.Name;
+                if (string.IsNullOrWhiteSpace(name)) return;
 
-                if (name != null)
+                else
                 {
                     Debug.WriteLine(String.Format("Discovered device: {0}", name));
                     Write(String.Format("Discovered device: {0}", name), info);
 
-                    if (e.Device.Name == Constants.DEV_NAME || e.Device.Name == "RN_BLE")
+                    EVENT(DEVICE_FOUND, String.Format($"Discovered device: {name}"));
+
+                    if (e.Device.Name == DEV_NAME || e.Device.Name == "RN_BLE")
                     {
-                        brace = e.Device;
-                        await Connect();
+                        await Connect(e.Device);
                     }
                 }
             };
             // BLE Device connection lost event
             adapter.DeviceConnectionLost += (s, e) =>
             {
-                Write("Disconnected from " + e.Device.Name, info);
+                EVENT(DISCONNECTED, "Disconnected from " + e.Device.Name);
                 App.isConnected = false;
                 buffer = RELEASE_DATA(buffer, false);
 
-                Device.BeginInvokeOnMainThread( async () =>
+                if (App.InputData.Count > 0)
                 {
-                    bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
-                        "Store data locally?", "Yes", "No");
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
+                    {
+                        bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
+                            "Store data locally?", "Yes", "No");
 
-                    if (save) await App.SaveDataLocally();
-                });
-                
-                
+                        if (save)
+                        {
+                            byte[] header = new byte[] { 0x0A, 0x0B, 0x0C };
+                            WRITE_FILE(DATA_IN, handler.GetFileName(DateTime.Now), header);
+                        }
+                    });
+                }
             };
-            // BLE device disconnection event
+            // BLE Device disconnection event
             adapter.DeviceDisconnected += (s, e) =>
             {
-                Write("Disconnected from " + e.Device.Name, info);
+                EVENT(DISCONNECTED, "Disconnected from " + e.Device.Name);
                 App.isConnected = false;
                 buffer = RELEASE_DATA(buffer, false);
 
-                Device.BeginInvokeOnMainThread(async () =>
+                if (App.InputData.Count > 0)
                 {
-                    bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
-                        "Store data locally?", "Yes", "No");
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
+                    {
+                        bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
+                            "Store data locally?", "Yes", "No");
 
-                    if (save) await App.SaveDataLocally();
-                });
+                        if (save)
+                        {
+                            byte[] header = new byte[] { 0x0A, 0x0B, 0x0C };
+                            WRITE_FILE(DATA_IN, handler.GetFileName(DateTime.Now), header);
+                        }
+                    });
+                }
+            };
+            // BLE Device conneciton event
+            adapter.DeviceConnected += (s, e) =>
+            {
+                EVENT(CONNECTED, $"Connected to: {e.Device.Name}");
+                App.isConnected = true;
             };
         }
-
         public void RegisterStack(StackLayout s)
         {
-            this.stack = s;
+            stack = s;
         }
         #endregion
 
-        #region Model Client Logic Methods
-        public async Task Connect()
+        #region Events
+
+        protected virtual void OnDownloadFinished(FileDownloadedEventArgs e)
         {
+            EventHandler<FileDownloadedEventArgs> handler = DownloadFinished;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public event EventHandler<FileDownloadedEventArgs> DownloadFinished;
+
+        protected virtual void OnFileSyncFinished(MobileSyncFinishedEventArgs e)
+        {
+            EventHandler<MobileSyncFinishedEventArgs> handler = FileSyncFinished;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public event EventHandler<MobileSyncFinishedEventArgs> FileSyncFinished;
+
+        protected virtual void OnLocalFileListUpdated(EventArgs e)
+        {
+            EventHandler handler = LocalFileListUpdated;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public event EventHandler LocalFileListUpdated;
+
+        protected virtual void OnPressureUpdated(PressureUpdatedEventArgs e)
+        {
+            EventHandler<PressureUpdatedEventArgs> handler = PressureUpdated;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public EventHandler<PressureUpdatedEventArgs> PressureUpdated;
+
+        protected virtual void OnDownloadProgress(DownloadProgressEventArgs e)
+        {
+            EventHandler<DownloadProgressEventArgs> handler = DownloadProgress;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public EventHandler<DownloadProgressEventArgs> DownloadProgress;
+        #endregion
+
+        #region Model Client Logic Methods
+        public async Task Connect(IDevice brace)
+        {
+            Device = brace;
+
+            // Check system bluetooth is turned on.
             if (!ble.IsOn)
             {
                 await Application.Current.MainPage.DisplayAlert("Bluetooth off.", "Please turn on bluetooth to connect to devices.", "OK");
@@ -145,26 +226,15 @@ namespace BracePLUS.Models
 
             try
             {
-                App.Status = "Attempting connection...";
-                Debug.WriteLine("Attempting connection...");
-
                 if (brace != null)
                 {
-                    STATUS = Constants.CLIENT_CONNECT;
-
+                    EVENT(CONNECTING);
                     await adapter.ConnectToDeviceAsync(brace);
                     await adapter.StopScanningForDevicesAsync();
-
-                    Debug.WriteLine("Connected, scan for devices stopped.");
-                    Write("Connected, scan for devices stopped.", debug);
-
-                    App.Status = "Connected to Brace+";
-                    App.isConnected = true;
                 }
                 else
                 {
                     App.isConnected = false;
-                    App.Status = "Brace+ not found.";
                     Write("Brace+ not found.", info);
                     return;
                 }
@@ -185,17 +255,15 @@ namespace BracePLUS.Models
                         uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
                         uartRx = await service.GetCharacteristicAsync(uartRxCharGUID);
 
-                        uartTx.ValueUpdated += async (o, args) =>
-                        {
-                            await COMMS_MENU(args.Characteristic.Value);
-                        };
+                        // Begin communication system
+                        COMMS_MENU(uartTx);
                         await RUN_BLE_START_UPDATES(uartTx);
 
                         // Brief propgation delay
                         await Task.Delay(2500);
 
                         // Send init command
-                        STATUS = Constants.SYS_INIT;
+                        EVENT(SYS_INIT);
                         await RUN_BLE_WRITE(uartRx, "I");
                     }
                     catch (Exception ex)
@@ -209,10 +277,10 @@ namespace BracePLUS.Models
             catch (DeviceConnectionException e)
             {
                 Debug.WriteLine("Connection failed with exception: " + e.Message);
-                Write("Failed to connect.", info);
+                EVENT(DISCONNECTED, "Failed to connect :(");
                 App.isConnected = false;
 
-                Device.BeginInvokeOnMainThread( async () =>
+                Xamarin.Forms.Device.BeginInvokeOnMainThread( async () =>
                 {
                     await Application.Current.MainPage.DisplayAlert("Connection failure.",
                         $"Failed to connect to Brace+", "OK");
@@ -222,22 +290,15 @@ namespace BracePLUS.Models
             }
             catch (Exception e)
             {
-                Debug.WriteLine("System failure: " + e.Message);
-                Write("System failure: " + e.Message, info);
+                EVENT(DISCONNECTED, $"Failed to connect :( \n {e.Message}");
                 App.isConnected = false;
-                App.Status = "Failed to connected.";
                 return;
             }
         }
         public async Task Disconnect()
         {
-            isSaving = false;
-            isStreaming = false;
-            App.isConnected = false;
-
             // Send command to put Brace in disconnected state;
-            commsByte = Encoding.ASCII.GetBytes(".");
-            await RUN_BLE_WRITE(uartTx, commsByte);
+            await RUN_BLE_WRITE(uartRx, ".");
             await RUN_BLE_STOP_UPDATES(uartTx);
 
             // Remove all connections
@@ -245,6 +306,8 @@ namespace BracePLUS.Models
             {
                 await adapter.DisconnectDeviceAsync(device);
             }
+
+            App.isConnected = false;
         }
         public async Task StartScan()
         {
@@ -255,164 +318,363 @@ namespace BracePLUS.Models
                 return;
             }
 
-            // If no devices found after timeout, stop scan.
-            Write("Starting scan...", info);
-            await adapter.StartScanningForDevicesAsync();
-            await Task.Delay(Constants.BLE_SCAN_TIMEOUT_MS);
+            // If already scanning, don't request second scan (will confuse BLE adapter)
+            if (adapter.IsScanning) return;
 
+            EVENT(SCAN_START, "Starting scan...");
+            await adapter.StartScanningForDevicesAsync();
+
+            // If no devices found after timeout, stop scan.
+            await Task.Delay(BLE_SCAN_TIMEOUT_MS);
             if (!App.isConnected)
             {
-                await Application.Current.MainPage.DisplayAlert(Constants.DEV_NAME + " not found.", "Unable to find " + Constants.DEV_NAME, "OK");
+                await Application.Current.MainPage.DisplayAlert(DEV_NAME + " not found.", "Unable to find " + DEV_NAME, "OK");
                 await StopScan();
             }
         }
         public async Task StopScan()
         {
-            Debug.WriteLine("Stopping scan.");
-            Write("Stopping scan.", info);
+            EVENT(SCAN_FINISH, "Stopping scan.");
             await adapter.StopScanningForDevicesAsync();
         }
         public async Task Stream()
         {
-            if (isStreaming)
+            // Stream data wirelessly
+            if (uartTx == null)
             {
-                // Stop stream from menu (any character apart from "S")
-                await RUN_BLE_WRITE(uartRx, ".");
-                Write("Stopping data stream.", info);
-                isStreaming = false;
-                STATUS = Constants.IDLE;
-
-                buffer = RELEASE_DATA(buffer, false);
-
-                bool save = await Application.Current.MainPage.DisplayAlert("Stream stopped.", "Store data locally?", "Yes", "No");
-                if (save) await App.SaveDataLocally();
+                Debug.WriteLine("UART RX characteristic null, quitting.");
+                return;
             }
-            else
-            {
-                // Start data strean.
-                Write("Starting data stream...", info);
-                // Stream data wirelessly
-                if (uartTx == null)
-                {
-                    Debug.WriteLine("UART RX characteristic null, quitting.");
-                    return;
-                }
-                isStreaming = true;
-                App.Status = "Streaming data.";
-                STATUS = Constants.SYS_STREAM;
-                // Request stream from menu
-                await RUN_BLE_WRITE(uartRx, "S");
-            }
+
+            // Flush out data
+            DATA_IN.Clear();
+            EVENT(SYS_STREAM_START, "Starting data stream...");
+            // Request stream from menu
+            await RUN_BLE_WRITE(uartRx, "S");
+        }
+        public async Task StopStream()
+        {
+            // Stop stream from menu (any character apart from "S")
+            await RUN_BLE_WRITE(uartRx, ".");
+            EVENT(SYS_STREAM_FINISH, "Stream finished.");
+
+            byte[] b = new byte[] { 0x0A, 0x0B, 0x0C };
+            WRITE_FILE(DATA_IN, name: handler.GetFileName(DateTime.Now), header: b, footer: b);
+            STATUS = SYS_STREAM_FINISH;
         }
         public async Task Save()
         {
             // Request long-term logging function from brace
-            STATUS = Constants.LOGGING;
+            EVENT(LOGGING_START);
             await RUN_BLE_WRITE(uartRx, "D");
+        }
+        public async Task GetMobileFiles()
+        {
+            // Request list of files from brace
+            EVENT(SYNC_START, "Beginning file sync");
+            await RUN_BLE_WRITE(uartRx, "F");
+        }
+        public async Task DownloadFile(string _filename)
+        {
+            downloadFilename = _filename.Remove(8);
+            downloadProgress = 0;
+            EVENT(DOWNLOAD_START, "Downloading file: " + _filename);
+            await RUN_BLE_WRITE(uartRx, "G");
         }
         #endregion
 
         #region BLE Functions
-        private async Task COMMS_MENU(byte[] args)
+        private void COMMS_MENU(ICharacteristic c)
         {
-            switch (STATUS)
+            c.ValueUpdated += async (o, args) =>
             {
-                // Do action according to current status of system...
-                case Constants.SYS_INIT:
-                    var input = Encoding.ASCII.GetString(args);
-                    var msg = handler.Translate(input, STATUS);
-                    Write(msg, info);
-                    break;
+                var bytes = args.Characteristic.Value;
+                switch (STATUS)
+                {
+                    // Do action according to current status of system...
+                    case SYS_INIT:
+                        HANDLE_INIT(bytes);
+                        break;
 
-                case Constants.SYS_STREAM:
-                    await HANDLE_STREAM(args);
-                    break;
+                    case SYS_STREAM_START:
+                        await HANDLE_STREAM(bytes);
+                        break;
 
-                case Constants.LOGGING:
-                    await HANDLE_LOGGING(args);
-                    break;
+                    case SYS_STREAM_FINISH:
+                        await HANDLE_STREAM(bytes);
+                        break;
 
-                default:
-                    break;
-            }
+                    case LOGGING_START:
+                        await HANDLE_LOGGING(bytes);
+                        break;
+
+                    case SYNC_START:
+                        HANDLE_SYNC(bytes);
+                        break;
+
+                    case DOWNLOAD_START:
+                        HANDLE_DOWNLOAD(bytes);
+                        break;
+
+                    default:
+                        // NO STATUS SET
+                        Debug.WriteLine("************ NO STATUS SET ************\n" +
+                            "DATA IN: " + BitConverter.ToString(bytes));
+                        break;
+                }
+            };
         }
 
+        private void HANDLE_INIT(byte[] args)
+        {
+            var input = Encoding.ASCII.GetString(args);
+            var msg = handler.Translate(input, STATUS);
+
+            if (input == "^") EVENT(CONNECTED, msg);
+        }
         private async Task HANDLE_LOGGING(byte[] args)
         {
             var input = Encoding.ASCII.GetString(args);
             // If filename requested, send over
             if (input == "E")
             {
-                var filename = handler.GetFileName(DateTime.Now, "");
+                var filename = handler.GetFileName(DateTime.Now, extension: null);
                 await RUN_BLE_WRITE(uartRx, filename);
 
-                App.Status = "Logging to file: " + filename + ".dat";
+                EVENT(LOGGING_START, "Logging to file: " + filename + ".dat");
             }
             else
             {
+                // If not filename, decode message and display
                 var msg = handler.Translate(input, STATUS);
-                Debug.WriteLine(msg);
-                Write(msg, debug);
+                EVENT(LOGGING_FINISH, msg);
             }
         }
-        
-        private async Task HANDLE_STREAM(byte[] stream)
+        private void HANDLE_SYNC(byte[] bytes)
         {
-            int len = stream.Length;
-            // Check message (min stream data len = 8)
-            if (len < 8)
+            var file = Encoding.ASCII.GetString(bytes);   
+            if (string.IsNullOrWhiteSpace(file) || string.IsNullOrEmpty(file))
             {
-                var input = Encoding.ASCII.GetString(stream);
-                var msg = handler.Translate(input, Constants.SYS_STREAM);
-                Write(msg, info);
+                return;
+            }
+            else if (file == "^")
+            {
+                MobileSyncFinishedEventArgs args = new MobileSyncFinishedEventArgs();
+                args.Files = MobileFileList;
+                OnFileSyncFinished(args);
+                MobileFileList.Clear();
+                return;
+            }
+            else
+            {
+                Write("HANDLE SYNC: Received file: " + file, info);
+                MobileFileList.Add(file);
+            }
+        }
+        private async void HANDLE_DOWNLOAD(byte[] bytes)
+        {
+           //  Debug.WriteLine($"File upload bytes: {BitConverter.ToString(bytes)}");
+            var input = Encoding.ASCII.GetString(bytes);
+            int len = bytes.Length;
+            // Check message (min stream data len = 8)
+            if (input == "E")
+            {
+                var filename = downloadFilename;
+                await RUN_BLE_WRITE(uartRx, filename);
+                return;
+            }
+            else if (input == "^")
+            {
+                FILE_DOWNLOAD_FINISHED(bytes);
                 return;
             }
 
             try
             {
                 // Add buffer to local array
-                stream.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
+                bytes.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
                 packetIndex += len;
             }
             catch (Exception e)
             {
+                Debug.WriteLine("*************** STREAM EXCEPTION ***************");
+                Debug.WriteLine($"Received {bytes.Length} bytes: {BitConverter.ToString(bytes)}");
                 Debug.WriteLine("Copy stream to buffer failed with exception: " + e.Message);
                 Debug.WriteLine($"Stream length: {len}, packet index: {packetIndex}");
             }
 
-            // Check for packet header
-            if ((buffer[buf_len-1] == 0xEE) &&
-                (buffer[buf_len-2] == 0xEE) &&
-                (buffer[buf_len-3] == 0xEE))  
+            // Check packet
+            if (packetIndex >= 100)
             {
+                DownloadProgressEventArgs args = new DownloadProgressEventArgs();
+                args.Value = downloadProgress / 31;
+                OnDownloadProgress(args);
+                downloadProgress += 1;
+                // Request next packet if header present.
+                await RUN_BLE_WRITE(uartRx, "g");
                 // Send buffer to be written to file and empty all values.
                 buffer = RELEASE_DATA(buffer);
-                // Request next packet if header present.
-                await RUN_BLE_WRITE(uartRx, "S");
             }
         }
-        byte[] RELEASE_DATA(byte[] b, bool save = true)
+        private async Task HANDLE_STREAM(byte[] stream)
+        {
+            switch (STATUS)
+            {
+                case SYS_STREAM_START:
+
+                    // Save data and send to display. 
+                    try
+                    {
+                        // Add buffer to local array
+                        stream.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
+                        packetIndex += stream.Length;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine("*************** STREAM EXCEPTION ***************");
+                        Debug.WriteLine($"Received {stream.Length} bytes: {BitConverter.ToString(stream)}");
+                        Debug.WriteLine("Copy stream to buffer failed with exception: " + e.Message);
+                        Debug.WriteLine($"Stream length: {stream.Length}, packet index: {packetIndex}");
+                    }
+
+                    // Check for packet header
+                    if (packetIndex >= 100)
+                    {
+                        // Request next packet if header present.
+                        await RUN_BLE_WRITE(uartRx, "S");
+                        // Send buffer to be written to file and empty all values.
+                        buffer = RELEASE_DATA(buffer);
+                    }
+                    break;
+
+                case SYS_STREAM_FINISH:
+                    var input = Encoding.ASCII.GetString(stream);
+                    var msg = handler.Translate(input, SYS_STREAM_FINISH);
+                    EVENT(SYS_STREAM_FINISH, msg);
+                    break;
+            }
+        }
+        private byte[] RELEASE_DATA(byte[] bytes, bool save = true)
         {
             // Reset packet index
             packetIndex = 0;
+
             // Save data
-            if (save) App.AddData(b);
-            // Return empty array of same size
-            return new byte[buf_len];
-        }
-        async Task<bool> RUN_BLE_WRITE(ICharacteristic c, byte[] b)
-        {
+            //Debug.WriteLine(BitConverter.ToString(bytes));
             try
             {
-                await c.WriteAsync(b);
-                return true;
+                double Zmsb, Zlsb, Z;
+                var z_max = 0.0;
+                // Extract highest Z value
+                for (int _byte = 8; _byte < 100; _byte += 6)
+                {
+                    // Debug.WriteLine($"Chip: {(_byte-8)/6}, MSB: {bytes[_byte]}, LSB: {bytes[_byte + 1]}");
+
+                    // Find current Z value
+                    Zmsb = bytes[_byte] << 8;
+                    Zlsb = bytes[_byte + 1];
+                    Z = (Zmsb + Zlsb) * 0.02636;
+                    // Check if higher than previous (sort highest)
+                    if (Z > z_max) z_max = Z;
+                }
+                // Send signal to Interface?
+                if (STATUS == SYS_STREAM_START)
+                {
+                    PressureUpdatedEventArgs args = new PressureUpdatedEventArgs();
+                    args.Value = z_max;
+                    OnPressureUpdated(args);
+                }
+
+                // Save to array of input data
+                if (save) DATA_IN.Add(bytes);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Characteristic {c.Uuid} write failed with exception: {ex.Message}");
+                Debug.WriteLine($"Failed to write {BitConverter.ToString(bytes)} to app with exception: {ex.Message}");
             }
-            return false;
+            // Return empty array of same size
+            return new byte[buf_len];
         }
+
+        private void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
+        {
+            // Create file instance
+            var filename = Path.Combine(App.FolderPath, name);
+            FileStream file = new FileStream(filename, FileMode.Create, FileAccess.Write);
+
+            // Header may be null so write in try/catch
+            try
+            {
+                file.Write(header, 0, header.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Header write failed: " + ex.Message);
+            }
+           
+            try
+            {
+                // Write file data in chunks of 100 bytes
+                foreach (var bytes in data)
+                {
+                    file.Write(bytes, 0, bytes.Length);
+                };
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Data write failed: " + ex.Message);
+            }
+
+            // Footer may be null so write in try/catch
+            try
+            {
+                file.Write(footer, 0, footer.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Footer write failed: " + ex.Message);
+            }
+            file.Close();
+
+            EVENT(FILE_WRITTEN, "File written: " + name);
+            OnLocalFileListUpdated(EventArgs.Empty);
+
+            DATA_IN.Clear();
+        }
+
+        private void FILE_DOWNLOAD_FINISHED(byte[] bytes)
+        {
+            // Write header for mobile file
+            var input = Encoding.ASCII.GetString(bytes);
+            byte[] b = new byte[] { 0x0D, 0x0E, 0x0F };
+
+            downloadProgress = 0;
+            downloadFilename += ".txt";
+            WRITE_FILE(DATA_IN, name: downloadFilename, header: b, footer: b);
+
+            FileDownloadedEventArgs args = new FileDownloadedEventArgs();
+            args.Filename = downloadFilename;
+            args.Data = DATA_IN;
+            OnDownloadFinished(args);
+
+            var msg = handler.Translate(input, DOWNLOAD_FINISH);
+            EVENT(DOWNLOAD_FINISH, msg);
+            return;
+        }
+
+        public void EVENT(int e, string msg = "")
+        {
+            MessagingCenter.Send(this, "UIEvent", e);
+
+            if (!string.IsNullOrWhiteSpace(msg))
+            {
+                MessagingCenter.Send(this, "StatusMessage", msg);
+                Write(msg, _event);
+            }
+
+            STATUS = e;
+        }
+
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
         {
             var b = Encoding.ASCII.GetBytes(s);
@@ -456,12 +718,17 @@ namespace BracePLUS.Models
 
         public void Write(string text, Color color)
         {
-            Device.BeginInvokeOnMainThread(() =>
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
             {
+                MessagingCenter.Send(this, "StatusMessage", text);
+                Debug.WriteLine(text);
+
                 stack.Children.Insert(0, new Label
                 {
                     Text = text,
-                    TextColor = color
+                    TextColor = color,
+                    Margin = 3,
+                    FontSize = 15                    
                 });
 
                 if (stack.Children.Count > 200)

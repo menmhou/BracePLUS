@@ -1,75 +1,154 @@
-﻿using BracePLUS.Extensions;
+﻿using BracePLUS.Events;
+using BracePLUS.Extensions;
 using BracePLUS.Models;
-using BracePLUS.ViewModels;
-using Syncfusion.SfChart.XForms;
+using MvvmCross.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Xamarin.Forms;
 
 namespace BracePLUS.Views
 {
-    public class InspectViewModel : BaseViewModel
+    public class InspectViewModel : MvxViewModel
     {
         // Public Interface Members
         public DataObject DataObj { get; set; }
-        public double FileTime 
-        { 
-            get { return DataObj.Duration; }
-            set { }
-        }
+        public INavigation Nav { get; set; }
+
+        #region File Info Section
         public string Date
         {
-            get { return DataObj.Date.ToString(); }
+            get => DataObj.Date.ToString();
+            set { }
+        }
+        public string Location
+        {
+            get => DataObj.Location;
+            set { }
+        }
+        public double Duration 
+        { 
+            get => DataObj.Duration; 
             set { }
         }
         public string FormattedSize
         {
-            get { return DataObj.FormattedSize; }
+            get => DataObj.FormattedSize;
+            set { }
+        }
+        #endregion
+        #region File Analysis Section
+        public double AveragePressure
+        {
+            get => DataObj.AveragePressure;
+            set { }
+        }
+        public double AverageChange
+        {
+            get
+            {
+                return (100*AveragePressure / App.GlobalAverage)-100;
+            }
+            set {  }
+        }
+
+        public double AverageOverall
+        {
+            get => App.GlobalAverage;
+            set { }
+        }
+
+        public double MaxPressure 
+        {
+            get => DataObj.MaxPressure;
+            set { }
+        }
+
+        public double MaximumChange
+        {
+            get
+            {
+                return (100*MaxPressure / App.GlobalMax)-100;
+            }
+            set { }
+        }
+
+        public double MaximumOverall
+        {
+            get => App.GlobalMax;
+            set { }
+        }
+
+        #endregion
+        #region Chart Section 
+        public ObservableCollection<ChartDataModel> ChartData { get; set; }
+        #endregion
+        #region Debug Section
+        public string DataString
+        {
+            get => DataObj.DataString;
             set { }
         }
         public string Filename
         {
-            get { return DataObj.Filename; }
+            get => DataObj.Directory;
             set { }
         }
-        public string DataString
-        {
-            get { return DataObj.DataString; }
-            set { }
-        }
-        public INavigation Nav { get; set; }
-        public ObservableCollection<ChartDataModel> ChartData { get; set; }
-
+        #endregion       
+        
+        // Public Interface Commands
         public Command ShareCommand { get; set; }
         public Command DeleteCommand { get; set; }
+        public Command ShowDataCommand { get; set; }
 
-        private MessageHandler handler;
+        private readonly MessageHandler handler;
 
         public InspectViewModel()
         {
+            handler = new MessageHandler();
             ShareCommand = new Command(async () => await ExecuteShareCommand());
             DeleteCommand = new Command(async () => await ExecuteDeleteCommand());
+            ShowDataCommand = new Command(() => ExecuteShowDataCommand());
 
             DataObj = new DataObject();
             ChartData = new ObservableCollection<ChartDataModel>();
-            handler = new MessageHandler();
+
+
         }
+
+        protected virtual void OnRemoveObject(RemoveObjectEventArgs e)
+        {
+            EventHandler<RemoveObjectEventArgs> handler = RemoveObject;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public EventHandler<RemoveObjectEventArgs> RemoveObject;
+        protected virtual void OnLocalFileListUpdated(EventArgs e)
+        {
+            EventHandler handler = LocalFileListUpdated;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        public event EventHandler LocalFileListUpdated;
 
         public void InitDataObject()
         {
-            var normals = handler.ExtractNormals(DataObj.Data, 50, 11);
-
+            if (!DataObj.IsDownloaded) return;
             // Add chart data
             try
             {
-                for (int i = 0; i < 50; i++)
+                int packets = (DataObj.Data.Length - 6) / 128;
+                var normals = handler.ExtractNormals(DataObj.Data, packets, 11);
+
+                // If less than 200 data points avaible, use total number of points
+                for (int i = 0; i < (normals.Count > 200 ? 200 : normals.Count); i++)
                 {
                     ChartData.Add(new ChartDataModel(i.ToString(), normals[i]));
                 }
@@ -82,11 +161,11 @@ namespace BracePLUS.Views
 
         public async Task ExecuteShareCommand()
         {
-            var file = Path.Combine(App.FolderPath, DataObj.Filename);
+            var file = Path.Combine(App.FolderPath, DataObj.Directory);
 
             await Share.RequestAsync(new ShareFileRequest
             {
-                Title = DataObj.Name,
+                Title = DataObj.Filename,
                 File = new ShareFile(file)
             });
         }
@@ -99,11 +178,26 @@ namespace BracePLUS.Views
                 var files = Directory.EnumerateFiles(App.FolderPath, "*");
                 foreach (var filename in files)
                 {
-                    if (filename == DataObj.Filename) File.Delete(filename);
+                    if (filename == DataObj.Directory)
+                    {
+
+                        File.Delete(filename);
+                        RemoveObjectEventArgs args = new RemoveObjectEventArgs() { dataObject = DataObj };
+                        OnRemoveObject(args);
+                    }
                 }
+                OnLocalFileListUpdated(EventArgs.Empty);
 
                 await Nav.PopAsync();
             }
+        }
+
+        private async void ExecuteShowDataCommand()
+        {
+            await Nav.PushAsync(new RawDataView
+            {
+                BindingContext = DataObj
+            });
         }
     }
 }
