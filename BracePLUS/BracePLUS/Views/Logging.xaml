@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
+             mc:Ignorable="d"
+             x:Class="BracePLUS.Views.Logging">
+    <ContentPage.Content>
+        <StackLayout BackgroundColor="White">
+            <chart:SfChart HeightRequest="300"
+                           VerticalOptions="FillAndExpand"
+                           HorizontalOptions="FillAndExpand"
+                           BackgroundColor="DimGray">
+            </chart:SfChart>
+            <Grid VerticalOptions = "FillAndExpand">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="4*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*" />
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="3*" />
+                </Grid.ColumnDefinitions>
+
+                <ListView ItemsSource="{Binding DataObjects}" 
+                          Grid.Row = "0" 
+                          Grid.Column = "0" 
+                          Grid.RowSpan = "2"
+                          Grid.ColumnSpan = "3" 
+                          VerticalOptions = "FillAndExpand" 
+                          HorizontalOptions="FillAndExpand">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <ViewCell>
+                                <Frame Margin="4, 8"
+                                       Padding="8">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="Large"/>
+                                </Frame>
+                            </ViewCell>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <Button Text = "+"
+                        FontSize="Medium"
+                        HeightRequest="60"
+                        WidthRequest="60"
+                        CornerRadius="30"
+                        VerticalOptions="CenterAndExpand"
+                        HorizontalOptions="CenterAndExpand"
+                        Opacity="0.5" 
+                        BackgroundColor = "Fuchsia" 
+                        Grid.Row="1" 
+                        Grid.Column = "2"/>
+
+            </Grid>
+
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

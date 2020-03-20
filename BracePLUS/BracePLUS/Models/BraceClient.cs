@@ -157,66 +157,43 @@ namespace BracePLUS.Models
         #region Events
         protected virtual void OnDownloadFinished(FileDownloadedEventArgs e)
         {
-            EventHandler<FileDownloadedEventArgs> handler = DownloadFinished;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            DownloadFinished?.Invoke(this, e);
         }
         public event EventHandler<FileDownloadedEventArgs> DownloadFinished;
         protected virtual void OnFileSyncFinished(MobileSyncFinishedEventArgs e)
         {
-            EventHandler<MobileSyncFinishedEventArgs> handler = FileSyncFinished;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            FileSyncFinished?.Invoke(this, e);
         }
         public event EventHandler<MobileSyncFinishedEventArgs> FileSyncFinished;
         protected virtual void OnLocalFileListUpdated(EventArgs e)
         {
-            EventHandler handler = LocalFileListUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            LocalFileListUpdated?.Invoke(this, e);
         }
         public event EventHandler LocalFileListUpdated;
+        protected virtual void OnDataObjectRemoved(RemoveObjectEventArgs e)
+        {
+            RemoveObject?.Invoke(this, e);
+        }
+        public event EventHandler<RemoveObjectEventArgs> RemoveObject;
         protected virtual void OnPressureUpdated(PressureUpdatedEventArgs e)
         {
-            EventHandler<PressureUpdatedEventArgs> handler = PressureUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            PressureUpdated?.Invoke(this, e);
         }
         public EventHandler<PressureUpdatedEventArgs> PressureUpdated;
         protected virtual void OnDownloadProgress(DownloadProgressEventArgs e)
         {
-            EventHandler<DownloadProgressEventArgs> handler = DownloadProgress;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            DownloadProgress?.Invoke(this, e);
         }
         public EventHandler<DownloadProgressEventArgs> DownloadProgress;
         protected virtual void OnStatusUpdate(StatusEventArgs e)
         {
-            EventHandler<StatusEventArgs> handler = StatusUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            StatusUpdated?.Invoke(this, e);
 
         }
         public EventHandler<StatusEventArgs> StatusUpdated;
         protected virtual void OnUIUpdated(UIUpdatedEventArgs e)
         {
-            EventHandler<UIUpdatedEventArgs> handler = UIUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            UIUpdated?.Invoke(this, e);
         }
         public EventHandler<UIUpdatedEventArgs> UIUpdated;
         #endregion
@@ -467,8 +444,10 @@ namespace BracePLUS.Models
             }
             else if (file == "^")
             {
-                MobileSyncFinishedEventArgs args = new MobileSyncFinishedEventArgs();
-                args.Files = MobileFileList;
+                MobileSyncFinishedEventArgs args = new MobileSyncFinishedEventArgs
+                {
+                    Files = MobileFileList
+                };
                 OnFileSyncFinished(args);
                 MobileFileList.Clear();
                 return;
@@ -514,8 +493,10 @@ namespace BracePLUS.Models
             // Check packet
             if (packetIndex >= 100)
             {
-                DownloadProgressEventArgs args = new DownloadProgressEventArgs();
-                args.Value = downloadProgress / 31;
+                DownloadProgressEventArgs args = new DownloadProgressEventArgs
+                {
+                    Value = downloadProgress / 31
+                };
                 OnDownloadProgress(args);
                 downloadProgress += 1;
                 // Request next packet if header present.
@@ -588,8 +569,10 @@ namespace BracePLUS.Models
                 // Send signal to Interface?
                 if (STATUS == SYS_STREAM_START)
                 {
-                    PressureUpdatedEventArgs args = new PressureUpdatedEventArgs();
-                    args.Value = z_max;
+                    PressureUpdatedEventArgs args = new PressureUpdatedEventArgs
+                    {
+                        Value = z_max
+                    };
                     OnPressureUpdated(args);
                 }
 
@@ -658,9 +641,11 @@ namespace BracePLUS.Models
             downloadFilename += ".txt";
             WRITE_FILE(DATA_IN, name: downloadFilename, header: b, footer: b);
 
-            FileDownloadedEventArgs args = new FileDownloadedEventArgs();
-            args.Filename = downloadFilename;
-            args.Data = DATA_IN;
+            FileDownloadedEventArgs args = new FileDownloadedEventArgs
+            {
+                Filename = downloadFilename,
+                Data = DATA_IN
+            };
             OnDownloadFinished(args);
 
             var msg = handler.Translate(input, DOWNLOAD_FINISH);
@@ -670,14 +655,18 @@ namespace BracePLUS.Models
 
         public void EVENT(int e, string msg = "")
         {
-            UIUpdatedEventArgs a = new UIUpdatedEventArgs();
-            a.Status = e;
+            UIUpdatedEventArgs a = new UIUpdatedEventArgs
+            {
+                Status = e
+            };
             OnUIUpdated(a);
 
             if (!string.IsNullOrWhiteSpace(msg))
             {
-                StatusEventArgs args = new StatusEventArgs();
-                args.Status = msg;
+                StatusEventArgs args = new StatusEventArgs
+                {
+                    Status = msg
+                };
                 OnStatusUpdate(args);
 
                 Write(msg, _event);

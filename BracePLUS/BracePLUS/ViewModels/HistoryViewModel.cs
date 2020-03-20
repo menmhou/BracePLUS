@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Text;
 using BracePLUS.Events;
 using System.Threading.Tasks;
+using BracePLUS.Views;
 
 namespace BracePLUS.ViewModels
 {
@@ -51,11 +52,9 @@ namespace BracePLUS.ViewModels
 
         // Private Properties
         private readonly MessageHandler handler;
-        private readonly List<string> Files;
 
         public HistoryViewModel()
         {
-            Files = new List<string>();
             handler = new MessageHandler();
 
             DataObjects = new ObservableCollection<DataObject>();
@@ -67,6 +66,12 @@ namespace BracePLUS.ViewModels
             App.Client.DownloadFinished += Client_OnDownloadFinished;
             App.Client.FileSyncFinished += Client_OnFileSyncFinished;
             App.Client.LocalFileListUpdated += Client_OnLocalFileListUpdated;
+
+            MessagingCenter.Subscribe<InspectViewModel, DataObject>(this, "Remove", (sender, arg) =>
+            {
+                DataObjects.Remove(arg);
+                LoadLocalFiles();
+            });
         }
 
         #region Event Handlers
@@ -85,23 +90,51 @@ namespace BracePLUS.ViewModels
         }
         void Client_OnLocalFileListUpdated(object sender, EventArgs e)
         {
-            Debug.WriteLine("Local files updated YAYAYAYAY");
             LoadLocalFiles();
-        }
-        void Client_OnRemoveDataObject(object sender, RemoveObjectEventArgs e)
-        {
-            DataObjects.Remove(e.dataObject);
         }
         #endregion
 
-        public void ExecuteRefreshCommand()
+        public void LoadLocalFiles()
+        {
+            ObservableCollection<DataObject> tempData = new ObservableCollection<DataObject>();
+
+            var files = Directory.EnumerateFiles(App.FolderPath, "*");
+
+            foreach (var filename in files)
+            {
+                // Get info about file
+                FileInfo fi = new FileInfo(filename);
+
+                // Download data ready to be read by data object
+                var data = File.ReadAllBytes(filename);
+
+                DataObject dataObject = new DataObject
+                {
+                    Size = fi.Length,
+                    Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm),
+                    Filename = fi.Name,
+                    Directory = filename,
+                    Location = (data[0] == 0x0A) ? "Local" : "Mobile",
+                    Data = data,
+                    IsDownloaded = (data.Length > 6) ? true : false
+                };
+
+                tempData.Add(dataObject);
+            }
+            DataObjects = tempData;
+
+            RefreshObjects();
+            ReorderDataObjects();
+        }
+
+        private void ExecuteRefreshCommand()
         {
             IsRefreshing = true;
-            //RefreshObjects();
+            RefreshObjects();
             IsRefreshing = false;
         }
 
-        public async Task ExecuteClearListCommand()
+        private async Task ExecuteClearListCommand()
         {
             // Check with user to clear all files
             var clear = await Application.Current.MainPage.DisplayAlert("Clear files?", "Clear all files from device memory. Continue?", "Yes", "Cancel");
@@ -120,10 +153,8 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        public async Task ExecuteGetFilenamesCommand()
+        private async Task ExecuteGetFilenamesCommand()
         {
-            // When list is ready, client will send a list of strings containing filenames using 
-            // "MobileFileListUpdated" identifier with MessagingCentre.
             if (App.isConnected)
             {
                 await App.Client.GetMobileFiles();
@@ -135,9 +166,10 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        public void RefreshObjects()
+        private void RefreshObjects()
         {
             App.GlobalMax = 0;
+            int downloaded = 0;
             double avgs_sum = 0.0;
             foreach (DataObject obj in DataObjects)
             {
@@ -147,51 +179,12 @@ namespace BracePLUS.ViewModels
                 if (obj.IsDownloaded)
                 {
                     avgs_sum += obj.AveragePressure;
+                    downloaded++;
                     if (obj.MaxPressure > App.GlobalMax) App.GlobalMax = obj.MaxPressure;
                 }               
             }
 
-            App.GlobalAverage = avgs_sum / DataObjects.Count;
-        }
-
-        public void LoadLocalFiles()
-        {
-            ObservableCollection<DataObject> tempData = new ObservableCollection<DataObject>();
-
-            var files = Directory.EnumerateFiles(App.FolderPath, "*");
-
-            foreach (var filename in files)
-            {
-                // Save filenames to local storage to compare for updates
-                Files.Add(filename);
-                // Get info about file
-                FileInfo fi = new FileInfo(filename);
-
-                var data = File.ReadAllBytes(filename);
-
-                DataObject dataObject = new DataObject();
-                dataObject.Size = fi.Length;
-                dataObject.Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm);
-                dataObject.Filename = fi.Name;
-                dataObject.Directory = filename;
-                dataObject.Location = (data[0] == 0x0A) ? "Local" : "Mobile";
-                dataObject.Data = data;
-
-                if (data.Length > 6)
-                {
-                    dataObject.IsDownloaded = true;
-                }
-                else
-                {
-                    dataObject.IsDownloaded = false;
-                }
-         
-                tempData.Add(dataObject);
-            }
-            DataObjects = tempData;
-
-            RefreshObjects();
-            ReorderDataObjects();
+            App.GlobalAverage = avgs_sum / downloaded;
         }
 
         private void ReorderDataObjects()
@@ -202,24 +195,31 @@ namespace BracePLUS.ViewModels
             {
                 for (int i = 0; i < data.Count - 1; i++)
                 {
-                    // Get date of current and next object
-                    int date1 = Int32.Parse(data[i].Filename.Remove(8));
-                    int date2 = Int32.Parse(data[i + 1].Filename.Remove(8));
-
-                    // If date2 > date1, respective dataobjects swap
-                    if (date2 > date1)
+                    try
                     {
-                        // Create temp data objects
-                        DataObject temp_i = data[i];
-                        DataObject temp_i1= data[i + 1];
+                        // Get date of current and next object
+                        int date1 = Int32.Parse(data[i].Filename.Remove(8));
+                        int date2 = Int32.Parse(data[i + 1].Filename.Remove(8));
 
-                        // Remove from collection
-                        data.Remove(temp_i);
-                        data.Remove(temp_i1);
+                        // If date2 > date1, respective dataobjects swap
+                        if (date2 > date1)
+                        {
+                            // Create temp data objects
+                            DataObject temp_i = data[i];
+                            DataObject temp_i1 = data[i + 1];
 
-                        // Put back in opposite places
-                        data.Insert(i, temp_i1);
-                        data.Insert(i + 1, temp_i);
+                            // Remove from collection
+                            data.Remove(temp_i);
+                            data.Remove(temp_i1);
+
+                            // Put back in opposite places
+                            data.Insert(i, temp_i1);
+                            data.Insert(i + 1, temp_i);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine("Object reordering failed: " + ex.Message);
                     }
                 }
             }

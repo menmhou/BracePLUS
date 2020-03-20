@@ -159,8 +159,7 @@
 
                 <chart:SfChart VerticalOptions="FillAndExpand"
                                HorizontalOptions="FillAndExpand"
-                               HeightRequest="300"
->
+                               HeightRequest="300">
 
                     <chart:SfChart.Series>
                         <chart:ColumnSeries ItemsSource="{Binding AllNodesData}"

@@ -147,13 +147,10 @@ namespace BracePLUS.Views
         #region Events
         protected virtual void OnRemoveObject(RemoveObjectEventArgs e)
         {
-            EventHandler<RemoveObjectEventArgs> handler = RemoveObject;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            Debug.WriteLine("Removing object: " + e.dataObject.Name);
+            RemoveObject?.Invoke(this, e);
         }
-        public EventHandler<RemoveObjectEventArgs> RemoveObject;
+        public event EventHandler<RemoveObjectEventArgs> RemoveObject;
         protected virtual void OnLocalFileListUpdated(EventArgs e)
         {
             LocalFileListUpdated?.Invoke(this, e);
@@ -165,14 +162,15 @@ namespace BracePLUS.Views
         {
             if (!DataObj.IsDownloaded) return;
             Packets = (DataObj.Data.Length - 6) / 128;
+
+            var normals = handler.ExtractNormals(DataObj.Data, Packets, 11);
+            var times = handler.ExtractTimes(DataObj.StartTime, DataObj.Data, Packets);
+
             // Add chart data
             try
             {
-                var normals = handler.ExtractNormals(DataObj.Data, Packets, 11);
-                var times = handler.ExtractTimes(DataObj.StartTime, DataObj.Data, Packets);
-
                 // If less than 200 data points avaible, use total number of points
-                for (int i = 0; i < (normals.Count > 200 ? 200 : normals.Count); i++)
+                for (int i = 0; i < (times.Count > 200 ? 200 : times.Count); i++)
                 {
                     //Debug.WriteLine(times[i].ToString());
                     ChartData.Add(new ChartDataModel(times[i].ToShortTimeString(), normals[i]));
@@ -180,6 +178,8 @@ namespace BracePLUS.Views
             }
             catch (Exception ex)
             {
+                Debug.WriteLine("Number of normals: " + normals.Count);
+                Debug.WriteLine("Number of time packets: " + times.Count);
                 Debug.WriteLine("Max normals initialisation failed with exception: " + ex.Message);
             }
 
@@ -218,10 +218,9 @@ namespace BracePLUS.Views
                 {
                     if (filename == DataObj.Directory)
                     {
-
                         File.Delete(filename);
                         RemoveObjectEventArgs args = new RemoveObjectEventArgs() { dataObject = DataObj };
-                        OnRemoveObject(args);
+                        MessagingCenter.Send<InspectViewModel, DataObject>(this, "Remove", DataObj);
                     }
                 }
                 OnLocalFileListUpdated(EventArgs.Empty);
@@ -251,14 +250,23 @@ namespace BracePLUS.Views
         private void SliderValueUpdated(double value)
         {
             int val = (int)value;
+            if (val < 1) val = 1;
 
-            var nodes = handler.ExtractNodes(DataObj.Data, val-1);
-            for (int i = 0; i < 16; i++)
+            try
             {
-                AllNodesData[i].Name = (i + 1).ToString();
-                AllNodesData[i].Value = nodes[i];
+                AllNodesData.Clear();
+                var nodes = handler.ExtractNodes(DataObj.Data, val-1);
+                for (int i = 0; i < 16; i++)
+                {
+                    AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Replace bar chart nodes failed with exception: " + ex.Message);
 
-                //Debug.WriteLine(AllNodesData[i]);
+                for (int i = 0; i < 16; i++)
+                    Debug.WriteLine(AllNodesData[i]);
             }
         }
     }

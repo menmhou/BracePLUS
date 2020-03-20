@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms" 
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
+             xmlns:local="clr-namespace:BracePLUS"
              x:Class="BracePLUS.Views.History">
 
     <ContentPage.ToolbarItems>
@@ -13,8 +14,8 @@
 
     <ContentPage.Content>
         <StackLayout>
-
             <ListView x:Name="listView"
+                      CachingStrategy="RecycleElement"
                       ItemSelected="OnListViewItemSelected"
                       ItemsSource="{Binding DataObjects}"
                       HasUnevenRows="True"
@@ -49,14 +50,16 @@
                                                Grid.Column="1"/>
                                     </Grid>
                                     <Label Text="{Binding Detail}"
-                                       FontSize="Medium"
-                                       TextColor="DimGray"/>
+                                           FontSize="Medium"
+                                           TextColor="DimGray"/>
                                     <Label Text="{Binding AveragePressure, StringFormat='Average Pressure: {0:0.00}'}"
-                                       FontSize="Medium"
-                                       TextColor="DimGray"/>
+                                           FontSize="Medium"
+                                           TextColor="DimGray"
+                                           IsVisible="{Binding IsDownloaded}"/>
                                     <Label Text="{Binding MaxPressure, StringFormat='Max Pressure: {0:0.00}'}"
-                                       FontSize="Medium"
-                                       TextColor="DimGray"/>
+                                           FontSize="Medium"
+                                           TextColor="DimGray"
+                                           IsVisible="{Binding IsDownloaded}"/>
 
                                     <ProgressBar Progress="{Binding DownloadProgress}"
                                                  IsVisible="{Binding ProgressBarEnabled}"

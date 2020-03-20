@@ -24,9 +24,7 @@ namespace BracePLUS
         public static Random generator;
         public static List<byte[]> InputData;
         public static List<string> MobileFiles;
-        public static string Status { get; set; }
         public static string FolderPath { get; private set; }
-        public static ObservableCollection<ChartDataModel> ChartData { get; set; }
 
         // BLE Status
         public static string ConnectedDevice
@@ -65,6 +63,7 @@ namespace BracePLUS
             InputData = new List<byte[]>();
             MobileFiles = new List<string>();
 
+            Client = new BraceClient();
             MainPage = new MainPage();
         }
 

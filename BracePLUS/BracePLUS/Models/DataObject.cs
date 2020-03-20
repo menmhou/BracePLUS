@@ -53,7 +53,7 @@ namespace BracePLUS.Models
             set { }
         }
         public string ChartEnabled { get; set; }
-        public string ProgressBarEnabled { get; set; }
+        public bool ProgressBarEnabled { get; set; }
         public float DownloadProgress { get; set; }
         #endregion
         #region Data Properties
@@ -77,19 +77,18 @@ namespace BracePLUS.Models
             DownloadCommand = new Command(async () => await ExecuteDownloadCommand());
 
             ChartEnabled = "False";
-            ProgressBarEnabled = "False";
+            ProgressBarEnabled = false;
 
             App.Client.DownloadProgress += Client_OnDownloadProgress;
         }
 
         void Client_OnDownloadProgress(object sender, DownloadProgressEventArgs e)
         {
-            if (e.Value == 1.0) ProgressBarEnabled = "False";
+            if (e.Value == 1.0) ProgressBarEnabled = false;
             else
             {
-                ProgressBarEnabled = "True";
+                ProgressBarEnabled = true;
                 DownloadProgress = e.Value;
-                Debug.WriteLine($"Progress: {DownloadProgress}");
             }
         }
 
@@ -101,7 +100,7 @@ namespace BracePLUS.Models
                 {
                     Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
-                    ProgressBarEnabled = "False";
+                    ProgressBarEnabled = false;
                     IsDownloaded = true;
                     return;
                 }
@@ -120,7 +119,15 @@ namespace BracePLUS.Models
                 }
                 else if (Location == "Mobile")
                 {
-                    await App.Client.DownloadFile(Filename);
+                    if (App.isConnected)
+                    {
+                        await App.Client.DownloadFile(Filename);
+                    }
+                    else
+                    {
+                        await Application.Current.MainPage.DisplayAlert
+                            ("Not Connected", "Please connect to Brace+ to download.", "OK");
+                    }
                 }
             }
             catch (Exception ex)
@@ -136,6 +143,7 @@ namespace BracePLUS.Models
             {
                 if (Data.Length > 6)
                 {
+                    Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
                     IsDownloaded = true;
                     return;
@@ -151,7 +159,6 @@ namespace BracePLUS.Models
             {
                 Data = File.ReadAllBytes(path);
                 if (Location == "Local") IsDownloaded = true;
-                Analyze();
             }
             catch (Exception ex)
             {
@@ -187,9 +194,12 @@ namespace BracePLUS.Models
 
                 try
                 {
-                    for (int i = 0; i < (normals.Count > 50 ? 50 : normals.Count); i++)
+                    if (PreviewNormalData.Count < 1)
                     {
-                        PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                        for (int i = 0; i < (normals.Count > 50 ? 50 : normals.Count); i++)
+                        {
+                            PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                        }
                     }
                 }
                 catch (Exception ex)

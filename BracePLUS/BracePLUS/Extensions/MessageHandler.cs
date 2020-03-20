@@ -376,8 +376,10 @@ namespace BracePLUS.Extensions
 
         public List<DateTime> ExtractTimes(DateTime start, byte[] data, int packets)
         {
-            List<DateTime> times = new List<DateTime>();
-            times.Add(start);
+            List<DateTime> times = new List<DateTime>
+            {
+                start
+            };
 
             DateTime t_old = start;
 

@@ -114,7 +114,6 @@ namespace BracePLUS.ViewModels
 
         public InterfaceViewModel()
         {
-            App.Client = new BraceClient();
             App.Client.PressureUpdated += Client_OnPressureUpdated;
             App.Client.StatusUpdated += Client_OnStatusUpdated;
             App.Client.UIUpdated += Client_OnUIUpdated;
