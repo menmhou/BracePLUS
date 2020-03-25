@@ -40,6 +40,26 @@ namespace BracePLUS.ViewModels
                 RaisePropertyChanged(() => LoggedColumnSeries);
             }
         }
+        private double[] _strokeDashArray;
+        public double[] StrokeDashArray
+        {
+            get => _strokeDashArray;
+            set
+            {
+                _strokeDashArray = value;
+                RaisePropertyChanged(() => StrokeDashArray);
+            }
+        }
+        private double _annotationLineHeight;
+        public double AnnotationLineHeight
+        {
+            get => _annotationLineHeight;
+            set
+            {
+                _annotationLineHeight = value;
+                RaisePropertyChanged(() => AnnotationLineHeight);
+            }
+        }
         #endregion
         #region Refreshing
         private bool _isRefreshing;
@@ -66,6 +86,9 @@ namespace BracePLUS.ViewModels
 
             DataObjectGroups = new ObservableCollection<DataObjectGroup>();
             LoggedColumnSeries = new ObservableCollection<ChartDataModel>();
+
+            StrokeDashArray = new double[2] { 2, 3 };
+            AnnotationLineHeight = BENCHMARK_PRESSURE;
 
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
             LogCommand = new Command(() => ExecuteLogCommand());

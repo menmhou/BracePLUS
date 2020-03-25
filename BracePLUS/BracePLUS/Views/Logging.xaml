@@ -4,7 +4,7 @@
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
-             xmlns:magic="clr-namespace:MagicGradients;assembly=MagicGradients"
+             xmlns:gradient="clr-namespace:Syncfusion.XForms.Graphics;assembly=Syncfusion.Core.XForms"
              mc:Ignorable="d"
              x:Class="BracePLUS.Views.Logging">
     <ContentPage.Content>
@@ -14,12 +14,32 @@
                            HorizontalOptions="FillAndExpand"
                            BackgroundColor="Transparent"
                            Margin="36">
+                <chart:SfChart.ChartAnnotations>
+                    <chart:LineAnnotation X1="-1" Y1="{Binding AnnotationLineHeight}" 
+                                          X2="7" Y2="{Binding AnnotationLineHeight}" 
+                                          FillColor="White"
+                                          StrokeColor="White"
+                                          StrokeWidth="3"
+                                          StrokeDashArray="{Binding StrokeDashArray}"/>
+                </chart:SfChart.ChartAnnotations>
                 <chart:SfChart.Series>
                     <chart:ColumnSeries ItemsSource="{Binding LoggedColumnSeries}"
-                                        Color="WhiteSmoke"
                                         XBindingPath="Name"
                                         YBindingPath="Value"
-                                        CornerRadius="6"/>
+                                        CornerRadius="6">
+                        <chart:ColumnSeries.ColorModel>
+                            <chart:ChartColorModel Palette="Custom">
+                                <chart:ChartColorModel.CustomGradientColors>
+                                    <chart:ChartGradientColor StartPoint="0.5,1" EndPoint="0.5,0">
+                                        <chart:ChartGradientColor.GradientStops>
+                                            <chart:ChartGradientStop Color="#A8EAEE" Offset= "0"/>
+                                            <chart:ChartGradientStop Color="#7BB0F9" Offset= "1"/>
+                                        </chart:ChartGradientColor.GradientStops>
+                                    </chart:ChartGradientColor>
+                                </chart:ChartColorModel.CustomGradientColors>
+                            </chart:ChartColorModel>
+                        </chart:ColumnSeries.ColorModel>
+                    </chart:ColumnSeries>
                 </chart:SfChart.Series>
                 
                 <chart:SfChart.PrimaryAxis>

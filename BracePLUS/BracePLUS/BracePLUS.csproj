@@ -19,6 +19,7 @@
     <PackageReference Include="MvvmCross" Version="6.4.2" />
     <PackageReference Include="MvvmCross.Forms" Version="6.4.2" />
     <PackageReference Include="Plugin.BLE" Version="2.1.1" />
+    <PackageReference Include="Syncfusion.Xamarin.Core" Version="17.4.0.55" />
     <PackageReference Include="Syncfusion.Xamarin.SfChart" Version="17.4.0.55" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />

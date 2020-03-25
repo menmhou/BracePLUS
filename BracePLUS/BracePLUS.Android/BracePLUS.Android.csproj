@@ -73,6 +73,9 @@
     <PackageReference Include="Rg.Plugins.Popup">
       <Version>1.2.0.223</Version>
     </PackageReference>
+    <PackageReference Include="Syncfusion.Xamarin.Core">
+      <Version>17.4.0.55</Version>
+    </PackageReference>
     <PackageReference Include="Syncfusion.Xamarin.SfChart">
       <Version>17.4.0.55</Version>
     </PackageReference>
