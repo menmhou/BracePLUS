@@ -34,6 +34,8 @@ namespace BracePLUS.Extensions
 
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
 
+        public const double BENCHMARK_PRESSURE = 281.791;
+
         // UI EVENTS
         public const int CONNECTED = 0;
         public const int DISCONNECTED = 1;
@@ -61,5 +63,8 @@ namespace BracePLUS.Extensions
         public static Xamarin.Forms.Color START_COLOUR = Xamarin.Forms.Color.FromHex("#0078E5");
         public static Xamarin.Forms.Color WAIT_COLOUR = Xamarin.Forms.Color.FromHex("#005096");
         public static Xamarin.Forms.Color STOP_COLOUR = Xamarin.Forms.Color.FromHex("#FE0000");
+
+        // EMOJI DEFINITIONS
+        // public static long 
     }
 }

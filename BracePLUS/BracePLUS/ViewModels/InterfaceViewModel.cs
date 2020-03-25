@@ -10,6 +10,8 @@ using MvvmCross.ViewModels;
 using static BracePLUS.Extensions.Constants;
 using System.Diagnostics;
 using BracePLUS.Events;
+using BracePLUS.Extensions;
+using System;
 
 namespace BracePLUS.ViewModels
 {
@@ -111,9 +113,12 @@ namespace BracePLUS.ViewModels
 
         // Private Properties
         double chartCounter = 0;
+        private readonly MessageHandler handler;
 
         public InterfaceViewModel()
         {
+            handler = new MessageHandler();
+
             App.Client.PressureUpdated += Client_OnPressureUpdated;
             App.Client.StatusUpdated += Client_OnStatusUpdated;
             App.Client.UIUpdated += Client_OnUIUpdated;
@@ -160,7 +165,6 @@ namespace BracePLUS.ViewModels
         {
             Status = e.Status;
         }
-
         void Client_OnUIUpdated(object sender, UIUpdatedEventArgs e)
         {
             switch (e.Status)
@@ -206,7 +210,6 @@ namespace BracePLUS.ViewModels
                     break;
             }
         }
-
         void Client_OnPressureUpdated(object sender, PressureUpdatedEventArgs e)
         {
             Device.BeginInvokeOnMainThread(() =>
@@ -265,11 +268,7 @@ namespace BracePLUS.ViewModels
             {
                 if (App.Client.STATUS != LOGGING_START)
                 {
-                    await App.Client.Save();
-                }
-                else
-                {
-                   // await App.Client.StopStream();
+                    await App.Client.Save(handler.GetFileName(DateTime.Now, extension: null));
                 }
             }
             else

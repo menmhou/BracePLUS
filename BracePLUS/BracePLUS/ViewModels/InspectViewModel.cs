@@ -46,36 +46,26 @@ namespace BracePLUS.Views
             get => DataObj.AveragePressure;
             set { }
         }
-        public double AverageChange
+        public string AverageChange
         {
-            get
-            {
-                return (100*AveragePressure / App.GlobalAverage)-100;
-            }
+            get => DataObj.FormattedPercentageDifference;
             set {  }
         }
-
         public double AverageOverall
         {
             get => App.GlobalAverage;
             set { }
         }
-
         public double MaxPressure 
         {
             get => DataObj.MaxPressure;
             set { }
         }
-
         public double MaximumChange
         {
-            get
-            {
-                return (100*MaxPressure / App.GlobalMax)-100;
-            }
+            get => (100*MaxPressure / App.GlobalMax)-100;
             set { }
         }
-
         public double MaximumOverall
         {
             get => App.GlobalMax;
@@ -121,6 +111,7 @@ namespace BracePLUS.Views
             set { }
         }
         #endregion
+
         #region Commands
         // Public Interface Commands
         public Command ShareCommand { get; set; }
@@ -145,12 +136,6 @@ namespace BracePLUS.Views
         }
 
         #region Events
-        protected virtual void OnRemoveObject(RemoveObjectEventArgs e)
-        {
-            Debug.WriteLine("Removing object: " + e.dataObject.Name);
-            RemoveObject?.Invoke(this, e);
-        }
-        public event EventHandler<RemoveObjectEventArgs> RemoveObject;
         protected virtual void OnLocalFileListUpdated(EventArgs e)
         {
             LocalFileListUpdated?.Invoke(this, e);
@@ -197,7 +182,7 @@ namespace BracePLUS.Views
             }
         }
 
-        public async Task ExecuteShareCommand()
+        private async Task ExecuteShareCommand()
         {
             var file = Path.Combine(App.FolderPath, DataObj.Directory);
 
@@ -208,7 +193,7 @@ namespace BracePLUS.Views
             });
         }
 
-        public async Task ExecuteDeleteCommand()
+        private async Task ExecuteDeleteCommand()
         {
             if (await Application.Current.MainPage.DisplayAlert("Delete File?", "Delete file from local storage?", "Yes", "No"))
             {
@@ -219,8 +204,7 @@ namespace BracePLUS.Views
                     if (filename == DataObj.Directory)
                     {
                         File.Delete(filename);
-                        RemoveObjectEventArgs args = new RemoveObjectEventArgs() { dataObject = DataObj };
-                        MessagingCenter.Send<InspectViewModel, DataObject>(this, "Remove", DataObj);
+                        MessagingCenter.Send(this, "Remove", DataObj);
                     }
                 }
                 OnLocalFileListUpdated(EventArgs.Empty);

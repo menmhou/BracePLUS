@@ -25,13 +25,13 @@ namespace BracePLUS.Views
             InitializeComponent();
             handler = new MessageHandler();
             BindingContext = viewModel = new HistoryViewModel();
-            viewModel.LoadLocalFiles();
+            viewModel.RefreshObjects();
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            // viewModel.RefreshObjects();
+            viewModel.RefreshObjects();
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)

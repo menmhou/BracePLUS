@@ -12,10 +12,11 @@ namespace BracePLUS.Extensions
     {
         private static readonly Random random = new Random();
 
-        // Taken from :
-        // https://stackoverflow.com/a/1344242/12383548
         public static string RandomString(int length)
         {
+            // Taken from :
+            // https://stackoverflow.com/a/1344242/12383548
+
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             return new string(Enumerable.Repeat(chars, length)
               .Select(s => s[random.Next(s.Length)]).ToArray());
@@ -163,7 +164,7 @@ namespace BracePLUS.Extensions
 
                     case FILE_FORMAT_MMDDHHmm:
 
-                        // Format: MMDDHHmm
+                        // Format: MMDDHHmm.dat
                         // Example filename: "09181007.dat"
                         // Represents 10:07am 18th September
                         // charArray would be: ['1','0','0'...'9']
@@ -187,13 +188,6 @@ namespace BracePLUS.Extensions
                         
                         // remove first 6 chards then all chars after 8th
                         int minute = int.Parse(min_t.Remove(0, 6).Remove(2));
-
-                        /*
-                        Debug.WriteLine("month: " + month);
-                        Debug.WriteLine("day: " + day);
-                        Debug.WriteLine("hour: " + hour);
-                        Debug.WriteLine("minute: " + minute);
-                        */
 
                         // Put data into a string of the correct format
                         string mon_fmt, day_fmt, hr_fmt, min_fmt, tt;
@@ -239,9 +233,7 @@ namespace BracePLUS.Extensions
             return filetime;
         }
 
-        public string GetFileName(DateTime dateTime, 
-            string extension = ".txt", 
-            int file_format = FILE_FORMAT_MMDDHHmm)
+        public string GetFileName(DateTime dateTime, string extension = ".txt", int file_format = FILE_FORMAT_MMDDHHmm)
         {
             string filename = "";
             try
@@ -288,41 +280,6 @@ namespace BracePLUS.Extensions
             }
 
             return filename;
-        }
-
-        public List<double[]> DecodeData(byte[] bytes, int nodes)
-        {
-            /*** DATA STRUCTURE ***/
-            /*
-             *  [ T0 | T1 | T2 | T3 | Xl | Xm | Yl | Ym | Zl | Zm | Xl | Xm ...]
-             *   0    1    2    3    4    5    6    7    8    9    10   11      
-             */
-
-            List<double[]> data = new List<double[]>();
-
-            // Get the time in seconds since system started
-            var t0 = bytes[3];
-            var t1 = bytes[2] << 8;
-            var t2 = bytes[1] << 16;
-            var t3 = bytes[0] << 24;
-
-            double[] time = { (t3 + t2 + t1 + t0) / 1000.0 };
-
-            data.Add(time);
-
-            double x, y, z;
-
-            for (int i = 0; i < nodes; i++)
-            {
-                x = ((bytes[(i * 6) + 4] << 8) + bytes[(i * 6) + 5]) * 0.00906;
-                y = ((bytes[(i * 6) + 6] << 8) + bytes[(i * 6) + 7]) * 0.00906;
-                z = ((bytes[(i * 6) + 8] << 8) + bytes[(i * 6) + 9]) * 0.02636;
-
-                double[] values = {x, y, z };
-                data.Add(values);
-            }
-
-            return data;
         }
 
         public List<double> ExtractNormals(byte[] data, int maxIndex = 100, int startIndex = 8)
@@ -422,6 +379,25 @@ namespace BracePLUS.Extensions
             return filesize;
         }
 
+        public string FormattedPercentageDifference(double value, double global)
+        {
+            try
+            {
+                double diff = (100 * value / global) - 100;
+                
+                if (diff < 0)
+                    return string.Format("{0:0.00}%", diff);
+
+                else
+                    return string.Format("+{0:0.00}%", diff);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                return "format % err";
+            }
+        }
+
         public void PrintInvalidFileChars()
         {
             Debug.WriteLine("All invalid filename chars:");
@@ -456,6 +432,39 @@ namespace BracePLUS.Extensions
         public string GetSafeFilename(string filename)
         {
             return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
+        }
+
+        public int GetAverage(int[] values)
+        {
+            int sum = 0;
+            int n = values.Length;
+
+            foreach (var val in values)
+                sum += val;
+
+            return sum / n;
+        }
+
+        public double GetAverage(double[] values)
+        {
+            double sum = 0;
+            int n = values.Length;
+
+            foreach (var val in values)
+                sum += val;
+
+            return sum / n;
+        }
+
+        public double GetAverage(List<double> values)
+        {
+            double sum = 0;
+            int n = values.Count;
+
+            foreach (var val in values)
+                sum += val;
+
+            return sum / n;
         }
     }
 }

@@ -4,14 +4,40 @@
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
+             xmlns:magic="clr-namespace:MagicGradients;assembly=MagicGradients"
              mc:Ignorable="d"
              x:Class="BracePLUS.Views.Logging">
     <ContentPage.Content>
-        <StackLayout BackgroundColor="White">
+        <StackLayout BackgroundColor="Navy">
             <chart:SfChart HeightRequest="300"
                            VerticalOptions="FillAndExpand"
                            HorizontalOptions="FillAndExpand"
-                           BackgroundColor="DimGray">
+                           BackgroundColor="Transparent"
+                           Margin="36">
+                <chart:SfChart.Series>
+                    <chart:ColumnSeries ItemsSource="{Binding LoggedColumnSeries}"
+                                        Color="WhiteSmoke"
+                                        XBindingPath="Name"
+                                        YBindingPath="Value"
+                                        CornerRadius="6"/>
+                </chart:SfChart.Series>
+                
+                <chart:SfChart.PrimaryAxis>
+                    <chart:CategoryAxis ShowMajorGridLines="False">
+                        <chart:CategoryAxis.LabelStyle>
+                            <chart:ChartAxisLabelStyle TextColor="White"/>
+                        </chart:CategoryAxis.LabelStyle>
+                    </chart:CategoryAxis>
+                </chart:SfChart.PrimaryAxis>
+
+                <chart:SfChart.SecondaryAxis>
+                    <chart:NumericalAxis ShowMajorGridLines="False"
+                                         ShowMinorGridLines="False">
+                        <chart:NumericalAxis.LabelStyle>
+                            <chart:ChartAxisLabelStyle TextColor="White"/>
+                        </chart:NumericalAxis.LabelStyle>
+                    </chart:NumericalAxis>
+                </chart:SfChart.SecondaryAxis>
             </chart:SfChart>
             <Grid VerticalOptions = "FillAndExpand">
                 <Grid.RowDefinitions>
@@ -24,26 +50,58 @@
                     <ColumnDefinition Width="3*" />
                 </Grid.ColumnDefinitions>
 
-                <ListView ItemsSource="{Binding DataObjects}" 
+                <ListView x:Name="listView"
+                          ItemsSource="{Binding DataObjectGroups}"
+                          ItemSelected="listView_ItemSelected"
+                          IsGroupingEnabled="True"
+                          BackgroundColor="White"
+                          HasUnevenRows="True"
                           Grid.Row = "0" 
                           Grid.Column = "0" 
                           Grid.RowSpan = "2"
                           Grid.ColumnSpan = "3" 
                           VerticalOptions = "FillAndExpand" 
                           HorizontalOptions="FillAndExpand">
+                    <ListView.GroupHeaderTemplate>
+                        <DataTemplate>
+                            <ViewCell>
+                                <Label Text="{Binding Heading}"
+                                       Padding="5"/>
+                            </ViewCell>
+                        </DataTemplate>
+                    </ListView.GroupHeaderTemplate>
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <ViewCell>
-                                <Frame Margin="4, 8"
-                                       Padding="8">
-                                    <Label Text="{Binding Name}"
-                                           FontSize="Large"/>
+                                <Frame Padding="8"
+                                       HasShadow="False">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="3*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Image Source="{Binding UpDownImage}"
+                                               Grid.Column="0"
+                                               HeightRequest="10"/>
+                                        <Label Text="{Binding Name}" 
+                                               FontSize="Medium" 
+                                               FontAttributes="Bold"  
+                                               Grid.Column="1"/>
+                                        <Label Text="{Binding FormattedPercentageDifference}" 
+                                               Grid.Column="2"
+                                               FontSize="Medium"
+                                               VerticalOptions="CenterAndExpand"/>
+                                    </Grid>
                                 </Frame>
                             </ViewCell>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
                 <Button Text = "+"
+                        Command="{Binding LogCommand}"
                         FontSize="Medium"
                         HeightRequest="60"
                         WidthRequest="60"
@@ -54,9 +112,7 @@
                         BackgroundColor = "Fuchsia" 
                         Grid.Row="1" 
                         Grid.Column = "2"/>
-
             </Grid>
-
         </StackLayout>
     </ContentPage.Content>
 </ContentPage>

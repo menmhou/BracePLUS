@@ -29,17 +29,17 @@ namespace BracePLUS
         // BLE Status
         public static string ConnectedDevice
         { 
-            get { return Client.Device.Name; }
+            get { return Client.Brace.Name; }
             set { } 
         }
         public static string DeviceID
         { 
-            get { return Client.Device.Id.ToString(); }
+            get { return Client.Brace.Id.ToString(); }
             set { }
         }
         public static string RSSI 
         { 
-            get { return Client.Device.Rssi.ToString(); }
+            get { return Client.Brace.Rssi.ToString(); }
             set { }
         }
 
@@ -56,6 +56,7 @@ namespace BracePLUS
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(SyncFusionLicense);
             FolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
 
+            // ClearFiles();
             InitializeComponent();
 
             generator = new Random();
@@ -69,8 +70,6 @@ namespace BracePLUS
 
         protected override async void OnStart()
         {
-            MessagingCenter.Send(Client, "StatusMessage", "Unconnected");
-
             isConnected = false;
             await Client.StartScan();
         }
@@ -100,6 +99,22 @@ namespace BracePLUS
             {
                 Debug.WriteLine("Vibration failed: " + ex.Message);
             }
+        }
+
+        private void ClearFiles()
+        {
+            string[] files = Directory.GetFiles(FolderPath, "*.txt");
+            int n = 0;
+
+            foreach (string f in files)
+            {
+                Debug.WriteLine("Discovered file: " + f);
+                File.Delete(f);
+
+                n++;
+            }
+
+            Debug.WriteLine($"Deleted {n} files");
         }
     }
 }

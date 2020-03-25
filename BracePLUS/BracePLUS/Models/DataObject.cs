@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using Xamarin.Essentials;
 using BracePLUS.Events;
+using static BracePLUS.Extensions.Constants;
 
 namespace BracePLUS.Models
 {
@@ -45,6 +46,11 @@ namespace BracePLUS.Models
             get => string.Format($"{Date.ToShortDateString()}, {Date.ToShortTimeString()}");
             set { }
         }
+        public string FormattedPercentageDifference
+        {
+            get => IsDownloaded ? handler.FormattedPercentageDifference(AveragePressure, BENCHMARK_PRESSURE) : "-";
+            set { }
+        }
         public ObservableCollection<ChartDataModel> NormalData { get; set; }
         public ObservableCollection<ChartDataModel> PreviewNormalData { get; set; }
         public string Detail
@@ -55,6 +61,7 @@ namespace BracePLUS.Models
         public string ChartEnabled { get; set; }
         public bool ProgressBarEnabled { get; set; }
         public float DownloadProgress { get; set; }
+        public string UpDownImage { get; set; }
         #endregion
         #region Data Properties
         public double AveragePressure { get; set; }
@@ -84,12 +91,25 @@ namespace BracePLUS.Models
 
         void Client_OnDownloadProgress(object sender, DownloadProgressEventArgs e)
         {
-            if (e.Value == 1.0) ProgressBarEnabled = false;
+            ProgressBarEnabled = true;
+            if (e.Value >= 1.0) ProgressBarEnabled = false;
             else
             {
+                //Debug.WriteLine(e.Value);
                 ProgressBarEnabled = true;
                 DownloadProgress = e.Value;
             }
+        }
+
+        private async Task ExecuteShareCommand()
+        {
+            var file = Path.Combine(App.FolderPath, Directory);
+
+            await Share.RequestAsync(new ShareFileRequest
+            {
+                Title = Filename,
+                File = new ShareFile(file)
+            });
         }
 
         public async Task ExecuteDownloadCommand()
@@ -98,7 +118,7 @@ namespace BracePLUS.Models
             {
                 if (Data.Length > 6)
                 {
-                    Debug.WriteLine("Data already downloaded, returning.");
+                    //Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
                     ProgressBarEnabled = false;
                     IsDownloaded = true;
@@ -121,6 +141,7 @@ namespace BracePLUS.Models
                 {
                     if (App.isConnected)
                     {
+                        ProgressBarEnabled = true;
                         await App.Client.DownloadFile(Filename);
                     }
                     else
@@ -137,13 +158,30 @@ namespace BracePLUS.Models
             
         }
 
+        public void DebugObject()
+        {
+            Debug.WriteLine("\n*** DEBUG OBJECT ***");
+            Debug.WriteLine($"*** Data Object: {Name} ***");
+            Debug.WriteLine($"*** Date of creation: {Date} ***");
+            Debug.WriteLine($"*** Directory: {Directory} ***");
+            Debug.WriteLine($"*** Downloaded? {IsDownloaded} ***");
+            if (IsDownloaded)
+            {
+                Debug.WriteLine($"*** Size: {FormattedSize} ***");
+                Debug.WriteLine($"*** Average: {AveragePressure} ***");
+                Debug.WriteLine($"*** Max pressure: {MaxPressure} ***");
+                Debug.WriteLine($"*** Duration: {Duration} ***");
+            }
+            Debug.WriteLine("*** END ***\n");
+        }
+
         public void DownloadLocalData(string path)
         {
             try
             {
                 if (Data.Length > 6)
                 {
-                    Debug.WriteLine("Data already downloaded, returning.");
+                    //Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
                     IsDownloaded = true;
                     return;
@@ -181,6 +219,12 @@ namespace BracePLUS.Models
                 {
                     Duration = GetDuration();
                     AveragePressure = GetAverage(normals);
+
+                    if (AveragePressure > BENCHMARK_PRESSURE)
+                        UpDownImage = "UpArrow.png";
+                    else
+                        UpDownImage = "DownArrow.png";
+
                     MaxPressure = GetMaximum(normals);
 
                     var t_finish = handler.DecodeFilename(Filename);
@@ -211,7 +255,7 @@ namespace BracePLUS.Models
             }
             else
             {
-                Debug.WriteLine("Unable to analyze. Data less than 6 bytes.");
+                //Debug.WriteLine("Unable to analyze. Data less than 6 bytes.");
                 ChartEnabled = "False";
             }
         }
@@ -269,17 +313,6 @@ namespace BracePLUS.Models
             }
 
             return max;
-        }
-
-        public async Task ExecuteShareCommand()
-        {
-            var file = Path.Combine(App.FolderPath, Directory);
-
-            await Share.RequestAsync(new ShareFileRequest
-            {
-                Title = Filename,
-                File = new ShareFile(file)
-            });
         }
 
         private string GetPreviewDataString()

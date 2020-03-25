@@ -58,7 +58,7 @@
                            FontSize="Large"
                            VerticalOptions="CenterAndExpand"
                            Grid.Row="0"/>
-                    <Label Text="{Binding AverageChange, StringFormat='Change: {0:0.00}%'}"
+                    <Label Text="{Binding AverageChange}"
                            Grid.Row="1"
                            FontSize="Medium"/>
                     <Label Text="{Binding AverageOverall, StringFormat='Overall Average: {0:0.000}'}"

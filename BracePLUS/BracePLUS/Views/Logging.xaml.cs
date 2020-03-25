@@ -1,10 +1,8 @@
-﻿using BracePLUS.ViewModels;
+﻿using BracePLUS.Models;
+using BracePLUS.ViewModels;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Diagnostics;
 using System.Threading.Tasks;
-
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -25,7 +23,26 @@ namespace BracePLUS.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            // Load list items
+            //viewModel.RefreshObjects();
+        }
+
+        async void listView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+        {
+            DataObject item = e.SelectedItem as DataObject;
+            if (item == null)
+                return;
+
+            // Inspect file...
+            try
+            {
+                await Navigation.PushAsync(new Inspect(item));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Async nav push to new file inspect page failed: {ex.Message}");
+            }
+
+            listView.SelectedItem = null;
         }
     }
 }

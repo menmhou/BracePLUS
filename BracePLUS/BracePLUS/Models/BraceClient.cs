@@ -12,6 +12,7 @@ using Xamarin.Forms;
 using BracePLUS.Events;
 
 using static BracePLUS.Extensions.Constants;
+using BracePLUS.Services;
 
 namespace BracePLUS.Models
 {
@@ -29,9 +30,8 @@ namespace BracePLUS.Models
         public Guid uartRxCharGUID = Guid.Parse(uartRxCharUUID);
 
         // Public Properties
-        public IDevice Device { get; set; }
-        public string Status { get; set; }
-        public static List<byte[]> DATA_IN;
+        public IDevice Brace { get; set; }
+        public static List<byte[]> DATA_IN { get; set; }
 
         // UI Assistant
         StackLayout stack;
@@ -44,17 +44,15 @@ namespace BracePLUS.Models
 
         // Data Handling
         byte[] buffer = new byte[128];
-        private readonly int buf_len = 128;       
-        
+        int packetIndex;
+        float downloadProgress;
+
         public int STATUS = IDLE;
 
         public List<string> messages;
         public List<string> MobileFileList;
 
-        string downloadFilename = "";
-
-        int packetIndex;
-        float downloadProgress;
+        string downloadFilename = "";       
         #endregion
 
         #region Model Instanciation
@@ -170,38 +168,38 @@ namespace BracePLUS.Models
             LocalFileListUpdated?.Invoke(this, e);
         }
         public event EventHandler LocalFileListUpdated;
-        protected virtual void OnDataObjectRemoved(RemoveObjectEventArgs e)
-        {
-            RemoveObject?.Invoke(this, e);
-        }
-        public event EventHandler<RemoveObjectEventArgs> RemoveObject;
         protected virtual void OnPressureUpdated(PressureUpdatedEventArgs e)
         {
             PressureUpdated?.Invoke(this, e);
         }
-        public EventHandler<PressureUpdatedEventArgs> PressureUpdated;
+        public event EventHandler<PressureUpdatedEventArgs> PressureUpdated;
         protected virtual void OnDownloadProgress(DownloadProgressEventArgs e)
         {
             DownloadProgress?.Invoke(this, e);
         }
-        public EventHandler<DownloadProgressEventArgs> DownloadProgress;
+        public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
         protected virtual void OnStatusUpdate(StatusEventArgs e)
         {
             StatusUpdated?.Invoke(this, e);
 
         }
-        public EventHandler<StatusEventArgs> StatusUpdated;
+        public event EventHandler<StatusEventArgs> StatusUpdated;
         protected virtual void OnUIUpdated(UIUpdatedEventArgs e)
         {
             UIUpdated?.Invoke(this, e);
         }
-        public EventHandler<UIUpdatedEventArgs> UIUpdated;
+        public event EventHandler<UIUpdatedEventArgs> UIUpdated;
+        protected virtual void OnLoggingFinished(LoggingFinishedEventArgs e)
+        {
+            LoggingFinished?.Invoke(this, e);
+        }
+        public event EventHandler<LoggingFinishedEventArgs> LoggingFinished;
         #endregion
 
         #region Model Client Logic Methods
         public async Task Connect(IDevice brace)
         {
-            Device = brace;
+            Brace = brace;
 
             // Check system bluetooth is turned on.
             if (!ble.IsOn)
@@ -348,8 +346,11 @@ namespace BracePLUS.Models
             WRITE_FILE(DATA_IN, name: handler.GetFileName(DateTime.Now), header: b, footer: b);
             STATUS = SYS_STREAM_FINISH;
         }
-        public async Task Save()
+        public async Task Save(string filename)
         {
+            // Set the filename to be written by brace
+            downloadFilename = filename;
+
             // Request long-term logging function from brace
             EVENT(LOGGING_START);
             await RUN_BLE_WRITE(uartRx, "D");
@@ -362,7 +363,13 @@ namespace BracePLUS.Models
         }
         public async Task DownloadFile(string _filename)
         {
-            downloadFilename = _filename.Remove(8);
+            Debug.WriteLine("filename: " + _filename);
+
+            if (_filename.Length > 8)
+               downloadFilename = _filename.Remove(8);
+            else
+                downloadFilename = _filename;
+            
             downloadProgress = 0;
             EVENT(DOWNLOAD_START, "Downloading file: " + _filename);
             await RUN_BLE_WRITE(uartRx, "G");
@@ -423,16 +430,22 @@ namespace BracePLUS.Models
             // If filename requested, send over
             if (input == "E")
             {
-                var filename = handler.GetFileName(DateTime.Now, extension: null);
-                await RUN_BLE_WRITE(uartRx, filename);
+                await RUN_BLE_WRITE(uartRx, downloadFilename);
 
-                EVENT(LOGGING_START, "Logging to file: " + filename + ".dat");
+                EVENT(LOGGING_START, "Logging to file: " + downloadFilename + ".dat");
             }
             else
             {
                 // If not filename, decode message and display
                 var msg = handler.Translate(input, STATUS);
                 EVENT(LOGGING_FINISH, msg);
+
+                await Task.Delay(1000);
+                LoggingFinishedEventArgs a = new LoggingFinishedEventArgs
+                {
+                    Filename = downloadFilename
+                };
+                OnLoggingFinished(a);
             }
         }
         private void HANDLE_SYNC(byte[] bytes)
@@ -478,13 +491,14 @@ namespace BracePLUS.Models
 
             try
             {
+                // Debug.WriteLine("Download received...");
                 // Add buffer to local array
                 bytes.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
                 packetIndex += len;
             }
             catch (Exception e)
             {
-                Debug.WriteLine("*************** STREAM EXCEPTION ***************");
+                Debug.WriteLine("*************** DOWNLOAD EXCEPTION ***************");
                 Debug.WriteLine($"Received {bytes.Length} bytes: {BitConverter.ToString(bytes)}");
                 Debug.WriteLine("Copy stream to buffer failed with exception: " + e.Message);
                 Debug.WriteLine($"Stream length: {len}, packet index: {packetIndex}");
@@ -501,6 +515,7 @@ namespace BracePLUS.Models
                 downloadProgress += 1;
                 // Request next packet if header present.
                 await RUN_BLE_WRITE(uartRx, "g");
+                //Debug.WriteLine("Download: Release data");
                 // Send buffer to be written to file and empty all values.
                 buffer = RELEASE_DATA(buffer);
             }
@@ -514,9 +529,12 @@ namespace BracePLUS.Models
                     // Save data and send to display. 
                     try
                     {
-                        // Add buffer to local array
-                        stream.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
-                        packetIndex += stream.Length;
+                        if (stream.Length > 1)
+                        {
+                            // Add buffer to local array
+                            stream.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
+                            packetIndex += stream.Length;
+                        }
                     }
                     catch (Exception e)
                     {
@@ -540,6 +558,7 @@ namespace BracePLUS.Models
                     var input = Encoding.ASCII.GetString(stream);
                     var msg = handler.Translate(input, SYS_STREAM_FINISH);
                     EVENT(SYS_STREAM_FINISH, msg);
+                    STATUS = IDLE;
                     break;
             }
         }
@@ -584,7 +603,7 @@ namespace BracePLUS.Models
                 Debug.WriteLine($"Failed to write {BitConverter.ToString(bytes)} to app with exception: {ex.Message}");
             }
             // Return empty array of same size
-            return new byte[buf_len];
+            return new byte[bytes.Length];
         }
         private void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
         {
@@ -604,7 +623,7 @@ namespace BracePLUS.Models
            
             try
             {
-                // Write file data in chunks of 100 bytes
+                // Write file data in chunks of 128 bytes
                 foreach (var bytes in data)
                 {
                     file.Write(bytes, 0, bytes.Length);
@@ -627,6 +646,10 @@ namespace BracePLUS.Models
             file.Close();
 
             EVENT(FILE_WRITTEN, "File written: " + name);
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                //DependencyService.Get<IMessage>().ShortAlert("File written: " + file.Name);
+            });
             OnLocalFileListUpdated(EventArgs.Empty);
 
             DATA_IN.Clear();
@@ -650,6 +673,7 @@ namespace BracePLUS.Models
 
             var msg = handler.Translate(input, DOWNLOAD_FINISH);
             EVENT(DOWNLOAD_FINISH, msg);
+
             return;
         }
 

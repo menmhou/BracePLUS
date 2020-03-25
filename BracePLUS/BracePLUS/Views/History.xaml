@@ -83,7 +83,7 @@
                                         </chart:SfChart.PrimaryAxis>
 
                                         <chart:SfChart.SecondaryAxis>
-                                            <chart:NumericalAxis Minimum="290"
+                                            <chart:NumericalAxis Minimum="300"
                                                                  Maximum="260"/>
                                         </chart:SfChart.SecondaryAxis>
                                     </chart:SfChart>

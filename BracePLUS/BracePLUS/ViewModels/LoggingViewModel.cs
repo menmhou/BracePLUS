@@ -4,8 +4,10 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
+using BracePLUS.Services;
 using MvvmCross.ViewModels;
 using Xamarin.Forms;
 
@@ -16,14 +18,26 @@ namespace BracePLUS.ViewModels
     class LoggingViewModel : MvxViewModel
     {
         #region DataObjectsList
-        private ObservableCollection<DataObject> _dataObjects;
-        public ObservableCollection<DataObject> DataObjects
+        private ObservableCollection<DataObjectGroup> _dataObjectGroups;
+        public ObservableCollection<DataObjectGroup> DataObjectGroups
         {
-            get => _dataObjects;
+            get => _dataObjectGroups;
             set
             {
-                _dataObjects = value;
-                RaisePropertyChanged(() => DataObjects);
+                _dataObjectGroups = value;
+                RaisePropertyChanged(() => DataObjectGroups);
+            }
+        }
+        #endregion
+        #region Chart
+        private ObservableCollection<ChartDataModel> _loggedColumnSeries;
+        public ObservableCollection<ChartDataModel> LoggedColumnSeries
+        {
+            get => _loggedColumnSeries;
+            set
+            {
+                _loggedColumnSeries = value;
+                RaisePropertyChanged(() => LoggedColumnSeries);
             }
         }
         #endregion
@@ -41,6 +55,8 @@ namespace BracePLUS.ViewModels
         public Command RefreshCommand { get; set; }
         #endregion
 
+        public Command LogCommand { get; set; }
+
         // Private Properties
         private readonly MessageHandler handler;
 
@@ -48,17 +64,107 @@ namespace BracePLUS.ViewModels
         {
             handler = new MessageHandler();
 
-            DataObjects = new ObservableCollection<DataObject>();
+            DataObjectGroups = new ObservableCollection<DataObjectGroup>();
+            LoggedColumnSeries = new ObservableCollection<ChartDataModel>();
 
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
+            LogCommand = new Command(() => ExecuteLogCommand());
 
+            App.Client.LocalFileListUpdated += Client_OnLocalFileListUpdated;
+            App.Client.LoggingFinished += Client_OnLoggingFinished;
+            App.Client.DownloadFinished += Client_OnDownloadFinished;
+
+            RefreshObjects();
+        }
+
+        #region Event Handlers
+        void Client_OnLocalFileListUpdated(object sender, EventArgs e)
+        {
+            RefreshObjects();
+        }
+        async void Client_OnLoggingFinished(object sender, LoggingFinishedEventArgs e)
+        {
+            // Debug.WriteLine($"LOGGING: Logging finished. Downloading file: {e.Filename}...");
+            await App.Client.DownloadFile(e.Filename);
+        }
+        void Client_OnDownloadFinished(object sender, FileDownloadedEventArgs e)
+        {
+            // Debug.WriteLine("LOGGING: Download finished. Updating object: " + e.Filename);
+            UpdateObject(e.Filename);
+        }
+        #endregion
+        #region Command Methods
+        private void ExecuteRefreshCommand()
+        {
+            IsRefreshing = true;
+            RefreshObjects();
+            IsRefreshing = false;
+        }
+        private async void ExecuteLogCommand()
+        {
+            if (App.isConnected)
+            {
+                if (App.Client.STATUS != LOGGING_START)
+                {
+                    var filename = handler.GetFileName(DateTime.Now, extension: null);
+                    await App.Client.Save(filename);
+                }
+            }
+            else
+            {
+                await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to log data.", "OK");
+            }
+            
+        }
+        #endregion
+
+        public void RefreshObjects()
+        {
+            //Debug.WriteLine("LOGGING: Refreshing objects...");
             LoadLocalFiles();
+
+            int downloaded = 0;
+            double avgs_sum = 0.0;
+            // Scan through each group of objects
+            for (int i = 0; i < DataObjectGroups.Count; i++)
+            {
+                var objectGroup = DataObjectGroups[i];
+                foreach (DataObject obj in objectGroup)
+                {
+                    if (obj.IsDownloaded)
+                    {
+                        avgs_sum += obj.AveragePressure;
+                        downloaded++;
+                        if (obj.MaxPressure > App.GlobalMax) App.GlobalMax = obj.MaxPressure;
+                    }
+                }
+
+                App.GlobalAverage = avgs_sum / downloaded;
+            }
+
+            UpdateGraph(DataObjectGroups);
         }
 
         #region Private Methods
         private void LoadLocalFiles()
         {
-            ObservableCollection<DataObject> tempData = new ObservableCollection<DataObject>();
+            // Debug.WriteLine("LOGGING: Loading local files...");
+            var todayObjects = new DataObjectGroup()
+            {
+                Heading = "Today"
+            };
+            var weekObjects = new DataObjectGroup()
+            {
+                Heading = "This Week"
+            };
+            var monthObjects = new DataObjectGroup()
+            {
+                Heading = "This Month"
+            };
+            var olderObjects = new DataObjectGroup()
+            {
+                Heading = "Older"
+            };
 
             var files = Directory.EnumerateFiles(App.FolderPath, "*");
 
@@ -67,9 +173,9 @@ namespace BracePLUS.ViewModels
                 // Get info about file
                 FileInfo fi = new FileInfo(filename);
 
+                // Download data ready to be read by data object
                 var data = File.ReadAllBytes(filename);
 
-                // Create temp object and assign values/data
                 DataObject dataObject = new DataObject
                 {
                     Size = fi.Length,
@@ -83,85 +189,160 @@ namespace BracePLUS.ViewModels
 
                 if (dataObject.Location == "Mobile")
                 {
-                    tempData.Add(dataObject);
+                    dataObject.Analyze();
+
+                    if (dataObject.Date.Month == DateTime.Now.Month &&
+                        dataObject.Date.Day == DateTime.Now.Day)
+                    {
+                        Debug.WriteLine($"Adding {dataObject.Name} to today objects");
+                        todayObjects.Add(dataObject);
+                    }
+                    else if (dataObject.Date.Month == DateTime.Now.Month &&
+                        dataObject.Date > DateTime.Now.AddDays(-7))
+                    {
+                        Debug.WriteLine($"Adding {dataObject.Name} to week objects");
+                        weekObjects.Add(dataObject);
+                    }
+                    else if (dataObject.Date.Month == DateTime.Now.Month)
+                    {
+                        Debug.WriteLine($"Adding {dataObject.Name} to month objects");
+                        monthObjects.Add(dataObject);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Adding {dataObject.Name} to older objects");
+                        olderObjects.Add(dataObject);
+                    }
                 }
             }
-            DataObjects = tempData;
 
-            RefreshObjects();
-            ReorderDataObjects();
-        }
-
-        private void RefreshObjects()
-        {
-            App.GlobalMax = 0;
-            double avgs_sum = 0.0;
-            foreach (DataObject obj in DataObjects)
+            var group = new ObservableCollection<DataObjectGroup>()
             {
-                obj.DownloadLocalData(obj.Directory);
-                obj.Analyze();
+                todayObjects,
+                weekObjects,
+                monthObjects,
+                olderObjects
+            };
+            DataObjectGroups = group;
 
-                if (obj.IsDownloaded)
-                {
-                    avgs_sum += obj.AveragePressure;
-                    if (obj.MaxPressure > App.GlobalMax) App.GlobalMax = obj.MaxPressure;
-                }
-            }
-
-            App.GlobalAverage = avgs_sum / DataObjects.Count;
+            ReorderDataObjects();
         }
 
         private void ReorderDataObjects()
         {
-            var data = DataObjects;
-            Debug.WriteLine("Objects before reordering:");
-            foreach (var obj in data)
-                Debug.WriteLine(obj.Name);
+            Debug.WriteLine("LOGGING: Reordering data objects.");
             
-            for (int j = 0; j < data.Count; j++)
+            try
             {
-                for (int i = 0; i < data.Count - 1; i++)
+                for (int k = 0; k < DataObjectGroups.Count; k++)
                 {
-                    try
+                    var objects = DataObjectGroups[k];
+
+                    for (int j = 0; j < objects.Count; j++)
                     {
-                        // Get date of current and next object
-                        int date1 = Int32.Parse(data[i].Filename.Remove(8));
-                        int date2 = Int32.Parse(data[i + 1].Filename.Remove(8));
-
-                        // If date2 > date1, respective dataobjects swap
-                        if (date2 > date1)
+                        for (int i = 0; i < objects.Count - 1; i++)
                         {
-                            // Create temp data objects
-                            DataObject temp_i = data[i];
-                            DataObject temp_i1 = data[i + 1];
+                            try
+                            {
+                                // Get date of current and next object
+                                int date1 = Int32.Parse(objects[i].Filename.Remove(8));
+                                int date2 = Int32.Parse(objects[i + 1].Filename.Remove(8));
 
-                            // Remove from collection
-                            data.Remove(temp_i);
-                            data.Remove(temp_i1);
+                                // If date2 > date1, respective dataobjects swap
+                                if (date2 > date1)
+                                {
+                                    // Create temp data objects
+                                    DataObject temp_i = objects[i];
+                                    DataObject temp_i1 = objects[i + 1];
 
-                            // Put back in opposite places
-                            data.Insert(i, temp_i1);
-                            data.Insert(i + 1, temp_i);
+                                    // Remove from collection
+                                    objects.Remove(temp_i);
+                                    objects.Remove(temp_i1);
+
+                                    // Put back in opposite places
+                                    objects.Insert(i, temp_i1);
+                                    objects.Insert(i + 1, temp_i);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine("LOGGING: Object reordering failed: " + ex.Message);
+                            }
                         }
                     }
-                    catch (Exception ex)
+
+                    DataObjectGroups[k] = objects;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("LOGGING: Object reordering failed: " + ex.Message);
+            }
+        }
+
+        private void UpdateObject(string objName)
+        {
+            // Scan through all objects, if found update data and analyze.
+            for (int i = 0; i < DataObjectGroups.Count; i++)
+            {
+                var objectGroup = DataObjectGroups[i];
+
+                foreach (var obj in objectGroup)
+                {
+                    if (obj.Filename == objName)
                     {
-                        Debug.WriteLine("Object reordering failed: " + ex.Message);
+                        obj.DownloadLocalData(obj.Directory);
+                        //Debug.WriteLine($"Downloaded data length: {obj.Data.Length}");
+                        obj.IsDownloaded = true;
+                        obj.Analyze();
                     }
                 }
             }
-            Debug.WriteLine("Objects after reordering:");
-            foreach (var obj in data)
-                Debug.WriteLine(obj.Name);
-
-            DataObjects = data;
         }
 
-        private void ExecuteRefreshCommand()
+        private void UpdateGraph(ObservableCollection<DataObjectGroup> dataObjectGroup)
         {
-            IsRefreshing = true;
-            RefreshObjects();
-            IsRefreshing = false;
+            LoggedColumnSeries.Clear();
+
+            double[] temps = new double[7];
+            double[] normals = new double[7];
+
+            foreach (var group in dataObjectGroup)
+            {
+                var dataObjects = group.DataObjects;
+
+                // Get normals from last 7 days to display (reference to today's date then 1 less each time)
+                for (int i = 0; i < 7; i++)
+                    temps[i] = GetNormalAverageFromDate(DateTime.Today.AddDays(i * (-1)), dataObjects);
+
+                for (int i = 0; i < 7; i++)
+                    if (temps[i] > 0) normals[i] = temps[i];
+            }
+
+            LoggedColumnSeries.Add(new ChartDataModel("6 days", normals[6]));
+            LoggedColumnSeries.Add(new ChartDataModel("5 days", normals[5]));
+            LoggedColumnSeries.Add(new ChartDataModel("4 days", normals[4]));
+            LoggedColumnSeries.Add(new ChartDataModel("3 days", normals[3]));
+            LoggedColumnSeries.Add(new ChartDataModel("2 days", normals[2]));
+            LoggedColumnSeries.Add(new ChartDataModel("Yesterday", normals[1]));
+            LoggedColumnSeries.Add(new ChartDataModel("Today", normals[0]));
+        }
+
+        private double GetNormalAverageFromDate(DateTime date, List<DataObject> dataObjects)
+        {
+            List<double> normals = new List<double>();
+
+            // scan through objects
+            foreach (var obj in dataObjects)
+            {
+                // if date matches the desired one, add to temp list of objects
+                if ((obj.Date.Day == date.Day) && (obj.Date.Month == date.Month) && obj.IsDownloaded)
+                {
+                    normals.Add(obj.AveragePressure);
+                }
+            }
+
+            return handler.GetAverage(normals);
         }
         #endregion
     }
