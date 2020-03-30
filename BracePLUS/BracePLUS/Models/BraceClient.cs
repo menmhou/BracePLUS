@@ -16,7 +16,7 @@ using BracePLUS.Services;
 
 namespace BracePLUS.Models
 {
-    public class BraceClient
+    public class BraceClient : BindableObject
     {
         #region Model Properties
         // Bluetooth Properties
@@ -406,7 +406,7 @@ namespace BracePLUS.Models
                         break;
 
                     case DOWNLOAD_START:
-                        HANDLE_DOWNLOAD(bytes);
+                        await HANDLE_DOWNLOAD(bytes);
                         break;
 
                     default:
@@ -416,6 +416,12 @@ namespace BracePLUS.Models
                         break;
                 }
             };
+
+            UIUpdatedEventArgs arg = new UIUpdatedEventArgs()
+            {
+                RSSI = Brace.Rssi
+            };
+            OnUIUpdated(arg);
         }
         private void HANDLE_INIT(byte[] args)
         {
@@ -471,7 +477,7 @@ namespace BracePLUS.Models
                 MobileFileList.Add(file);
             }
         }
-        private async void HANDLE_DOWNLOAD(byte[] bytes)
+        private async Task HANDLE_DOWNLOAD(byte[] bytes)
         {
            //  Debug.WriteLine($"File upload bytes: {BitConverter.ToString(bytes)}");
             var input = Encoding.ASCII.GetString(bytes);
@@ -607,43 +613,7 @@ namespace BracePLUS.Models
         }
         private void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
         {
-            // Create file instance
-            var filename = Path.Combine(App.FolderPath, name);
-            FileStream file = new FileStream(filename, FileMode.Create, FileAccess.Write);
-
-            // Header may be null so write in try/catch
-            try
-            {
-                file.Write(header, 0, header.Length);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Header write failed: " + ex.Message);
-            }
-           
-            try
-            {
-                // Write file data in chunks of 128 bytes
-                foreach (var bytes in data)
-                {
-                    file.Write(bytes, 0, bytes.Length);
-                };
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Data write failed: " + ex.Message);
-            }
-
-            // Footer may be null so write in try/catch
-            try
-            {
-                file.Write(footer, 0, footer.Length);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Footer write failed: " + ex.Message);
-            }
-            file.Close();
+            FileManager.WriteFile(data, name, header, footer);
 
             EVENT(FILE_WRITTEN, "File written: " + name);
             Device.BeginInvokeOnMainThread(() =>
@@ -676,7 +646,6 @@ namespace BracePLUS.Models
 
             return;
         }
-
         public void EVENT(int e, string msg = "")
         {
             UIUpdatedEventArgs a = new UIUpdatedEventArgs

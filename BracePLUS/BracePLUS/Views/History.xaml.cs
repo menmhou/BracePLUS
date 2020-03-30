@@ -25,7 +25,6 @@ namespace BracePLUS.Views
             InitializeComponent();
             handler = new MessageHandler();
             BindingContext = viewModel = new HistoryViewModel();
-            viewModel.RefreshObjects();
         }
 
         protected override void OnAppearing()

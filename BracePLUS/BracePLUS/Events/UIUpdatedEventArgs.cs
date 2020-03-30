@@ -7,5 +7,7 @@ namespace BracePLUS.Events
     public class UIUpdatedEventArgs : EventArgs
     {
         public int Status { get; set; }
+        public int RSSI { get; set; }
+        public string DeviceName { get; set; }
     }
 }

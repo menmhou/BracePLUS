@@ -146,10 +146,10 @@ namespace BracePLUS.Views
         public void InitDataObject()
         {
             if (!DataObj.IsDownloaded) return;
-            Packets = (DataObj.Data.Length - 6) / 128;
+            Packets = (DataObj.RawData.Length - 6) / 128;
 
-            var normals = handler.ExtractNormals(DataObj.Data, Packets, 11);
-            var times = handler.ExtractTimes(DataObj.StartTime, DataObj.Data, Packets);
+            var normals = handler.ExtractNormals(DataObj.CalibData);
+            var times = handler.ExtractTimes(DataObj.StartTime, DataObj.RawData, Packets);
 
             // Add chart data
             try
@@ -170,7 +170,7 @@ namespace BracePLUS.Views
 
             try
             {
-                var nodes = handler.ExtractNodes(DataObj.Data, 0);
+                var nodes = handler.ExtractNodes(DataObj.RawData, 0);
                 for (int i = 0; i < 16; i++)
                 {
                     AllNodesData.Add(new ChartDataModel((i+1).ToString(), nodes[i]));
@@ -182,6 +182,7 @@ namespace BracePLUS.Views
             }
         }
 
+        #region Command Methods
         private async Task ExecuteShareCommand()
         {
             var file = Path.Combine(App.FolderPath, DataObj.Directory);
@@ -230,6 +231,7 @@ namespace BracePLUS.Views
                 BindingContext = DataObj
             });
         }
+        #endregion
 
         private void SliderValueUpdated(double value)
         {
@@ -239,7 +241,7 @@ namespace BracePLUS.Views
             try
             {
                 AllNodesData.Clear();
-                var nodes = handler.ExtractNodes(DataObj.Data, val-1);
+                var nodes = handler.ExtractNodes(DataObj.RawData, val-1);
                 for (int i = 0; i < 16; i++)
                 {
                     AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));

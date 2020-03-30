@@ -1,5 +1,6 @@
 ﻿using BracePLUS.Models;
 using BracePLUS.ViewModels;
+using Syncfusion.SfChart.XForms;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;

@@ -10,7 +10,6 @@ using BracePLUS.Models;
 using BracePLUS.Extensions;
 using MvvmCross.ViewModels;
 using System.Collections.Generic;
-using System.Text;
 using BracePLUS.Events;
 using System.Threading.Tasks;
 using BracePLUS.Views;
@@ -47,7 +46,6 @@ namespace BracePLUS.ViewModels
         #endregion
 
         // Public Commands
-        public Command ClearListCommand { get; set; }
         public Command GetFilenamesCommand { get; set; }
 
         // Private Properties
@@ -60,7 +58,6 @@ namespace BracePLUS.ViewModels
 
             // Commands
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
-            ClearListCommand = new Command(async () => await ExecuteClearListCommand());
             GetFilenamesCommand = new Command(async () => await ExecuteGetFilenamesCommand());
 
             // Events
@@ -110,25 +107,6 @@ namespace BracePLUS.ViewModels
                     ("Not Connected", "Please connect to Brace+ to sync files.", "OK");
             }
         }
-        private async Task ExecuteClearListCommand()
-        {
-            // Check with user to clear all files
-            var clear = await Application.Current.MainPage.DisplayAlert("Clear files?", "Clear all files from device memory. Continue?", "Yes", "Cancel");
-
-            if (clear)
-            {
-                // Clear files from local list
-                DataObjects.Clear();
-                
-                // Clear files from memory
-                var files = Directory.EnumerateFiles(App.FolderPath, "*");
-                foreach (var filename in files)
-                {
-                    File.Delete(filename);
-                }
-                
-            }
-        }
         #endregion
 
         public void RefreshObjects()
@@ -176,7 +154,7 @@ namespace BracePLUS.ViewModels
                     Filename = fi.Name,
                     Directory = filename,
                     Location = (data[0] == 0x0A) ? "Local" : "Mobile",
-                    Data = data,
+                    RawData = data,
                     IsDownloaded = (data.Length > 6) ? true : false
                 };
 

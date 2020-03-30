@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="BracePLUS.Views.BluetoothSetup"
+             Title="Bluetooth Setup">
+    <ContentPage.Content>
+        <StackLayout BackgroundColor="White"
+                     Padding="10">
+
+            <Frame CornerRadius="20"
+                   BackgroundColor="{Binding ConnectionColour}"
+                   VerticalOptions="Center"
+                   HorizontalOptions="Center"
+                   HasShadow ="True">
+                <Label Text="{Binding ConnectionText}"
+                       FontSize="30"
+                       TextColor="White"/>
+            </Frame>
+
+
+            <Label Text="{Binding DeviceName, StringFormat='Device name: {0}'}"
+                    Margin="12"
+                    FontSize="20"/>
+
+            <Label Text="{Binding ConnectionStrength, StringFormat='Connection strength: {0}'}"
+                    Margin="12"
+                    FontSize="20"/>
+
+            <Grid Margin="10">
+                <Button Text="Scan"
+                        MinimumHeightRequest="20"
+                        Grid.Column="0"/>
+                <Button Text="Disconnect"
+                        Grid.Column="1"/>
+            </Grid>
+
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

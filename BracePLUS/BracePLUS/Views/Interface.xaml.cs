@@ -15,7 +15,10 @@ namespace BracePLUS.Views
         public Interface()
         {
             InitializeComponent();
-            BindingContext = viewModel = new InterfaceViewModel();
+            BindingContext = viewModel = new InterfaceViewModel
+            {
+                Nav = Navigation
+            };
         }
     }
 }

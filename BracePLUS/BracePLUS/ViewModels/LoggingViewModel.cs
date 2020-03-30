@@ -9,6 +9,7 @@ using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.Services;
 using MvvmCross.ViewModels;
+using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
 
 using static BracePLUS.Extensions.Constants;
@@ -58,6 +59,16 @@ namespace BracePLUS.ViewModels
             {
                 _annotationLineHeight = value;
                 RaisePropertyChanged(() => AnnotationLineHeight);
+            }
+        }
+        private int _selectedIndex;
+        public int SelectedIndex
+        {
+            get => _selectedIndex;
+            set
+            {
+                _selectedIndex = value;
+                RaisePropertyChanged(() => SelectedIndex);
             }
         }
         #endregion
@@ -143,7 +154,7 @@ namespace BracePLUS.ViewModels
 
         public void RefreshObjects()
         {
-            //Debug.WriteLine("LOGGING: Refreshing objects...");
+            // Debug.WriteLine("LOGGING: Refreshing objects...");
             LoadLocalFiles();
 
             int downloaded = 0;
@@ -171,7 +182,6 @@ namespace BracePLUS.ViewModels
         #region Private Methods
         private void LoadLocalFiles()
         {
-            // Debug.WriteLine("LOGGING: Loading local files...");
             var todayObjects = new DataObjectGroup()
             {
                 Heading = "Today"
@@ -206,7 +216,7 @@ namespace BracePLUS.ViewModels
                     Filename = fi.Name,
                     Directory = filename,
                     Location = (data[0] == 0x0A) ? "Local" : "Mobile",
-                    Data = data,
+                    RawData = data,
                     IsDownloaded = (data.Length > 6) ? true : false
                 };
 
@@ -217,23 +227,19 @@ namespace BracePLUS.ViewModels
                     if (dataObject.Date.Month == DateTime.Now.Month &&
                         dataObject.Date.Day == DateTime.Now.Day)
                     {
-                        Debug.WriteLine($"Adding {dataObject.Name} to today objects");
                         todayObjects.Add(dataObject);
                     }
                     else if (dataObject.Date.Month == DateTime.Now.Month &&
                         dataObject.Date > DateTime.Now.AddDays(-7))
                     {
-                        Debug.WriteLine($"Adding {dataObject.Name} to week objects");
                         weekObjects.Add(dataObject);
                     }
                     else if (dataObject.Date.Month == DateTime.Now.Month)
                     {
-                        Debug.WriteLine($"Adding {dataObject.Name} to month objects");
                         monthObjects.Add(dataObject);
                     }
                     else
                     {
-                        Debug.WriteLine($"Adding {dataObject.Name} to older objects");
                         olderObjects.Add(dataObject);
                     }
                 }
@@ -252,9 +258,7 @@ namespace BracePLUS.ViewModels
         }
 
         private void ReorderDataObjects()
-        {
-            Debug.WriteLine("LOGGING: Reordering data objects.");
-            
+        {           
             try
             {
                 for (int k = 0; k < DataObjectGroups.Count; k++)

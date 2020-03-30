@@ -28,7 +28,7 @@ namespace BracePLUS.Models
         #region View Properties
         public string Text
         {
-            get => BitConverter.ToString(Data);
+            get => BitConverter.ToString(RawData);
             set { }
         }
         public string FormattedSize
@@ -66,7 +66,8 @@ namespace BracePLUS.Models
         #region Data Properties
         public double AveragePressure { get; set; }
         public double MaxPressure { get; set; }
-        public byte[] Data { get; set; }
+        public byte[] RawData { get; set; }
+        public List<double[,]> CalibData { get; set; }
         public DateTime StartTime { get; set; }
         #endregion
 
@@ -89,6 +90,7 @@ namespace BracePLUS.Models
             App.Client.DownloadProgress += Client_OnDownloadProgress;
         }
 
+        #region Events
         void Client_OnDownloadProgress(object sender, DownloadProgressEventArgs e)
         {
             ProgressBarEnabled = true;
@@ -100,7 +102,8 @@ namespace BracePLUS.Models
                 DownloadProgress = e.Value;
             }
         }
-
+        #endregion
+        #region Command Methods
         private async Task ExecuteShareCommand()
         {
             var file = Path.Combine(App.FolderPath, Directory);
@@ -116,7 +119,7 @@ namespace BracePLUS.Models
         {
             try
             {
-                if (Data.Length > 6)
+                if (RawData.Length > 6)
                 {
                     //Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
@@ -155,13 +158,13 @@ namespace BracePLUS.Models
             {
                 Debug.WriteLine("Filedownload failed: " + ex.Message);
             }
-            
         }
+        #endregion
 
         public void DebugObject()
         {
             Debug.WriteLine("\n*** DEBUG OBJECT ***");
-            Debug.WriteLine($"*** Data Object: {Name} ***");
+            Debug.WriteLine($"*** RawData Object: {Name} ***");
             Debug.WriteLine($"*** Date of creation: {Date} ***");
             Debug.WriteLine($"*** Directory: {Directory} ***");
             Debug.WriteLine($"*** Downloaded? {IsDownloaded} ***");
@@ -179,7 +182,7 @@ namespace BracePLUS.Models
         {
             try
             {
-                if (Data.Length > 6)
+                if (RawData.Length > 6)
                 {
                     //Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
@@ -195,7 +198,7 @@ namespace BracePLUS.Models
             // Download data
             try
             {
-                Data = File.ReadAllBytes(path);
+                RawData = File.ReadAllBytes(path);
                 if (Location == "Local") IsDownloaded = true;
             }
             catch (Exception ex)
@@ -208,33 +211,44 @@ namespace BracePLUS.Models
         public void Analyze()
         {
             // Basic analysis
-            if (Data.Length > 6) // (only contains header/footer)
+            if (RawData.Length > 6) // (only contains header/footer)
             {
-                int packets = (Data.Length - 6) / 128;
+                // Check if file exists
+                if (File.Exists(Filename.Remove(8).Insert(8, "_CALIB.csv")))
+                {
+                    Debug.WriteLine("Calibration file already written.");
+                    // Read calib file
+                }
+                else
+                {
+                    CalibData = Calibrate();
+                }
 
-                // Prepare chart data
-                var normals = handler.ExtractNormals(Data, packets, 11);
+                var normals = handler.ExtractNormals(CalibData);
 
                 try
                 {
                     Duration = GetDuration();
-                    AveragePressure = GetAverage(normals);
+                    AveragePressure = handler.GetAverage(normals);
 
                     if (AveragePressure > BENCHMARK_PRESSURE)
                         UpDownImage = "UpArrow.png";
                     else
                         UpDownImage = "DownArrow.png";
 
-                    MaxPressure = GetMaximum(normals);
+                    MaxPressure = handler.GetMaximum(normals);
 
+                    // Filenames are given at different times:
+                    // At the end when streaming is finished.
+                    // At the beginning when logging is first requested.
                     var t_finish = handler.DecodeFilename(Filename);
                     DateTime t_start = t_finish.AddSeconds(Duration * -1.0);
                     StartTime = new DateTime(t_start.Year, t_start.Month, t_start.Day, t_start.Hour, t_start.Minute, t_start.Second);
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("Data analysis failed with exception: " + ex.Message);
-                }
+                    Debug.WriteLine("RawData analysis failed with exception: " + ex.Message);
+                }               
 
                 try
                 {
@@ -260,27 +274,63 @@ namespace BracePLUS.Models
             }
         }
 
+        public List<double[,]> Calibrate()
+        {
+            var _calibData = new List<double[,]>();
+
+            try
+            {
+                // Calculate number of packets within data object
+                int packets = (RawData.Length - 6) / 128;
+
+                // For each packet of 128 bytes within raw data,
+                // calibrate each packet and send result to calibration data list.
+                for (int i = 0; i < packets; i++)
+                {
+                    // Prepare data
+                    byte[] buf = new byte[128];
+                    for (int j = 0; j < 128; j++)
+                        buf[j] = RawData[3 + j + i * 128];
+
+                    // Perform calibration on one 128byte buffer
+                    var calibLine = NeuralNetCalib.CalibrateData(buf);
+
+                    _calibData.Add(calibLine);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Calibration failed: " + ex.Message);
+                return null;
+            }
+
+            string calib_filename = Filename.Remove(8).Insert(8, "_CALIB.csv");
+            Debug.WriteLine("Calibration filename: " + calib_filename);
+
+            return _calibData;
+        }
+
         public double GetDuration()
         {
             if (IsDownloaded)
             {
                 // Extract first and last time packets from file.
                 // File format: [ 0x0A | 0x0B | 0x0C | T0 | T1 | T2 | T3 | X1MSB.....| Zn | 0x0A | 0x0B | 0x0C ]
-                byte t3 = Data[6];
-                byte t2 = Data[5];
-                byte t1 = Data[4];
-                byte t0 = Data[3];
+                byte t3 = RawData[6];
+                byte t2 = RawData[5];
+                byte t1 = RawData[4];
+                byte t0 = RawData[3];
                 var t_start = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
                 //Debug.WriteLine("T start: " + t_start);
 
-                int length = Data.Length;
+                int length = RawData.Length;
 
                 // Packet length is 128, then accomodate for file footer.
                 // Last time packet is bytes 0:3 of last packet
-                t3 = Data[length - 128];
-                t2 = Data[length - 129];
-                t1 = Data[length - 130];
-                t0 = Data[length - 131];
+                t3 = RawData[length - 128];
+                t2 = RawData[length - 129];
+                t1 = RawData[length - 130];
+                t0 = RawData[length - 131];
 
                 var t_finish = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
                // Debug.WriteLine("T finish: " + t_start);
@@ -294,45 +344,24 @@ namespace BracePLUS.Models
             }
         }
 
-        public double GetAverage(List<double> values)
-        {
-            int length = values.Count;
-            double sum = 0.0;
-            foreach (double val in values) sum += val;
-
-            return sum / length;
-        }
-
-        public double GetMaximum(List<double> values)
-        {
-            double max = 0.0;
-
-            foreach (double val in values)
-            {
-                if (val > max) max = val;
-            }
-
-            return max;
-        }
-
         private string GetPreviewDataString()
         {
             if (IsDownloaded)
             {
-                if (Data.Length < 100)
+                if (RawData.Length < 100)
                 {
-                    return BitConverter.ToString(Data);
+                    return BitConverter.ToString(RawData);
                 }
                 else
                 {
                     // Create 100 char string of data and append "..." 
-                    return BitConverter.ToString(Data).Substring(0, 100).Insert(100, "...");
+                    return BitConverter.ToString(RawData).Substring(0, 100).Insert(100, "...");
                 }
             }
             else
             {
                 Debug.WriteLine("Unable to get data string: data not downloaded.");
-                return "Data string null";
+                return "RawData string null";
             }
         }
     }

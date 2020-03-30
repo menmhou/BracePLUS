@@ -12,6 +12,7 @@ using System.Diagnostics;
 using BracePLUS.Events;
 using BracePLUS.Extensions;
 using System;
+using BracePLUS.Views;
 
 namespace BracePLUS.ViewModels
 {
@@ -110,10 +111,13 @@ namespace BracePLUS.ViewModels
         public Command StreamCommand { get; set; }
         public Command SaveCommand { get; set; }
         public Command SwapChartTypeCommand { get; set; }
+        public Command SetupBLECommand { get; set; }
 
         // Private Properties
         double chartCounter = 0;
         private readonly MessageHandler handler;
+
+        public INavigation Nav { get; set; }
 
         public InterfaceViewModel()
         {
@@ -132,10 +136,11 @@ namespace BracePLUS.ViewModels
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SaveCommand = new Command(async () => await ExecuteSaveCommand());
             SwapChartTypeCommand = new Command(() => ExecuteSwapChartsCommand());
+            SetupBLECommand = new Command(() => ExecuteSetupBLECommand());
 
             ConnectText = "Connect";
             StreamText = "Stream";
-            SaveText = "Log Data";
+            SaveText = "Log RawData";
 
             ButtonColour = START_COLOUR;
 
@@ -206,7 +211,7 @@ namespace BracePLUS.ViewModels
                     break;
 
                 case LOGGING_FINISH:
-                    SaveText = "Log Data";
+                    SaveText = "Log RawData";
                     break;
             }
         }
@@ -241,6 +246,10 @@ namespace BracePLUS.ViewModels
                 // Start scan
                 await App.Client.StartScan();
             }
+        }
+        private async void ExecuteSetupBLECommand()
+        {
+            await Nav.PushAsync(new BluetoothSetup());
         }
 
         public async Task ExecuteStreamCommand()

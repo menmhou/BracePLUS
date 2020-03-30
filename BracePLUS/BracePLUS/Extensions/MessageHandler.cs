@@ -95,7 +95,7 @@ namespace BracePLUS.Extensions
                             break;
 
                         case "L":
-                            msg = "Data logging finished.";
+                            msg = "RawData logging finished.";
                             break;
 
                         case "g":
@@ -315,6 +315,33 @@ namespace BracePLUS.Extensions
             return normals;
         }
 
+        public List<double> ExtractNormals(List<double[,]> calibData)
+        {
+            var normals = new List<double>();
+
+            try
+            {
+                for (int j = 0; j < calibData.Count; j++)
+                {                
+                    double z, z_max = 0;
+
+                    for (int i = 0; i < 16; i++)
+                    {
+                        z = calibData[j][i, 2];
+                        if (z > z_max) z_max = z;
+                    }
+
+                    normals.Add(z_max);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Calibrated normals extraction failed: " + ex.Message);
+            }
+
+            return normals;
+        }
+
         public double[] ExtractNodes(byte[] data, int index)
         {
             double[] values = new double[16];
@@ -465,6 +492,17 @@ namespace BracePLUS.Extensions
                 sum += val;
 
             return sum / n;
+        }
+
+        public double GetMaximum(List<double> values)
+        {
+            double max = 0.0;
+
+            foreach (double val in values)
+                if (val > max) max = val;
+            
+
+            return max;
         }
     }
 }

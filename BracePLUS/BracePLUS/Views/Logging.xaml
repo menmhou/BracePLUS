@@ -4,16 +4,15 @@
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:chart="clr-namespace:Syncfusion.SfChart.XForms;assembly=Syncfusion.SfChart.XForms"
-             xmlns:gradient="clr-namespace:Syncfusion.XForms.Graphics;assembly=Syncfusion.Core.XForms"
              mc:Ignorable="d"
              x:Class="BracePLUS.Views.Logging">
     <ContentPage.Content>
         <StackLayout BackgroundColor="Navy">
-            <chart:SfChart HeightRequest="300"
+            <chart:SfChart HeightRequest="270"
                            VerticalOptions="FillAndExpand"
                            HorizontalOptions="FillAndExpand"
                            BackgroundColor="Transparent"
-                           Margin="36">
+                           Margin="30">
                 <chart:SfChart.ChartAnnotations>
                     <chart:LineAnnotation X1="-1" Y1="{Binding AnnotationLineHeight}" 
                                           X2="7" Y2="{Binding AnnotationLineHeight}" 

@@ -29,6 +29,12 @@
             <x:Arguments>
                 <views:Logging/>
             </x:Arguments>
+            <NavigationPage.Icon>
+                <OnPlatform x:TypeArguments="FileImageSource">
+                    <On Platform="iOS" Value="LoggingIconWhite.png" />
+                    <On Platform="Android" Value="LoggingIconWhite.png" />
+                </OnPlatform>
+            </NavigationPage.Icon>
         </NavigationPage>
         
         <!-- Browse page -->

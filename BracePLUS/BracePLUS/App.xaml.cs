@@ -56,13 +56,13 @@ namespace BracePLUS
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(SyncFusionLicense);
             FolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
 
-            // ClearFiles();
+            //ClearFiles();
             InitializeComponent();
 
             generator = new Random();
             handler = new MessageHandler();
             InputData = new List<byte[]>();
-            MobileFiles = new List<string>();
+            MobileFiles = new List<string>();  
 
             Client = new BraceClient();
             MainPage = new MainPage();
@@ -103,18 +103,23 @@ namespace BracePLUS
 
         private void ClearFiles()
         {
-            string[] files = Directory.GetFiles(FolderPath, "*.txt");
-            int n = 0;
+            var files = Directory.GetFiles(FolderPath);
+            Debug.WriteLine("Found directory files:");
+            foreach (var file in files)
+                Debug.WriteLine(file);
 
-            foreach (string f in files)
+            foreach (var file in files)
             {
-                Debug.WriteLine("Discovered file: " + f);
-                File.Delete(f);
-
-                n++;
+                if (File.Exists(file))
+                {
+                    File.Delete(file);
+                }
             }
 
-            Debug.WriteLine($"Deleted {n} files");
+            files = Directory.GetFiles(FolderPath);
+            Debug.WriteLine("Files left over:");
+            foreach (var file in files)
+                Debug.WriteLine(file);
         }
     }
 }

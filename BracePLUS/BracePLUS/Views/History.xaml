@@ -8,8 +8,6 @@
     <ContentPage.ToolbarItems>
         <ToolbarItem IconImageSource="SyncIconWhite.png"
                      Command="{Binding GetFilenamesCommand}"/>
-        <ToolbarItem Text="Clear"
-                     Command="{Binding ClearListCommand}" />
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
@@ -83,8 +81,8 @@
                                         </chart:SfChart.PrimaryAxis>
 
                                         <chart:SfChart.SecondaryAxis>
-                                            <chart:NumericalAxis Minimum="300"
-                                                                 Maximum="260"/>
+                                            <chart:NumericalAxis Maximum="1.5"
+                                                                 Minimum="0"/>
                                         </chart:SfChart.SecondaryAxis>
                                     </chart:SfChart>
                                     
