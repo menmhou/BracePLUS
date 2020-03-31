@@ -24,5 +24,10 @@ namespace BracePLUS.Views
             };
             viewModel.InitDataObject();
         }
+
+        private void Switch_Toggled(object sender, ToggledEventArgs e)
+        {
+            viewModel.ToggleTarredData(e);
+        }
     }
 }

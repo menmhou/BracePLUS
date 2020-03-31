@@ -35,9 +35,6 @@ namespace BracePLUS.Models
                 var L2Out = CalculateLayer2(L1Out);
                 var dOutput = CalculateOutput(L2Out);
 
-                // Align z output for positive output when compressed
-                //dOutput[2] *= -1.0;
-
                 /*
                 Debug.WriteLine("NN Inputs:");
                 foreach (var val in raw)

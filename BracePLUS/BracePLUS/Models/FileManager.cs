@@ -1,7 +1,10 @@
-﻿using System;
+﻿using CsvHelper;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using static BracePLUS.Extensions.Constants;
 using System.Text;
 
 namespace BracePLUS.Models
@@ -97,5 +100,76 @@ namespace BracePLUS.Models
             }
             file.Close();
         }
+
+        public static void WriteCSV(List<double[,]> data, string name)
+        {
+            // Create file instance
+            var path = Path.Combine(App.FolderPath, name);
+
+            // Prepare objects to be written.
+            var csv = new List<string>();
+            csv.Add("ID,X,Y,Z");
+
+            Debug.WriteLine("Writing CSV file: " + path);
+            Debug.WriteLine($"Number of packets: {data.Count}");
+
+            // For each packet in the data, read each line and create a new record for the sensor reading.
+            for (int packet = 0; packet < data.Count; packet++)
+            {
+                for (int node = 0; node < 16; node++)
+                {
+                    double x = data[packet][node, X_AXIS];
+                    double y = data[packet][node, Y_AXIS];
+                    double z = data[packet][node, Z_AXIS];
+
+                    csv.Add(string.Format($"{packet},{x},{y},{z}"));
+                }
+            }
+
+            File.AppendAllLines(path, csv);
+        }
+
+        public static List<double[,]> ReadCSV(string path)
+        {
+            var data = new List<double[,]>();
+
+            StreamReader file = new StreamReader(path);
+            string line;
+            int node = 0;
+            int counter = 0;
+            var packet = new double[16, 3];
+
+            while((line = file.ReadLine()) != null)
+            {
+                // Line format:
+                // id, x, y, z
+                string[] chars = line.Split(',');
+
+                if (chars[0] != "ID")
+                {
+                    packet[node, X_AXIS] = double.Parse(chars[1]);
+                    packet[node, Y_AXIS] = double.Parse(chars[2]);
+                    packet[node, Z_AXIS] = double.Parse(chars[3]);
+
+                    node++;
+                    if (node > 15)
+                    {
+                        data.Add(packet);
+                        counter++;
+                        node = 0;
+                    }
+                } 
+            }
+
+            return data;
+        }
+    }
+
+    class SensorReading
+    {
+        public int Id { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
     }
 }

@@ -199,7 +199,7 @@ namespace BracePLUS.ViewModels
                 Heading = "Older"
             };
 
-            var files = Directory.EnumerateFiles(App.FolderPath, "*");
+            var files = Directory.EnumerateFiles(App.FolderPath, "*.txt");
 
             foreach (var filename in files)
             {

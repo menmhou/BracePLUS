@@ -112,7 +112,8 @@
                                         <Label Text="{Binding FormattedPercentageDifference}" 
                                                Grid.Column="2"
                                                FontSize="Medium"
-                                               VerticalOptions="CenterAndExpand"/>
+                                               VerticalOptions="CenterAndExpand"
+                                               MaxLines="1"/>
                                     </Grid>
                                 </Frame>
                             </ViewCell>

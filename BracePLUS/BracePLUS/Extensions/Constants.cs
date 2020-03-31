@@ -22,7 +22,7 @@ namespace BracePLUS.Extensions
         public const string LOCAL =     "Saved locally";      // Define file location on app
         public const string BRACE_SD =  "Saved on Brace+";    // Define file location on brace+
 
-        public const double MAX_PRESSURE = 0.95;
+        public const double MAX_PRESSURE = 1.1;
 
         public const string uartServiceUUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
         public const string uartTxCharUUID = "49535343-1e4d-4bd9-ba61-23c647249616";
@@ -63,6 +63,10 @@ namespace BracePLUS.Extensions
         public static Xamarin.Forms.Color START_COLOUR = Xamarin.Forms.Color.FromHex("#0078E5");
         public static Xamarin.Forms.Color WAIT_COLOUR = Xamarin.Forms.Color.FromHex("#005096");
         public static Xamarin.Forms.Color STOP_COLOUR = Xamarin.Forms.Color.FromHex("#FE0000");
+
+        public const int X_AXIS = 0;
+        public const int Y_AXIS = 1;
+        public const int Z_AXIS = 2;
 
         // EMOJI DEFINITIONS
         // public static long 

@@ -56,7 +56,7 @@ namespace BracePLUS
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(SyncFusionLicense);
             FolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
 
-            //ClearFiles();
+            ClearFiles();
             InitializeComponent();
 
             generator = new Random();
@@ -103,14 +103,14 @@ namespace BracePLUS
 
         private void ClearFiles()
         {
-            var files = Directory.GetFiles(FolderPath);
+            var files = Directory.EnumerateFiles(FolderPath, "*.csv");
             Debug.WriteLine("Found directory files:");
             foreach (var file in files)
                 Debug.WriteLine(file);
 
             foreach (var file in files)
             {
-                if (File.Exists(file))
+                if (File.Exists(Path.Combine(FolderPath, file)))
                 {
                     File.Delete(file);
                 }

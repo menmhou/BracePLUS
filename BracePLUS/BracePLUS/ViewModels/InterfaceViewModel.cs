@@ -140,10 +140,11 @@ namespace BracePLUS.ViewModels
 
             ConnectText = "Connect";
             StreamText = "Stream";
-            SaveText = "Log RawData";
+            SaveText = "Log Data";
 
             ButtonColour = START_COLOUR;
 
+            #region Simulation
 #if SIMULATION
             // Add random values to simulate a connected device
             for (int i = 0; i < App.generator.Next(2000); i++)
@@ -164,8 +165,10 @@ namespace BracePLUS.ViewModels
                 App.AddData(values);
             }
 #endif
+            #endregion
         }
 
+        #region Events
         void Client_OnStatusUpdated(object sender, StatusEventArgs e)
         {
             Status = e.Status;
@@ -233,7 +236,9 @@ namespace BracePLUS.ViewModels
 #endif
             });
         }
-        
+        #endregion
+
+        #region Command Methods
         public async Task ExecuteConnectCommand()
         {
             if (App.isConnected)
@@ -251,7 +256,6 @@ namespace BracePLUS.ViewModels
         {
             await Nav.PushAsync(new BluetoothSetup());
         }
-
         public async Task ExecuteStreamCommand()
         {
             if (App.isConnected)
@@ -270,7 +274,6 @@ namespace BracePLUS.ViewModels
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to stream data.", "OK");
             }
         }
-
         public async Task ExecuteSaveCommand()
         {
             if (App.isConnected)
@@ -285,11 +288,11 @@ namespace BracePLUS.ViewModels
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to log data.", "OK");
             }
         }
-
         public void ExecuteSwapChartsCommand()
         {
             LineChartEnabled = !LineChartEnabled;
             BarChartEnabled = !BarChartEnabled;
         }
+        #endregion
     }
 }

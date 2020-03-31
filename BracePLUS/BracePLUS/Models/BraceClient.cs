@@ -574,22 +574,19 @@ namespace BracePLUS.Models
             packetIndex = 0;
 
             // Save data
-            //Debug.WriteLine(BitConverter.ToString(bytes));
             try
             {
-                double Zmsb, Zlsb, Z;
-                var z_max = 0.0;
+                double z, z_max = 0.0;
                 // Extract highest Z value
                 for (int _byte = 8; _byte < 100; _byte += 6)
                 {
-                    // Debug.WriteLine($"Chip: {(_byte-8)/6}, MSB: {bytes[_byte]}, LSB: {bytes[_byte + 1]}");
-
-                    // Find current Z value
-                    Zmsb = bytes[_byte] << 8;
-                    Zlsb = bytes[_byte + 1];
-                    Z = (Zmsb + Zlsb) * 0.02636;
-                    // Check if higher than previous (sort highest)
-                    if (Z > z_max) z_max = Z;
+                    var calibrated = NeuralNetCalib.CalibrateData(bytes);
+                    var normals = new List<double>();
+                    for (int i = 0; i < 16; i++)
+                    {
+                        z = calibrated[i, 2];
+                        if (z > z_max) z_max = z;
+                    }
                 }
                 // Send signal to Interface?
                 if (STATUS == SYS_STREAM_START)
@@ -710,7 +707,7 @@ namespace BracePLUS.Models
 
         public void Write(string text, Color color)
         {
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+            Device.BeginInvokeOnMainThread(() =>
             {
                 MessagingCenter.Send(this, "StatusMessage", text);
                 Debug.WriteLine(text);

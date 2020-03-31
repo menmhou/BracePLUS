@@ -358,6 +358,18 @@ namespace BracePLUS.Extensions
             return values;
         }
 
+        public double[] ExtractNodes(List<double[,]> data, int index)
+        {
+            double[] values = new double[16];
+
+            for (int i = 0; i < 16; i++)
+            {
+                values[i] = data[index][i, 2];
+            }
+
+            return values;
+        }
+
         public List<DateTime> ExtractTimes(DateTime start, byte[] data, int packets)
         {
             List<DateTime> times = new List<DateTime>

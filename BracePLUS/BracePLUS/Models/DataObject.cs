@@ -9,6 +9,8 @@ using System.IO;
 using Xamarin.Essentials;
 using BracePLUS.Events;
 using static BracePLUS.Extensions.Constants;
+using CsvHelper;
+using System.Globalization;
 
 namespace BracePLUS.Models
 {
@@ -21,6 +23,7 @@ namespace BracePLUS.Models
         public DateTime Date { get; set; }
         public string Directory { get; set; }
         public string Filename { get; set; }
+        public string FilenameCSV { get; set; }
         public string Location { get; set; }
         public long Size { get; set; }
         public double Duration { get; set; }
@@ -106,7 +109,8 @@ namespace BracePLUS.Models
         #region Command Methods
         private async Task ExecuteShareCommand()
         {
-            var file = Path.Combine(App.FolderPath, Directory);
+            var file = Path.Combine(App.FolderPath, FilenameCSV);
+            Debug.WriteLine("Sharing file: " + file);
 
             await Share.RequestAsync(new ShareFileRequest
             {
@@ -163,7 +167,7 @@ namespace BracePLUS.Models
 
         public void DebugObject()
         {
-            Debug.WriteLine("\n*** DEBUG OBJECT ***");
+            Debug.WriteLine("*** DEBUG OBJECT ***");
             Debug.WriteLine($"*** RawData Object: {Name} ***");
             Debug.WriteLine($"*** Date of creation: {Date} ***");
             Debug.WriteLine($"*** Directory: {Directory} ***");
@@ -213,16 +217,9 @@ namespace BracePLUS.Models
             // Basic analysis
             if (RawData.Length > 6) // (only contains header/footer)
             {
-                // Check if file exists
-                if (File.Exists(Filename.Remove(8).Insert(8, "_CALIB.csv")))
-                {
-                    Debug.WriteLine("Calibration file already written.");
-                    // Read calib file
-                }
-                else
-                {
-                    CalibData = Calibrate();
-                }
+
+                FilenameCSV = Filename.Remove(8).Insert(8, "_CALIB.csv");
+                CalibData = RetrieveCalibration(RawData, FilenameCSV);
 
                 var normals = handler.ExtractNormals(CalibData);
 
@@ -274,14 +271,47 @@ namespace BracePLUS.Models
             }
         }
 
-        public List<double[,]> Calibrate()
+        public List<double[,]> RetrieveCalibration(byte[] bytes, string name)
+        {
+            // Check if data already retrieved
+            try
+            {
+                if (CalibData.Count > 3)
+                {
+                    return CalibData;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Unable to count calibration data. " + ex.Message);
+            }
+           
+            // Check if calibration file exists
+            if (File.Exists(Path.Combine(App.FolderPath, name)))
+            {
+                Debug.WriteLine("File already exists. Reading data from file: " + name);
+                // Read data
+                return FileManager.ReadCSV(Path.Combine(App.FolderPath, name));
+            }
+            else
+            {
+                // If not, perform calibration and write to file
+                var calibData = Calibrate(bytes);
+
+                FileManager.WriteCSV(calibData, name);
+
+                return calibData;
+            }
+        }
+
+        public List<double[,]> Calibrate(byte[] bytes)
         {
             var _calibData = new List<double[,]>();
 
             try
             {
                 // Calculate number of packets within data object
-                int packets = (RawData.Length - 6) / 128;
+                int packets = (bytes.Length - 6) / 128;
 
                 // For each packet of 128 bytes within raw data,
                 // calibrate each packet and send result to calibration data list.
@@ -290,7 +320,7 @@ namespace BracePLUS.Models
                     // Prepare data
                     byte[] buf = new byte[128];
                     for (int j = 0; j < 128; j++)
-                        buf[j] = RawData[3 + j + i * 128];
+                        buf[j] = bytes[3 + j + i * 128];
 
                     // Perform calibration on one 128byte buffer
                     var calibLine = NeuralNetCalib.CalibrateData(buf);
@@ -303,9 +333,6 @@ namespace BracePLUS.Models
                 Debug.WriteLine("Calibration failed: " + ex.Message);
                 return null;
             }
-
-            string calib_filename = Filename.Remove(8).Insert(8, "_CALIB.csv");
-            Debug.WriteLine("Calibration filename: " + calib_filename);
 
             return _calibData;
         }

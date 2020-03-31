@@ -137,7 +137,7 @@ namespace BracePLUS.ViewModels
             Debug.WriteLine("HISTORY: Loading local files...");
             ObservableCollection<DataObject> tempData = new ObservableCollection<DataObject>();
 
-            var files = Directory.EnumerateFiles(App.FolderPath, "*");
+            var files = Directory.EnumerateFiles(App.FolderPath, "*.txt");
 
             foreach (var filename in files)
             {
