@@ -5,74 +5,48 @@
              x:Class="BracePLUS.Views.Interface">
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem IconImageSource="SwapChartLogo.png"
-                     Command="{Binding SwapChartTypeCommand}"/>
+        <ToolbarItem Text="Connect"
+                     Command="{Binding SetupBLECommand}"/>
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
         <StackLayout Padding="8, 8, 8, 8"
                      BackgroundColor="White">
-            <Grid>
+
+            <Button Text="{Binding StreamText}"
+                    Command="{Binding StreamCommand}"
+                    VerticalOptions="Start"/>
+
+            <Grid Padding="4">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="40"/>
-                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="2*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <Button Text="{Binding ConnectText}"
-                        Command="{Binding ConnectCommand}"
-                        BackgroundColor="{Binding ButtonColour}"
-                        Grid.ColumnSpan="2"/>
-                <Button Text="{Binding StreamText}"
-                        Command="{Binding StreamCommand}"
-                        Grid.Row="1"
-                        Grid.Column="0"/>
-                <Button Text="{Binding SaveText}"
-                        Command="{Binding SaveCommand}"
-                        Grid.Row="1"
-                        Grid.Column="1" />
+                <Label Text="{Binding Average, StringFormat='Average: {0:0.000}'}"
+                       FontSize="25"
+                       TextColor="Black"
+                       Grid.Column="0"
+                       Grid.Row="0"/>
+
+                <Label Text="{Binding Maximum, StringFormat='Maximum: {0:0.000}'}"
+                       FontSize="25"
+                       TextColor="Black"
+                       Grid.Column="0"
+                       Grid.Row="1"/>
+
+                <Button Text="Tare Values"
+                        Command="{Binding TareCommand}"
+                        BackgroundColor="HotPink"
+                        VerticalOptions="CenterAndExpand"
+                        Grid.Column="1"
+                        Grid.RowSpan="2"/>
+
             </Grid>
-
-            <chart:SfChart Margin="10"
-                           VerticalOptions="FillAndExpand"
-                           HorizontalOptions="FillAndExpand"
-                           IsVisible="{Binding LineChartEnabled}">
-                <chart:SfChart.Series>
-                    <chart:SplineSeries ItemsSource="{Binding LineChartData}"
-                                        ListenPropertyChange="True"
-                                        Color="#167BEA"
-                                        XBindingPath="Name"
-                                        YBindingPath="Value"/>
-                </chart:SfChart.Series>
-
-                <chart:SfChart.PrimaryAxis>
-                    <chart:CategoryAxis/>
-                </chart:SfChart.PrimaryAxis>
-
-                <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis Maximum="310"
-                                         Minimum="240">
-                        <chart:NumericalAxis.StripLines>
-                            <chart:NumericalStripLine Start="240" 
-                                                      Width ="20" 
-                                                      Text="Low Pressure" 
-                                                      FillColor="#CAD6FE"/>
-                            <chart:NumericalStripLine Start="260" 
-                                                      Width ="30" 
-                                                      Text="Correct Pressure" 
-                                                      FillColor="#ACC0FE"/>
-                            <chart:NumericalStripLine Start="290" 
-                                                      Width ="20" 
-                                                      Text="High Pressure" 
-                                                      FillColor="#7F9DFD"/>
-
-                        </chart:NumericalAxis.StripLines>
-                    </chart:NumericalAxis>
-                </chart:SfChart.SecondaryAxis>
-            </chart:SfChart>
             
             <chart:SfChart Margin="40, 10"
                            VerticalOptions="FillAndExpand"
@@ -85,7 +59,20 @@
                                         Color="#167BEA"
                                         XBindingPath="Name"
                                         YBindingPath="Value" 
-                                        CornerRadius="16"/>
+                                        CornerRadius="16">
+                        <chart:ColumnSeries.ColorModel>
+                            <chart:ChartColorModel Palette="Custom">
+                                <chart:ChartColorModel.CustomGradientColors>
+                                    <chart:ChartGradientColor StartPoint="0.5,1" EndPoint="0.5,0">
+                                        <chart:ChartGradientColor.GradientStops>
+                                            <chart:ChartGradientStop Color="#A8EAEE" Offset= "0"/>
+                                            <chart:ChartGradientStop Color="#7BB0F9" Offset= "1"/>
+                                        </chart:ChartGradientColor.GradientStops>
+                                    </chart:ChartGradientColor>
+                                </chart:ChartColorModel.CustomGradientColors>
+                            </chart:ChartColorModel>
+                        </chart:ColumnSeries.ColorModel>
+                    </chart:ColumnSeries>
                 </chart:SfChart.Series>
 
                 <chart:SfChart.PrimaryAxis>
@@ -93,22 +80,21 @@
                 </chart:SfChart.PrimaryAxis>
 
                 <chart:SfChart.SecondaryAxis>
-                    <chart:NumericalAxis Maximum="310"
-                                         Minimum="240">
+                    <chart:NumericalAxis Maximum="{Binding BarChartMaximum}"
+                                         Minimum="{Binding BarChartMinimum}">
                         <chart:NumericalAxis.StripLines>
-                            <chart:NumericalStripLine Start="240" 
-                                                      Width ="20" 
+                            <chart:NumericalStripLine Start="0.7" 
+                                                      Width ="0.15" 
                                                       Text="Low Pressure" 
                                                       FillColor="#CAD6FE"/>
-                            <chart:NumericalStripLine Start="260" 
-                                                      Width ="30" 
+                            <chart:NumericalStripLine Start="0.85" 
+                                                      Width ="0.2" 
                                                       Text="Correct Pressure" 
                                                       FillColor="#ACC0FE"/>
-                            <chart:NumericalStripLine Start="290" 
-                                                      Width ="20" 
+                            <chart:NumericalStripLine Start="1.05" 
+                                                      Width ="0.15" 
                                                       Text="High Pressure" 
                                                       FillColor="#7F9DFD"/>
-
                         </chart:NumericalAxis.StripLines>
                     </chart:NumericalAxis>
                 </chart:SfChart.SecondaryAxis>

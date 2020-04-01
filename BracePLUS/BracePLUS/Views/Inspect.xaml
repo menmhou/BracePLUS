@@ -40,6 +40,22 @@
                        FontSize="Medium"/>
                 <Label Text="{Binding FormattedSize, StringFormat='File size: {0}'}"
                        FontSize="Medium"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <Label Text="View tarred data"
+                           FontSize="Medium"
+                           HorizontalTextAlignment="Start"
+                           TextColor="DimGray"/>
+                    
+                    <Switch IsToggled="false" 
+                            Toggled="Switch_Toggled"/>
+                </Grid>
+                
+
                 <BoxView BackgroundColor="LightGray"
                          Margin="0, 12"
                          HeightRequest="1"
@@ -58,7 +74,7 @@
                            FontSize="Large"
                            VerticalOptions="CenterAndExpand"
                            Grid.Row="0"/>
-                    <Label Text="{Binding AverageChange, StringFormat='Change: {0:0.00}%'}"
+                    <Label Text="{Binding AverageChange}"
                            Grid.Row="1"
                            FontSize="Medium"/>
                     <Label Text="{Binding AverageOverall, StringFormat='Overall Average: {0:0.000}'}"
@@ -145,8 +161,8 @@
                     </chart:SfChart.PrimaryAxis>
 
                     <chart:SfChart.SecondaryAxis>
-                        <chart:NumericalAxis Minimum="240"
-                                            Maximum="300"/>
+                        <chart:NumericalAxis Minimum="{Binding LineChartMinimum}"
+                                            Maximum="{Binding LineChartMaximum}"/>
                     </chart:SfChart.SecondaryAxis>
                 </chart:SfChart>
 
@@ -159,8 +175,7 @@
 
                 <chart:SfChart VerticalOptions="FillAndExpand"
                                HorizontalOptions="FillAndExpand"
-                               HeightRequest="300"
->
+                               HeightRequest="300">
 
                     <chart:SfChart.Series>
                         <chart:ColumnSeries ItemsSource="{Binding AllNodesData}"
@@ -174,11 +189,12 @@
                     </chart:SfChart.PrimaryAxis>
 
                     <chart:SfChart.SecondaryAxis>
-                        <chart:NumericalAxis Minimum="240"
-                                            Maximum="300"/>
+                        <chart:NumericalAxis Minimum="0.6"
+                                            Maximum="1.2"/>
                     </chart:SfChart.SecondaryAxis>
 
                 </chart:SfChart>
+                
                 <Slider Maximum="{Binding Packets}"
                         Value="{Binding SliderValue}"/>
 

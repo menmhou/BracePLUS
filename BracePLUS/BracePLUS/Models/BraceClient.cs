@@ -12,10 +12,11 @@ using Xamarin.Forms;
 using BracePLUS.Events;
 
 using static BracePLUS.Extensions.Constants;
+using BracePLUS.Services;
 
 namespace BracePLUS.Models
 {
-    public class BraceClient
+    public class BraceClient : BindableObject
     {
         #region Model Properties
         // Bluetooth Properties
@@ -29,9 +30,8 @@ namespace BracePLUS.Models
         public Guid uartRxCharGUID = Guid.Parse(uartRxCharUUID);
 
         // Public Properties
-        public IDevice Device { get; set; }
-        public string Status { get; set; }
-        public static List<byte[]> DATA_IN;
+        public IDevice Brace { get; set; }
+        public static List<byte[]> DATA_IN { get; set; }
 
         // UI Assistant
         StackLayout stack;
@@ -44,23 +44,24 @@ namespace BracePLUS.Models
 
         // Data Handling
         byte[] buffer = new byte[128];
-        private readonly int buf_len = 128;       
-        
+        int packetIndex;
+        float downloadProgress;
+
         public int STATUS = IDLE;
 
         public List<string> messages;
         public List<string> MobileFileList;
 
         string downloadFilename = "";
-
-        int packetIndex;
-        float downloadProgress;
+        private int watch_counter = 0;
+        public UserInterfaceUpdates InterfaceUpdates;
         #endregion
 
         #region Model Instanciation
         public BraceClient()
         {
             handler = new MessageHandler();
+            InterfaceUpdates = new UserInterfaceUpdates();
 
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
@@ -86,10 +87,8 @@ namespace BracePLUS.Models
 
                 else
                 {
-                    Debug.WriteLine(String.Format("Discovered device: {0}", name));
-                    Write(String.Format("Discovered device: {0}", name), info);
-
-                    EVENT(DEVICE_FOUND, String.Format($"Discovered device: {name}"));
+                    InterfaceUpdates.Status = DEVICE_FOUND;
+                    EVENT(InterfaceUpdates, string.Format($"Discovered device: {name}"));
 
                     if (e.Device.Name == DEV_NAME || e.Device.Name == "RN_BLE")
                     {
@@ -100,13 +99,14 @@ namespace BracePLUS.Models
             // BLE Device connection lost event
             adapter.DeviceConnectionLost += (s, e) =>
             {
-                EVENT(DISCONNECTED, "Disconnected from " + e.Device.Name);
+                InterfaceUpdates.Status = DISCONNECTED;
+                EVENT(InterfaceUpdates, "Disconnected from " + e.Device.Name);
                 App.isConnected = false;
                 buffer = RELEASE_DATA(buffer, false);
 
-                if (App.InputData.Count > 0)
+                if (DATA_IN.Count > 0)
                 {
-                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
+                    Device.BeginInvokeOnMainThread(async () =>
                     {
                         bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                             "Store data locally?", "Yes", "No");
@@ -122,13 +122,14 @@ namespace BracePLUS.Models
             // BLE Device disconnection event
             adapter.DeviceDisconnected += (s, e) =>
             {
-                EVENT(DISCONNECTED, "Disconnected from " + e.Device.Name);
+                InterfaceUpdates.Status = DISCONNECTED;
+                EVENT(InterfaceUpdates, "Disconnected");
                 App.isConnected = false;
                 buffer = RELEASE_DATA(buffer, false);
 
-                if (App.InputData.Count > 0)
+                if (DATA_IN.Count > 0)
                 {
-                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
+                    Device.BeginInvokeOnMainThread(async () =>
                     {
                         bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                             "Store data locally?", "Yes", "No");
@@ -144,7 +145,9 @@ namespace BracePLUS.Models
             // BLE Device conneciton event
             adapter.DeviceConnected += (s, e) =>
             {
-                EVENT(CONNECTED, $"Connected to: {e.Device.Name}");
+                InterfaceUpdates.Status = DISCONNECTED;
+                InterfaceUpdates.Device = e.Device;
+                EVENT(InterfaceUpdates, $"Connected to: {e.Device.Name}");
                 App.isConnected = true;
             };
         }
@@ -157,74 +160,50 @@ namespace BracePLUS.Models
         #region Events
         protected virtual void OnDownloadFinished(FileDownloadedEventArgs e)
         {
-            EventHandler<FileDownloadedEventArgs> handler = DownloadFinished;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            DownloadFinished?.Invoke(this, e);
         }
         public event EventHandler<FileDownloadedEventArgs> DownloadFinished;
         protected virtual void OnFileSyncFinished(MobileSyncFinishedEventArgs e)
         {
-            EventHandler<MobileSyncFinishedEventArgs> handler = FileSyncFinished;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            FileSyncFinished?.Invoke(this, e);
         }
         public event EventHandler<MobileSyncFinishedEventArgs> FileSyncFinished;
         protected virtual void OnLocalFileListUpdated(EventArgs e)
         {
-            EventHandler handler = LocalFileListUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            LocalFileListUpdated?.Invoke(this, e);
         }
         public event EventHandler LocalFileListUpdated;
         protected virtual void OnPressureUpdated(PressureUpdatedEventArgs e)
         {
-            EventHandler<PressureUpdatedEventArgs> handler = PressureUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            PressureUpdated?.Invoke(this, e);
         }
-        public EventHandler<PressureUpdatedEventArgs> PressureUpdated;
+        public event EventHandler<PressureUpdatedEventArgs> PressureUpdated;
         protected virtual void OnDownloadProgress(DownloadProgressEventArgs e)
         {
-            EventHandler<DownloadProgressEventArgs> handler = DownloadProgress;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            DownloadProgress?.Invoke(this, e);
         }
-        public EventHandler<DownloadProgressEventArgs> DownloadProgress;
+        public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
         protected virtual void OnStatusUpdate(StatusEventArgs e)
         {
-            EventHandler<StatusEventArgs> handler = StatusUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-
+            StatusUpdated?.Invoke(this, e);
         }
-        public EventHandler<StatusEventArgs> StatusUpdated;
+        public event EventHandler<StatusEventArgs> StatusUpdated;
         protected virtual void OnUIUpdated(UIUpdatedEventArgs e)
         {
-            EventHandler<UIUpdatedEventArgs> handler = UIUpdated;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            UIUpdated?.Invoke(this, e);
         }
-        public EventHandler<UIUpdatedEventArgs> UIUpdated;
+        public event EventHandler<UIUpdatedEventArgs> UIUpdated;
+        protected virtual void OnLoggingFinished(LoggingFinishedEventArgs e)
+        {
+            LoggingFinished?.Invoke(this, e);
+        }
+        public event EventHandler<LoggingFinishedEventArgs> LoggingFinished;
         #endregion
 
         #region Model Client Logic Methods
         public async Task Connect(IDevice brace)
         {
-            Device = brace;
+            Brace = brace;
 
             // Check system bluetooth is turned on.
             if (!ble.IsOn)
@@ -237,7 +216,6 @@ namespace BracePLUS.Models
             {
                 if (brace != null)
                 {
-                    EVENT(CONNECTING);
                     await adapter.ConnectToDeviceAsync(brace);
                     await adapter.StopScanningForDevicesAsync();
                 }
@@ -254,11 +232,8 @@ namespace BracePLUS.Models
                 {
                     try
                     {
-                        var characteristics = await service.GetCharacteristicsAsync();
-                        foreach (var c in characteristics)
-                        {
-                            Debug.WriteLine($"Discovered characteristics {c.Id}");
-                        }
+                        // Retrieve characteristics from device service
+                        var characteristics = await service.GetCharacteristicsAsync();                       
 
                         // Register characteristics
                         uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
@@ -268,12 +243,9 @@ namespace BracePLUS.Models
                         COMMS_MENU(uartTx);
                         await RUN_BLE_START_UPDATES(uartTx);
 
-                        // Brief propgation delay
+                        // Brief propogation delay
                         await Task.Delay(2500);
-
-                        // Send init command
-                        EVENT(SYS_INIT);
-                        await RUN_BLE_WRITE(uartRx, "I");
+                        await InitBrace();
                     }
                     catch (Exception ex)
                     {
@@ -286,10 +258,11 @@ namespace BracePLUS.Models
             catch (DeviceConnectionException e)
             {
                 Debug.WriteLine("Connection failed with exception: " + e.Message);
-                EVENT(DISCONNECTED, "Failed to connect :(");
+                InterfaceUpdates.Status = DISCONNECTED;
+                EVENT(InterfaceUpdates, "Failed to connect :(");
                 App.isConnected = false;
 
-                Xamarin.Forms.Device.BeginInvokeOnMainThread( async () =>
+                Device.BeginInvokeOnMainThread( async () =>
                 {
                     await Application.Current.MainPage.DisplayAlert("Connection failure.",
                         $"Failed to connect to Brace+", "OK");
@@ -299,20 +272,21 @@ namespace BracePLUS.Models
             }
             catch (Exception e)
             {
-                EVENT(DISCONNECTED, $"Failed to connect :( \n {e.Message}");
+                InterfaceUpdates.Status = DISCONNECTED;
+                EVENT(InterfaceUpdates, "Failed to connect: " + e.Message);
                 App.isConnected = false;
                 return;
             }
         }
         public async Task Disconnect()
         {
-            // Send command to put Brace in disconnected state;
-            await RUN_BLE_WRITE(uartRx, ".");
+            // Stop updates from BLE device
             await RUN_BLE_STOP_UPDATES(uartTx);
 
             // Remove all connections
             foreach (IDevice device in adapter.ConnectedDevices)
             {
+                Debug.WriteLine("Disconnecting from: " + device.Name);
                 await adapter.DisconnectDeviceAsync(device);
             }
 
@@ -330,7 +304,8 @@ namespace BracePLUS.Models
             // If already scanning, don't request second scan (will confuse BLE adapter)
             if (adapter.IsScanning) return;
 
-            EVENT(SCAN_START, "Starting scan...");
+            InterfaceUpdates.Status = SCAN_START;
+            EVENT(InterfaceUpdates, "Starting scan...");
             await adapter.StartScanningForDevicesAsync();
 
             // If no devices found after timeout, stop scan.
@@ -343,7 +318,8 @@ namespace BracePLUS.Models
         }
         public async Task StopScan()
         {
-            EVENT(SCAN_FINISH, "Stopping scan.");
+            InterfaceUpdates.Status = SCAN_FINISH;
+            EVENT(InterfaceUpdates, "Stopping scan.");
             await adapter.StopScanningForDevicesAsync();
         }
         public async Task Stream()
@@ -357,37 +333,60 @@ namespace BracePLUS.Models
 
             // Flush out data
             DATA_IN.Clear();
-            EVENT(SYS_STREAM_START, "Starting data stream...");
+
+            InterfaceUpdates.Status = SYS_STREAM_START;
+            EVENT(InterfaceUpdates, "Starting data stream...");
             // Request stream from menu
             await RUN_BLE_WRITE(uartRx, "S");
+        }
+        public async Task InitBrace()
+        {
+            // Send init command
+            InterfaceUpdates.Status = SYS_INIT;
+            EVENT(InterfaceUpdates, "Initalising device...");
+            await RUN_BLE_WRITE(uartRx, "I");
         }
         public async Task StopStream()
         {
             // Stop stream from menu (any character apart from "S")
             await RUN_BLE_WRITE(uartRx, ".");
-            EVENT(SYS_STREAM_FINISH, "Stream finished.");
+
+            InterfaceUpdates.Status = SYS_STREAM_FINISH;
+            EVENT(InterfaceUpdates, "Stream finished.");
 
             byte[] b = new byte[] { 0x0A, 0x0B, 0x0C };
             WRITE_FILE(DATA_IN, name: handler.GetFileName(DateTime.Now), header: b, footer: b);
             STATUS = SYS_STREAM_FINISH;
         }
-        public async Task Save()
+        public async Task Save(string filename)
         {
+            // Set the filename to be written by brace
+            downloadFilename = filename;
+
             // Request long-term logging function from brace
-            EVENT(LOGGING_START);
+            InterfaceUpdates.Status = LOGGING_START;
+            EVENT(InterfaceUpdates);
             await RUN_BLE_WRITE(uartRx, "D");
         }
         public async Task GetMobileFiles()
         {
             // Request list of files from brace
-            EVENT(SYNC_START, "Beginning file sync");
+            InterfaceUpdates.Status = SYNC_START;
+            EVENT(InterfaceUpdates, "Beginning file sync");
             await RUN_BLE_WRITE(uartRx, "F");
         }
         public async Task DownloadFile(string _filename)
         {
-            downloadFilename = _filename.Remove(8);
+            Debug.WriteLine("filename: " + _filename);
+
+            if (_filename.Length > 8)
+               downloadFilename = _filename.Remove(8);
+            else
+                downloadFilename = _filename;
+            
             downloadProgress = 0;
-            EVENT(DOWNLOAD_START, "Downloading file: " + _filename);
+            InterfaceUpdates.Status = DOWNLOAD_START;
+            EVENT(InterfaceUpdates, "Downloading file: " + _filename);
             await RUN_BLE_WRITE(uartRx, "G");
         }
         #endregion
@@ -422,13 +421,14 @@ namespace BracePLUS.Models
                         break;
 
                     case DOWNLOAD_START:
-                        HANDLE_DOWNLOAD(bytes);
+                        await HANDLE_DOWNLOAD(bytes);
                         break;
 
                     default:
                         // NO STATUS SET
                         Debug.WriteLine("************ NO STATUS SET ************\n" +
-                            "DATA IN: " + BitConverter.ToString(bytes));
+                            "DATA IN: " + BitConverter.ToString(bytes) + 
+                            ", Status: " + STATUS);
                         break;
                 }
             };
@@ -438,7 +438,26 @@ namespace BracePLUS.Models
             var input = Encoding.ASCII.GetString(args);
             var msg = handler.Translate(input, STATUS);
 
-            if (input == "^") EVENT(CONNECTED, msg);
+            if (input == "^")
+            {
+                try
+                {
+                    InterfaceUpdates.Status = CONNECTED;
+                    InterfaceUpdates.Device = Brace;
+                    InterfaceUpdates.ServiceID = uartServiceUUID;
+                    InterfaceUpdates.CharacteristicIDs = new List<string>()
+                    {
+                        uartTxCharUUID,
+                        uartRxCharUUID
+                    };
+                    EVENT(InterfaceUpdates, msg);
+                }
+                catch (Exception ex)
+                {
+                    STATUS = CONNECTED;
+                    Debug.WriteLine("Unable to perform UI update: " + ex.Message);
+                }
+            }
         }
         private async Task HANDLE_LOGGING(byte[] args)
         {
@@ -446,16 +465,25 @@ namespace BracePLUS.Models
             // If filename requested, send over
             if (input == "E")
             {
-                var filename = handler.GetFileName(DateTime.Now, extension: null);
-                await RUN_BLE_WRITE(uartRx, filename);
+                await RUN_BLE_WRITE(uartRx, downloadFilename);
 
-                EVENT(LOGGING_START, "Logging to file: " + filename + ".dat");
+                InterfaceUpdates.Status = LOGGING_START;
+                EVENT(InterfaceUpdates, "Logging to file: " + downloadFilename + ".dat");
             }
             else
             {
                 // If not filename, decode message and display
                 var msg = handler.Translate(input, STATUS);
-                EVENT(LOGGING_FINISH, msg);
+
+                InterfaceUpdates.Status = LOGGING_FINISH;
+                EVENT(InterfaceUpdates, msg);
+
+                await Task.Delay(1000);
+                LoggingFinishedEventArgs e = new LoggingFinishedEventArgs
+                {
+                    Filename = downloadFilename
+                };
+                OnLoggingFinished(e);
             }
         }
         private void HANDLE_SYNC(byte[] bytes)
@@ -467,8 +495,10 @@ namespace BracePLUS.Models
             }
             else if (file == "^")
             {
-                MobileSyncFinishedEventArgs args = new MobileSyncFinishedEventArgs();
-                args.Files = MobileFileList;
+                MobileSyncFinishedEventArgs args = new MobileSyncFinishedEventArgs
+                {
+                    Files = MobileFileList
+                };
                 OnFileSyncFinished(args);
                 MobileFileList.Clear();
                 return;
@@ -479,7 +509,7 @@ namespace BracePLUS.Models
                 MobileFileList.Add(file);
             }
         }
-        private async void HANDLE_DOWNLOAD(byte[] bytes)
+        private async Task HANDLE_DOWNLOAD(byte[] bytes)
         {
            //  Debug.WriteLine($"File upload bytes: {BitConverter.ToString(bytes)}");
             var input = Encoding.ASCII.GetString(bytes);
@@ -499,13 +529,14 @@ namespace BracePLUS.Models
 
             try
             {
+                // Debug.WriteLine("Download received...");
                 // Add buffer to local array
                 bytes.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
                 packetIndex += len;
             }
             catch (Exception e)
             {
-                Debug.WriteLine("*************** STREAM EXCEPTION ***************");
+                Debug.WriteLine("*************** DOWNLOAD EXCEPTION ***************");
                 Debug.WriteLine($"Received {bytes.Length} bytes: {BitConverter.ToString(bytes)}");
                 Debug.WriteLine("Copy stream to buffer failed with exception: " + e.Message);
                 Debug.WriteLine($"Stream length: {len}, packet index: {packetIndex}");
@@ -514,12 +545,15 @@ namespace BracePLUS.Models
             // Check packet
             if (packetIndex >= 100)
             {
-                DownloadProgressEventArgs args = new DownloadProgressEventArgs();
-                args.Value = downloadProgress / 31;
+                DownloadProgressEventArgs args = new DownloadProgressEventArgs
+                {
+                    Value = downloadProgress / 31
+                };
                 OnDownloadProgress(args);
                 downloadProgress += 1;
                 // Request next packet if header present.
                 await RUN_BLE_WRITE(uartRx, "g");
+                //Debug.WriteLine("Download: Release data");
                 // Send buffer to be written to file and empty all values.
                 buffer = RELEASE_DATA(buffer);
             }
@@ -533,9 +567,12 @@ namespace BracePLUS.Models
                     // Save data and send to display. 
                     try
                     {
-                        // Add buffer to local array
-                        stream.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
-                        packetIndex += stream.Length;
+                        if (stream.Length > 1)
+                        {
+                            // Add buffer to local array
+                            stream.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
+                            packetIndex += stream.Length;
+                        }
                     }
                     catch (Exception e)
                     {
@@ -558,7 +595,10 @@ namespace BracePLUS.Models
                 case SYS_STREAM_FINISH:
                     var input = Encoding.ASCII.GetString(stream);
                     var msg = handler.Translate(input, SYS_STREAM_FINISH);
-                    EVENT(SYS_STREAM_FINISH, msg);
+
+                    InterfaceUpdates.Status = SYS_STREAM_FINISH;
+                    EVENT(InterfaceUpdates, msg);
+                    STATUS = IDLE;
                     break;
             }
         }
@@ -568,28 +608,27 @@ namespace BracePLUS.Models
             packetIndex = 0;
 
             // Save data
-            //Debug.WriteLine(BitConverter.ToString(bytes));
             try
             {
-                double Zmsb, Zlsb, Z;
-                var z_max = 0.0;
+                double z, z_max = 0.0;
                 // Extract highest Z value
                 for (int _byte = 8; _byte < 100; _byte += 6)
                 {
-                    // Debug.WriteLine($"Chip: {(_byte-8)/6}, MSB: {bytes[_byte]}, LSB: {bytes[_byte + 1]}");
-
-                    // Find current Z value
-                    Zmsb = bytes[_byte] << 8;
-                    Zlsb = bytes[_byte + 1];
-                    Z = (Zmsb + Zlsb) * 0.02636;
-                    // Check if higher than previous (sort highest)
-                    if (Z > z_max) z_max = Z;
+                    var calibrated = NeuralNetCalib.CalibrateData(bytes);
+                    var normals = new List<double>();
+                    for (int i = 0; i < 16; i++)
+                    {
+                        z = calibrated[i, 2];
+                        if (z > z_max) z_max = z;
+                    }
                 }
                 // Send signal to Interface?
                 if (STATUS == SYS_STREAM_START)
                 {
-                    PressureUpdatedEventArgs args = new PressureUpdatedEventArgs();
-                    args.Value = z_max;
+                    PressureUpdatedEventArgs args = new PressureUpdatedEventArgs
+                    {
+                        Value = z_max
+                    };
                     OnPressureUpdated(args);
                 }
 
@@ -601,49 +640,18 @@ namespace BracePLUS.Models
                 Debug.WriteLine($"Failed to write {BitConverter.ToString(bytes)} to app with exception: {ex.Message}");
             }
             // Return empty array of same size
-            return new byte[buf_len];
+            return new byte[bytes.Length];
         }
         private void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
         {
-            // Create file instance
-            var filename = Path.Combine(App.FolderPath, name);
-            FileStream file = new FileStream(filename, FileMode.Create, FileAccess.Write);
+            FileManager.WriteFile(data, name, header, footer);
 
-            // Header may be null so write in try/catch
-            try
+            InterfaceUpdates.Status = FILE_WRITTEN;
+            EVENT(InterfaceUpdates, "File written: " + name);
+            Device.BeginInvokeOnMainThread(() =>
             {
-                file.Write(header, 0, header.Length);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Header write failed: " + ex.Message);
-            }
-           
-            try
-            {
-                // Write file data in chunks of 100 bytes
-                foreach (var bytes in data)
-                {
-                    file.Write(bytes, 0, bytes.Length);
-                };
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Data write failed: " + ex.Message);
-            }
-
-            // Footer may be null so write in try/catch
-            try
-            {
-                file.Write(footer, 0, footer.Length);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Footer write failed: " + ex.Message);
-            }
-            file.Close();
-
-            EVENT(FILE_WRITTEN, "File written: " + name);
+                //DependencyService.Get<IMessage>().ShortAlert("File written: " + file.Name);
+            });
             OnLocalFileListUpdated(EventArgs.Empty);
 
             DATA_IN.Clear();
@@ -658,32 +666,39 @@ namespace BracePLUS.Models
             downloadFilename += ".txt";
             WRITE_FILE(DATA_IN, name: downloadFilename, header: b, footer: b);
 
-            FileDownloadedEventArgs args = new FileDownloadedEventArgs();
-            args.Filename = downloadFilename;
-            args.Data = DATA_IN;
+            FileDownloadedEventArgs args = new FileDownloadedEventArgs
+            {
+                Filename = downloadFilename,
+                Data = DATA_IN
+            };
             OnDownloadFinished(args);
 
             var msg = handler.Translate(input, DOWNLOAD_FINISH);
-            EVENT(DOWNLOAD_FINISH, msg);
+
+            InterfaceUpdates.Status = DOWNLOAD_FINISH;
+            EVENT(InterfaceUpdates, msg);
+
             return;
         }
-
-        public void EVENT(int e, string msg = "")
+        public void EVENT(UserInterfaceUpdates args, string msg = "")
         {
-            UIUpdatedEventArgs a = new UIUpdatedEventArgs();
-            a.Status = e;
-            OnUIUpdated(a);
+            UIUpdatedEventArgs e = new UIUpdatedEventArgs
+            {
+                InterfaceUpdates = args
+            };
+
+            STATUS = args.Status;
+            OnUIUpdated(e);
 
             if (!string.IsNullOrWhiteSpace(msg))
             {
-                StatusEventArgs args = new StatusEventArgs();
-                args.Status = msg;
-                OnStatusUpdate(args);
-
+                StatusEventArgs a = new StatusEventArgs
+                {
+                    Status = msg
+                };
+                OnStatusUpdate(a);
                 Write(msg, _event);
             }
-
-            STATUS = e;           
         }
 
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
@@ -728,7 +743,7 @@ namespace BracePLUS.Models
 
         public void Write(string text, Color color)
         {
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+            Device.BeginInvokeOnMainThread(() =>
             {
                 MessagingCenter.Send(this, "StatusMessage", text);
                 Debug.WriteLine(text);
@@ -746,6 +761,12 @@ namespace BracePLUS.Models
                     stack.Children.RemoveAt(200);
                 }
             });
+        }
+
+        private void Watch()
+        {
+            Debug.WriteLine(watch_counter);
+            watch_counter++;
         }
         #endregion
     }

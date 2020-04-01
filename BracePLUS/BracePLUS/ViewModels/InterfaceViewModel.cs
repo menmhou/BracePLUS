@@ -10,24 +10,16 @@ using MvvmCross.ViewModels;
 using static BracePLUS.Extensions.Constants;
 using System.Diagnostics;
 using BracePLUS.Events;
+using BracePLUS.Extensions;
+using System;
+using BracePLUS.Views;
+using System.Collections.Generic;
 
 namespace BracePLUS.ViewModels
 {
     public class InterfaceViewModel : MvxViewModel
     {
         // Public Properties
-        #region ConnecText
-        private string _connectText;
-        public string ConnectText
-        {
-            get => _connectText;
-            set
-            {
-                _connectText = value;
-                RaisePropertyChanged(() => ConnectText);
-            }
-        }
-        #endregion
         #region StreamText
         private string _streamText;
         public string StreamText 
@@ -40,15 +32,27 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-        #region SaveText
-        private string _saveText;
-        public string SaveText
+        #region AverageText
+        private double _average;
+        public double Average
         {
-            get => _saveText;
+            get => _average;
             set
             {
-                _saveText = value;
-                RaisePropertyChanged(() => SaveText);
+                _average = value;
+                RaisePropertyChanged(() => Average);
+            }
+        }
+        #endregion
+        #region MaximumText
+        private double _maximum;
+        public double Maximum
+        {
+            get => _maximum;
+            set
+            {
+                _maximum = value;
+                RaisePropertyChanged(() => Maximum);
             }
         }
         #endregion
@@ -76,65 +80,67 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-        #region BarChartEnabled
-        private bool _barChartEnabled;
-        public bool BarChartEnabled
+        #region Chart
+        private double _barChartMinimum;
+        public double BarChartMinimum
         {
-            get => _barChartEnabled;
+            get => _barChartMinimum;
             set
             {
-                _barChartEnabled = value;
-                RaisePropertyChanged(() => BarChartEnabled);
+                _barChartMinimum = value;
+                RaisePropertyChanged(() => BarChartMinimum);
             }
         }
-        #endregion
-        #region LineChartEnabled
-        private bool _lineChartEnabled;
-        public bool LineChartEnabled
+        private double _barChartMaximum;
+        public double BarChartMaximum
         {
-            get => _lineChartEnabled;
+            get => _barChartMaximum;
             set
             {
-                _lineChartEnabled = value;
-                RaisePropertyChanged(() => LineChartEnabled);
+                _barChartMaximum = value;
+                RaisePropertyChanged(() => BarChartMaximum);
             }
         }
         #endregion
         public ObservableCollection<ChartDataModel> BarChartData { get; set; }
-        public ObservableCollection<ChartDataModel> LineChartData { get; set; }
 
         // Commands
-        public Command ConnectCommand { get; set; }
         public Command StreamCommand { get; set; }
-        public Command SaveCommand { get; set; }
-        public Command SwapChartTypeCommand { get; set; }
+        public Command SetupBLECommand { get; set; }
+        public Command TareCommand { get; set; }
 
         // Private Properties
-        double chartCounter = 0;
+        private readonly MessageHandler handler;
+        private double offset = 0.0;
+
+        public INavigation Nav { get; set; }
+
+        private List<double> normals;
 
         public InterfaceViewModel()
         {
-            App.Client = new BraceClient();
+            handler = new MessageHandler();
+
             App.Client.PressureUpdated += Client_OnPressureUpdated;
             App.Client.StatusUpdated += Client_OnStatusUpdated;
             App.Client.UIUpdated += Client_OnUIUpdated;
 
             BarChartData = new ObservableCollection<ChartDataModel>();
-            LineChartData = new ObservableCollection<ChartDataModel>();
-            BarChartEnabled = true;
-            LineChartEnabled = false;
+            normals = new List<double>();
 
-            ConnectCommand = new Command(async () => await ExecuteConnectCommand());
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
-            SaveCommand = new Command(async () => await ExecuteSaveCommand());
-            SwapChartTypeCommand = new Command(() => ExecuteSwapChartsCommand());
+            SetupBLECommand = new Command(() => ExecuteSetupBLECommand());
+            TareCommand = new Command(() => ExecuteTareCommand());
 
-            ConnectText = "Connect";
             StreamText = "Stream";
-            SaveText = "Log Data";
+            BarChartMaximum = 1.2;
+            BarChartMinimum = 0.8;
+
+            Maximum = 0.0;
 
             ButtonColour = START_COLOUR;
 
+            #region Simulation
 #if SIMULATION
             // Add random values to simulate a connected device
             for (int i = 0; i < App.generator.Next(2000); i++)
@@ -155,38 +161,36 @@ namespace BracePLUS.ViewModels
                 App.AddData(values);
             }
 #endif
+            #endregion
         }
 
+        #region Events
         void Client_OnStatusUpdated(object sender, StatusEventArgs e)
         {
             Status = e.Status;
         }
-
         void Client_OnUIUpdated(object sender, UIUpdatedEventArgs e)
         {
-            switch (e.Status)
+            switch (e.InterfaceUpdates.Status)
             {
                 case CONNECTED:
                     ButtonColour = STOP_COLOUR;
-                    ConnectText = "Disconnect";
                     break;
 
                 case DISCONNECTED:
                     ButtonColour = START_COLOUR;
-                    ConnectText = "Connect";
-                    chartCounter = 0;
-                    BarChartData.Clear();
-                    LineChartData.Clear();
-                    break;
-
-                case CONNECTING:
-                    ConnectText = "Connecting...";
-                    ButtonColour = WAIT_COLOUR;
-                    Status = "Initialising sytem...";
+                    try
+                    {
+                        BarChartData.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine("Unable to clear bar chart data: " + ex.Message);
+                    }
+                    
                     break;
 
                 case SYS_INIT:
-                    ButtonColour = WAIT_COLOUR;
                     Status = "Initialising sytem...";
                     break;
 
@@ -197,25 +201,24 @@ namespace BracePLUS.ViewModels
                 case SYS_STREAM_FINISH:
                     StreamText = "Stream";
                     break;
-
-                case LOGGING_START:
-                    SaveText = "Stop logging";
-                    break;
-
-                case LOGGING_FINISH:
-                    SaveText = "Log Data";
-                    break;
             }
         }
-
         void Client_OnPressureUpdated(object sender, PressureUpdatedEventArgs e)
         {
             Device.BeginInvokeOnMainThread(() =>
             {
                 if (BarChartData.Count > 0) BarChartData.Clear();
-                BarChartData.Add(new ChartDataModel("Pressure", e.Value));
-                LineChartData.Add(new ChartDataModel(chartCounter, e.Value));
-                chartCounter += 1;
+
+                var pressure = e.Value - offset;
+                BarChartData.Add(new ChartDataModel("Pressure", pressure));
+
+                // Update average
+                normals.Add(pressure);
+                Average = handler.GetAverage(normals);
+
+                if (pressure > Maximum) Maximum = pressure;
+
+                #region Simulation
 #if SIMULATION
 
 #else
@@ -224,25 +227,22 @@ namespace BracePLUS.ViewModels
                     App.Vibrate(1);
                 }
 #endif
+                #endregion
             });
         }
-        
-        public async Task ExecuteConnectCommand()
-        {
-            if (App.isConnected)
-            {
-                // Disconnect from device
-                await App.Client.Disconnect();
-            }
-            else
-            {
-                // Start scan
-                await App.Client.StartScan();
-            }
-        }
+        #endregion
 
-        public async Task ExecuteStreamCommand()
+        #region Command Methods
+        private async void ExecuteSetupBLECommand()
         {
+            await Nav.PushAsync(new BluetoothSetup(App.Client.InterfaceUpdates));
+        }
+        private async Task ExecuteStreamCommand()
+        {
+            offset = 0.0;
+            BarChartMaximum = 1.2;
+            BarChartMinimum = 0.8;
+
             if (App.isConnected)
             {
                 if(App.Client.STATUS == SYS_STREAM_START)
@@ -259,30 +259,28 @@ namespace BracePLUS.ViewModels
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to stream data.", "OK");
             }
         }
-
-        public async Task ExecuteSaveCommand()
+        private void ExecuteTareCommand()
         {
-            if (App.isConnected)
+            if (App.Client.STATUS == SYS_STREAM_START)
             {
-                if (App.Client.STATUS != LOGGING_START)
+                try
                 {
-                    await App.Client.Save();
-                }
-                else
-                {
-                   // await App.Client.StopStream();
-                }
-            }
-            else
-            {
-                await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to log data.", "OK");
-            }
-        }
+                    Maximum = 0.0;
+                    normals.Clear();
 
-        public void ExecuteSwapChartsCommand()
-        {
-            LineChartEnabled = !LineChartEnabled;
-            BarChartEnabled = !BarChartEnabled;
+                    BarChartMaximum = 0.2;
+                    BarChartMinimum = -0.2;
+
+                    offset = BarChartData[0].Value;
+
+                    Debug.WriteLine($"Fetching offset: {offset}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Couldnt fetch offset value: " + ex.Message);
+                }
+            }   
         }
+        #endregion
     }
 }

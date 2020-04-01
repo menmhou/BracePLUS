@@ -3,6 +3,7 @@ using BracePLUS.Extensions;
 using BracePLUS.Models;
 using MvvmCross.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -39,6 +40,16 @@ namespace BracePLUS.Views
             get => DataObj.FormattedSize;
             set { }
         }
+        private bool _offsetData;
+        public bool OffsetData
+        {
+            get => _offsetData;
+            set
+            {
+                _offsetData = value;
+                RaisePropertyChanged(() => OffsetData);
+            }
+        }
         #endregion
         #region File Analysis Section
         public double AveragePressure
@@ -46,36 +57,26 @@ namespace BracePLUS.Views
             get => DataObj.AveragePressure;
             set { }
         }
-        public double AverageChange
+        public string AverageChange
         {
-            get
-            {
-                return (100*AveragePressure / App.GlobalAverage)-100;
-            }
+            get => DataObj.FormattedPercentageDifference;
             set {  }
         }
-
         public double AverageOverall
         {
             get => App.GlobalAverage;
             set { }
         }
-
         public double MaxPressure 
         {
             get => DataObj.MaxPressure;
             set { }
         }
-
         public double MaximumChange
         {
-            get
-            {
-                return (100*MaxPressure / App.GlobalMax)-100;
-            }
+            get => (100*MaxPressure / App.GlobalMax)-100;
             set { }
         }
-
         public double MaximumOverall
         {
             get => App.GlobalMax;
@@ -86,6 +87,37 @@ namespace BracePLUS.Views
         #region Charts Section 
         public ObservableCollection<ChartDataModel> ChartData { get; set; }
         public ObservableCollection<ChartDataModel> AllNodesData { get; set; }
+        private List<double> _rawNormals;
+        public List<double> RawNormals
+        {
+            get => _rawNormals;
+            set
+            {
+                _rawNormals = value;
+                RaisePropertyChanged(() => RawNormals);
+            }
+        }
+        private List<double> _offsetNormals;
+        public List<double> OffsetNormals
+        {
+            get => _offsetNormals;
+            set
+            {
+                _offsetNormals = value;
+                RaisePropertyChanged(() => OffsetNormals);
+            }
+        }
+
+        private double[] _nodeOffsets;
+        public double[] NodeOffsets
+        {
+            get => _nodeOffsets;
+            set
+            {
+                _nodeOffsets = value;
+                RaisePropertyChanged(() => NodeOffsets);
+            }
+        }
         private double _sliderValue;
         public double SliderValue
         {
@@ -104,8 +136,47 @@ namespace BracePLUS.Views
             set
             {
                 _packets = value;
-                Debug.WriteLine("Packets: " +Packets);
                 RaisePropertyChanged(() => Packets);
+            }
+        }
+        private double _chartMinimum;
+        public double LineChartMinimum
+        {
+            get => _chartMinimum;
+            set
+            {
+                _chartMinimum = value;
+                RaisePropertyChanged(() => LineChartMinimum);
+            }
+        }
+        private double _chartMaximum;
+        public double LineChartMaximum
+        {
+            get => _chartMaximum;
+            set
+            {
+                _chartMaximum = value;
+                RaisePropertyChanged(() => LineChartMaximum);
+            }
+        }
+        private double _barChartMinimum;
+        public double BarChartMinimum
+        {
+            get => _barChartMinimum;
+            set
+            {
+                _barChartMinimum = value;
+                RaisePropertyChanged(() => BarChartMinimum);
+            }
+        }
+        private double _barChartMaximum;
+        public double BarChartMaximum
+        {
+            get => _barChartMaximum;
+            set
+            {
+                _barChartMaximum = value;
+                RaisePropertyChanged(() => BarChartMaximum);
             }
         }
         #endregion
@@ -121,6 +192,7 @@ namespace BracePLUS.Views
             set { }
         }
         #endregion
+
         #region Commands
         // Public Interface Commands
         public Command ShareCommand { get; set; }
@@ -142,18 +214,19 @@ namespace BracePLUS.Views
             DataObj = new DataObject();
             ChartData = new ObservableCollection<ChartDataModel>();
             AllNodesData = new ObservableCollection<ChartDataModel>();
+            RawNormals = new List<double>();
+            OffsetNormals = new List<double>();
+            OffsetData = false;
+            NodeOffsets = new double[16];
+
+            LineChartMinimum = 0.6;
+            LineChartMaximum = 1.2;
+
+            BarChartMinimum = 0.6;
+            BarChartMaximum = 1.2;
         }
 
         #region Events
-        protected virtual void OnRemoveObject(RemoveObjectEventArgs e)
-        {
-            EventHandler<RemoveObjectEventArgs> handler = RemoveObject;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
-        public EventHandler<RemoveObjectEventArgs> RemoveObject;
         protected virtual void OnLocalFileListUpdated(EventArgs e)
         {
             LocalFileListUpdated?.Invoke(this, e);
@@ -164,30 +237,40 @@ namespace BracePLUS.Views
         public void InitDataObject()
         {
             if (!DataObj.IsDownloaded) return;
-            Packets = (DataObj.Data.Length - 6) / 128;
+            Packets = (DataObj.RawData.Length - 6) / 128;
+
+            // Take pure calibrated data
+            RawNormals = handler.ExtractNormals(DataObj.CalibratedData);
+
+            // Create offset from initial value (0th index is sometimes wrong- needs fixing.)
+            var offset = RawNormals[1];
+
+            // Create new set of values with offset removed to create tarred data.
+            for (int i = 0; i < RawNormals.Count; i++)
+                OffsetNormals.Add(RawNormals[i] - offset);
+                
             // Add chart data
             try
             {
-                var normals = handler.ExtractNormals(DataObj.Data, Packets, 11);
-                var times = handler.ExtractTimes(DataObj.StartTime, DataObj.Data, Packets);
-
                 // If less than 200 data points avaible, use total number of points
-                for (int i = 0; i < (normals.Count > 200 ? 200 : normals.Count); i++)
+                for (int i = 0; i < (RawNormals.Count > 200 ? 200 : RawNormals.Count); i++)
                 {
-                    //Debug.WriteLine(times[i].ToString());
-                    ChartData.Add(new ChartDataModel(times[i].ToShortTimeString(), normals[i]));
+                    ChartData.Add(new ChartDataModel(i.ToString(), RawNormals[i]));
                 }
             }
             catch (Exception ex)
             {
+                Debug.WriteLine("Number of normals: " + RawNormals.Count);
                 Debug.WriteLine("Max normals initialisation failed with exception: " + ex.Message);
             }
 
             try
             {
-                var nodes = handler.ExtractNodes(DataObj.Data, 0);
+                var nodes = handler.ExtractNodes(DataObj.CalibratedData, 0);
+
                 for (int i = 0; i < 16; i++)
                 {
+                    NodeOffsets[i] = nodes[i];
                     AllNodesData.Add(new ChartDataModel((i+1).ToString(), nodes[i]));
                 }
             }
@@ -197,7 +280,68 @@ namespace BracePLUS.Views
             }
         }
 
-        public async Task ExecuteShareCommand()
+        public void ToggleTarredData(ToggledEventArgs e)
+        {
+            try
+            {
+                ChartData.Clear();
+                OffsetData = e.Value;
+
+                if (!e.Value)
+                {
+                    // UNTARRED DATA
+
+                    // Update chart axes
+                    LineChartMinimum = 0.7;
+                    LineChartMaximum = 1.2;
+
+                    BarChartMinimum = 0.6;
+                    BarChartMaximum = 1.4;
+
+                    // Update chart data
+                    // If less than 200 data points avaible, use total number of points
+                    for (int i = 0; i < (RawNormals.Count > 200 ? 200 : RawNormals.Count); i++)
+                    {
+                        ChartData.Add(new ChartDataModel(i.ToString(), RawNormals[i]));
+                    }
+                }
+                else
+                {
+                    // TARRED DATA
+
+                    // Update chart axes
+                    LineChartMinimum = -0.2;
+                    LineChartMaximum = 0.2;
+
+                    BarChartMinimum = 0.9;
+                    BarChartMaximum = 1.5;
+
+                    // Update chart data
+                    // If less than 200 data points avaible, use total number of points
+                    for (int i = 0; i < (OffsetNormals.Count > 200 ? 200 : OffsetNormals.Count); i++)
+                    {
+                        ChartData.Add(new ChartDataModel(i.ToString(), OffsetNormals[i]));
+                    }
+                }
+
+                AllNodesData.Clear();
+                var nodes = handler.ExtractNodes(DataObj.CalibratedData, (int)SliderValue - 1);
+                for (int i = 0; i < 16; i++)
+                {
+                    if (OffsetData)
+                        AllNodesData.Add(new ChartDataModel((i + 1).ToString(), 1 + nodes[i] - NodeOffsets[i]));
+                    else
+                        AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        #region Command Methods
+        private async Task ExecuteShareCommand()
         {
             var file = Path.Combine(App.FolderPath, DataObj.Directory);
 
@@ -208,7 +352,7 @@ namespace BracePLUS.Views
             });
         }
 
-        public async Task ExecuteDeleteCommand()
+        private async Task ExecuteDeleteCommand()
         {
             if (await Application.Current.MainPage.DisplayAlert("Delete File?", "Delete file from local storage?", "Yes", "No"))
             {
@@ -218,10 +362,8 @@ namespace BracePLUS.Views
                 {
                     if (filename == DataObj.Directory)
                     {
-
                         File.Delete(filename);
-                        RemoveObjectEventArgs args = new RemoveObjectEventArgs() { dataObject = DataObj };
-                        OnRemoveObject(args);
+                        MessagingCenter.Send(this, "Remove", DataObj);
                     }
                 }
                 OnLocalFileListUpdated(EventArgs.Empty);
@@ -247,18 +389,31 @@ namespace BracePLUS.Views
                 BindingContext = DataObj
             });
         }
+        #endregion
 
         private void SliderValueUpdated(double value)
         {
             int val = (int)value;
+            if (val < 1) val = 1;
 
-            var nodes = handler.ExtractNodes(DataObj.Data, val-1);
-            for (int i = 0; i < 16; i++)
+            try
             {
-                AllNodesData[i].Name = (i + 1).ToString();
-                AllNodesData[i].Value = nodes[i];
+                AllNodesData.Clear();
+                var nodes = handler.ExtractNodes(DataObj.CalibratedData, val-1);
+                for (int i = 0; i < 16; i++)
+                {
+                    if (OffsetData)
+                        AllNodesData.Add(new ChartDataModel((i + 1).ToString(), 1 + nodes[i] - NodeOffsets[i]));
+                    else
+                        AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Replace bar chart nodes failed with exception: " + ex.Message);
 
-                //Debug.WriteLine(AllNodesData[i]);
+                for (int i = 0; i < 16; i++)
+                    Debug.WriteLine(AllNodesData[i]);
             }
         }
     }

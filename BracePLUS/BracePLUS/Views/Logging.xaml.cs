@@ -1,39 +1,33 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BracePLUS.Extensions;
-using BracePLUS.Models;
+﻿using BracePLUS.Models;
 using BracePLUS.ViewModels;
 using Syncfusion.SfChart.XForms;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-
 namespace BracePLUS.Views
 {
-    public partial class History : ContentPage
+    [XamlCompilation(XamlCompilationOptions.Compile)]
+    public partial class Logging : ContentPage
     {
-        HistoryViewModel viewModel;
+        LoggingViewModel viewModel;
 
-        MessageHandler handler;
-        public History()
+        public Logging()
         {
             InitializeComponent();
-            handler = new MessageHandler();
-            BindingContext = viewModel = new HistoryViewModel();
+
+            BindingContext = viewModel = new LoggingViewModel();
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            viewModel.RefreshObjects();
+            //viewModel.RefreshObjects();
         }
 
-        async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
+        async void listView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
         {
             DataObject item = e.SelectedItem as DataObject;
             if (item == null)
@@ -48,7 +42,7 @@ namespace BracePLUS.Views
             {
                 Debug.WriteLine($"Async nav push to new file inspect page failed: {ex.Message}");
             }
-            
+
             listView.SelectedItem = null;
         }
     }

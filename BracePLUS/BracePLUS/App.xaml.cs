@@ -5,11 +5,13 @@ using System.Diagnostics;
 using BracePLUS.Models;
 using static BracePLUS.Extensions.Constants;
 using System.IO;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using BracePLUS.Extensions;
 using Xamarin.Essentials;
+
+using Microsoft.AppCenter;
+using Microsoft.AppCenter.Analytics;
+using Microsoft.AppCenter.Crashes;
 
 namespace BracePLUS
 {
@@ -22,28 +24,7 @@ namespace BracePLUS
 
         // Global Members
         public static Random generator;
-        public static List<byte[]> InputData;
-        public static List<string> MobileFiles;
-        public static string Status { get; set; }
         public static string FolderPath { get; private set; }
-        public static ObservableCollection<ChartDataModel> ChartData { get; set; }
-
-        // BLE Status
-        public static string ConnectedDevice
-        { 
-            get { return Client.Device.Name; }
-            set { } 
-        }
-        public static string DeviceID
-        { 
-            get { return Client.Device.Id.ToString(); }
-            set { }
-        }
-        public static string RSSI 
-        { 
-            get { return Client.Device.Rssi.ToString(); }
-            set { }
-        }
 
         // User Info
         public static double GlobalMax { get; set; }
@@ -62,15 +43,16 @@ namespace BracePLUS
 
             generator = new Random();
             handler = new MessageHandler();
-            InputData = new List<byte[]>();
-            MobileFiles = new List<string>();
 
+            RemovePersistentAnnoyingMarchFiles();
+
+            Client = new BraceClient();
             MainPage = new MainPage();
         }
 
         protected override async void OnStart()
         {
-            MessagingCenter.Send(Client, "StatusMessage", "Unconnected");
+            AppCenter.Start("android=4587f74f-2879-4a99-864d-1ca78e951599;", typeof(Analytics), typeof(Crashes));
 
             isConnected = false;
             await Client.StartScan();
@@ -100,6 +82,19 @@ namespace BracePLUS
             catch (Exception ex)
             {
                 Debug.WriteLine("Vibration failed: " + ex.Message);
+            }
+        }
+
+        private void RemovePersistentAnnoyingMarchFiles()
+        {
+            // Can't remove these files for some reason. Needs looking into in depth.
+            var files = Directory.EnumerateFiles(FolderPath, "*.txt");
+
+            foreach (var path in files)
+            {
+                var date = handler.DecodeFilename(Path.GetFileName(path));
+                if (date.Month == 3 && date.Day == 4)
+                    FileManager.DeleteFile(path: path);
             }
         }
     }
