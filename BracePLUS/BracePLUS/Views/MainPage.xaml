@@ -11,7 +11,7 @@
     <TabbedPage.Children>
 
         <!-- Interface page -->
-        <NavigationPage Title="Connect">
+        <NavigationPage Title="Stream">
             <x:Arguments>
                 <views:Interface />
             </x:Arguments>

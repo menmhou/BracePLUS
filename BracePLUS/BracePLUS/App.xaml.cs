@@ -5,11 +5,13 @@ using System.Diagnostics;
 using BracePLUS.Models;
 using static BracePLUS.Extensions.Constants;
 using System.IO;
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using BracePLUS.Extensions;
 using Xamarin.Essentials;
+
+using Microsoft.AppCenter;
+using Microsoft.AppCenter.Analytics;
+using Microsoft.AppCenter.Crashes;
 
 namespace BracePLUS
 {
@@ -22,26 +24,7 @@ namespace BracePLUS
 
         // Global Members
         public static Random generator;
-        public static List<byte[]> InputData;
-        public static List<string> MobileFiles;
         public static string FolderPath { get; private set; }
-
-        // BLE Status
-        public static string ConnectedDevice
-        { 
-            get { return Client.Brace.Name; }
-            set { } 
-        }
-        public static string DeviceID
-        { 
-            get { return Client.Brace.Id.ToString(); }
-            set { }
-        }
-        public static string RSSI 
-        { 
-            get { return Client.Brace.Rssi.ToString(); }
-            set { }
-        }
 
         // User Info
         public static double GlobalMax { get; set; }
@@ -56,13 +39,12 @@ namespace BracePLUS
             Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(SyncFusionLicense);
             FolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
 
-            ClearFiles();
             InitializeComponent();
 
             generator = new Random();
             handler = new MessageHandler();
-            InputData = new List<byte[]>();
-            MobileFiles = new List<string>();  
+
+            RemovePersistentAnnoyingMarchFiles();
 
             Client = new BraceClient();
             MainPage = new MainPage();
@@ -70,6 +52,8 @@ namespace BracePLUS
 
         protected override async void OnStart()
         {
+            AppCenter.Start("android=4587f74f-2879-4a99-864d-1ca78e951599;", typeof(Analytics), typeof(Crashes));
+
             isConnected = false;
             await Client.StartScan();
         }
@@ -101,25 +85,17 @@ namespace BracePLUS
             }
         }
 
-        private void ClearFiles()
+        private void RemovePersistentAnnoyingMarchFiles()
         {
-            var files = Directory.EnumerateFiles(FolderPath, "*.csv");
-            Debug.WriteLine("Found directory files:");
-            foreach (var file in files)
-                Debug.WriteLine(file);
+            // Can't remove these files for some reason. Needs looking into in depth.
+            var files = Directory.EnumerateFiles(FolderPath, "*.txt");
 
-            foreach (var file in files)
+            foreach (var path in files)
             {
-                if (File.Exists(Path.Combine(FolderPath, file)))
-                {
-                    File.Delete(file);
-                }
+                var date = handler.DecodeFilename(Path.GetFileName(path));
+                if (date.Month == 3 && date.Day == 4)
+                    FileManager.DeleteFile(path: path);
             }
-
-            files = Directory.GetFiles(FolderPath);
-            Debug.WriteLine("Files left over:");
-            foreach (var file in files)
-                Debug.WriteLine(file);
         }
     }
 }

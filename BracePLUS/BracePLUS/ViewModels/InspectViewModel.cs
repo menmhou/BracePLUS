@@ -136,7 +136,6 @@ namespace BracePLUS.Views
             set
             {
                 _packets = value;
-                Debug.WriteLine("Packets: " +Packets);
                 RaisePropertyChanged(() => Packets);
             }
         }
@@ -241,7 +240,7 @@ namespace BracePLUS.Views
             Packets = (DataObj.RawData.Length - 6) / 128;
 
             // Take pure calibrated data
-            RawNormals = handler.ExtractNormals(DataObj.CalibData);
+            RawNormals = handler.ExtractNormals(DataObj.CalibratedData);
 
             // Create offset from initial value (0th index is sometimes wrong- needs fixing.)
             var offset = RawNormals[1];
@@ -267,7 +266,7 @@ namespace BracePLUS.Views
 
             try
             {
-                var nodes = handler.ExtractNodes(DataObj.CalibData, 0);
+                var nodes = handler.ExtractNodes(DataObj.CalibratedData, 0);
 
                 for (int i = 0; i < 16; i++)
                 {
@@ -305,8 +304,6 @@ namespace BracePLUS.Views
                     {
                         ChartData.Add(new ChartDataModel(i.ToString(), RawNormals[i]));
                     }
-
-
                 }
                 else
                 {
@@ -328,7 +325,7 @@ namespace BracePLUS.Views
                 }
 
                 AllNodesData.Clear();
-                var nodes = handler.ExtractNodes(DataObj.CalibData, (int)SliderValue - 1);
+                var nodes = handler.ExtractNodes(DataObj.CalibratedData, (int)SliderValue - 1);
                 for (int i = 0; i < 16; i++)
                 {
                     if (OffsetData)
@@ -402,7 +399,7 @@ namespace BracePLUS.Views
             try
             {
                 AllNodesData.Clear();
-                var nodes = handler.ExtractNodes(DataObj.CalibData, val-1);
+                var nodes = handler.ExtractNodes(DataObj.CalibratedData, val-1);
                 for (int i = 0; i < 16; i++)
                 {
                     if (OffsetData)

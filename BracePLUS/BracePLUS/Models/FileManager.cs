@@ -107,11 +107,9 @@ namespace BracePLUS.Models
             var path = Path.Combine(App.FolderPath, name);
 
             // Prepare objects to be written.
-            var csv = new List<string>();
-            csv.Add("ID,X,Y,Z");
+            var csv = new List<string> { "ID,X,Y,Z" };
 
             Debug.WriteLine("Writing CSV file: " + path);
-            Debug.WriteLine($"Number of packets: {data.Count}");
 
             // For each packet in the data, read each line and create a new record for the sensor reading.
             for (int packet = 0; packet < data.Count; packet++)
@@ -162,6 +160,19 @@ namespace BracePLUS.Models
             }
 
             return data;
+        }
+
+        public static void DeleteFile(string path = null, string name = null)
+        {
+            if (!string.IsNullOrEmpty(path))
+                File.Delete(path);
+
+            else if (!string.IsNullOrEmpty(name))
+            {
+                var _path = Path.Combine(App.FolderPath, name);
+                File.Delete(_path);
+            }
+
         }
     }
 

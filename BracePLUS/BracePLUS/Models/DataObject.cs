@@ -70,7 +70,7 @@ namespace BracePLUS.Models
         public double AveragePressure { get; set; }
         public double MaxPressure { get; set; }
         public byte[] RawData { get; set; }
-        public List<double[,]> CalibData { get; set; }
+        public List<double[,]> CalibratedData { get; set; }
         public DateTime StartTime { get; set; }
         #endregion
 
@@ -89,6 +89,8 @@ namespace BracePLUS.Models
 
             ChartEnabled = "False";
             ProgressBarEnabled = false;
+
+            CalibratedData = new List<double[,]>();
 
             App.Client.DownloadProgress += Client_OnDownloadProgress;
         }
@@ -217,11 +219,18 @@ namespace BracePLUS.Models
             // Basic analysis
             if (RawData.Length > 6) // (only contains header/footer)
             {
-
                 FilenameCSV = Filename.Remove(8).Insert(8, "_CALIB.csv");
-                CalibData = RetrieveCalibration(RawData, FilenameCSV);
 
-                var normals = handler.ExtractNormals(CalibData);
+                try
+                {
+                    CalibratedData = RetrieveCalibration(RawData, FilenameCSV);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Unable to retrieve calibration. " + ex.Message);
+                }
+
+                var normals = handler.ExtractNormals(CalibratedData);
 
                 try
                 {
@@ -276,9 +285,9 @@ namespace BracePLUS.Models
             // Check if data already retrieved
             try
             {
-                if (CalibData.Count > 3)
+                if (CalibratedData.Count > 1)
                 {
-                    return CalibData;
+                    return CalibratedData;
                 }
             }
             catch (Exception ex)
@@ -289,17 +298,16 @@ namespace BracePLUS.Models
             // Check if calibration file exists
             if (File.Exists(Path.Combine(App.FolderPath, name)))
             {
-                Debug.WriteLine("File already exists. Reading data from file: " + name);
                 // Read data
                 return FileManager.ReadCSV(Path.Combine(App.FolderPath, name));
             }
             else
             {
-                // If not, perform calibration and write to file
+                // Perform calibration
                 var calibData = Calibrate(bytes);
-
+                // Export data to CSV file
                 FileManager.WriteCSV(calibData, name);
-
+                // Return data
                 return calibData;
             }
         }

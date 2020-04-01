@@ -10,32 +10,43 @@
         <StackLayout BackgroundColor="White"
                      Padding="10">
 
-            <Frame CornerRadius="20"
-                   BackgroundColor="{Binding ConnectionColour}"
-                   VerticalOptions="Center"
-                   HorizontalOptions="Center"
-                   HasShadow ="True">
-                <Label Text="{Binding ConnectionText}"
-                       FontSize="30"
-                       TextColor="White"/>
-            </Frame>
-
-
+            <Label Text="{Binding ConnectionText}"
+                FontSize="30"
+                TextColor="Black"
+                Margin="8, 12"
+                HorizontalOptions="FillAndExpand"
+                   WidthRequest="200"
+                HorizontalTextAlignment="Center"/>
+    
             <Label Text="{Binding DeviceName, StringFormat='Device name: {0}'}"
-                    Margin="12"
-                    FontSize="20"/>
+                   Margin="8, 12"
+                   FontSize="25"/>
 
             <Label Text="{Binding ConnectionStrength, StringFormat='Connection strength: {0}'}"
-                    Margin="12"
-                    FontSize="20"/>
+                   Margin="8, 12"
+                   FontSize="25"/>
 
-            <Grid Margin="10">
-                <Button Text="Scan"
-                        MinimumHeightRequest="20"
-                        Grid.Column="0"/>
-                <Button Text="Disconnect"
-                        Grid.Column="1"/>
-            </Grid>
+            <Label Text="{Binding DeviceID, StringFormat='ID: {0}'}"
+                   Margin="8, 12"
+                   FontSize="22"/>
+            
+            <Label Text="{Binding ServiceID, StringFormat='Service UUID: {0}'}"
+                   Margin="8, 12"
+                   FontSize="18"/>
+            
+            <Label Text="{Binding CharacteristicRX, StringFormat='RX Characteristic: {0}'}"
+                   Margin="6, 12"
+                   FontSize="16"/>
+
+            <Label Text="{Binding CharacteristicRX, StringFormat='TX Characteristic: {0}'}"
+                   Margin="6, 12"
+                   FontSize="16"/>
+
+            <Button Text="{Binding ButtonText}"
+                    FontSize="22"
+                    FontAttributes="Bold"
+                    Command="{Binding ButtonCommand}"
+                    VerticalOptions="EndAndExpand"/>
 
         </StackLayout>
     </ContentPage.Content>

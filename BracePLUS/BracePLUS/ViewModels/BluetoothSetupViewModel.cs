@@ -5,6 +5,9 @@ using BracePLUS.Events;
 using MvvmCross.ViewModels;
 using static BracePLUS.Extensions.Constants;
 using Xamarin.Forms;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using BracePLUS.Models;
 
 namespace BracePLUS.ViewModels
 {
@@ -58,46 +61,161 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
+        #region Device ID
+        private string _deviceID;
+        public string DeviceID
+        {
+            get => _deviceID;
+            set
+            {
+                _deviceID = value;
+                RaisePropertyChanged(() => DeviceID);
+            }
+        }
+        #endregion
+        #region Service ID
+        private string _serviceID;
+        public string ServiceID
+        {
+            get => _serviceID;
+            set
+            {
+                _serviceID = value;
+                RaisePropertyChanged(() => ServiceID);
+            }
+        }
+        #endregion
+        #region Characteristic RX
+        private string _characteristicRX;
+        public string CharacteristicRX
+        {
+            get => _characteristicRX;
+            set
+            {
+                _characteristicRX = value;
+                RaisePropertyChanged(() => CharacteristicRX);
+            }
+        }
+        #endregion
+        #region Characteristic TX
+        private string _characteristicTX;
+        public string CharacteristicTX
+        {
+            get => _characteristicTX;
+            set
+            {
+                _characteristicTX = value;
+                RaisePropertyChanged(() => CharacteristicTX);
+            }
+        }
+        #endregion
+        #region Button
+        private string _buttonText;
+        public string ButtonText
+        {
+            get => _buttonText;
+            set
+            {
+                _buttonText = value;
+                RaisePropertyChanged(() => ButtonText);
+            }
+        }
+        public Command ButtonCommand { get; set; }
+        #endregion
+
+        public UserInterfaceUpdates InterfaceUpdates { get; set; }
 
         public BluetoothSetupViewModel()
         {
-            ConnectionText = "Unconnected";
-            ConnectionColour = WAIT_COLOUR;
-            ConnectionStrength = "-";
-            DeviceName = "-";
+            ButtonCommand = new Command(async () => await ExecuteButtonCommand());
 
             App.Client.UIUpdated += Client_OnUIUpdated;
         }
 
+        #region Commands
+        private async Task ExecuteButtonCommand()
+        {
+            if (App.isConnected)
+            {
+                // Disconnect from device
+                await App.Client.Disconnect();
+            }
+            else
+            {
+                // Start scan
+                await App.Client.StartScan();
+            }
+        }
+        #endregion
+        #region Events
         void Client_OnUIUpdated(object sender, UIUpdatedEventArgs e)
         {
-            switch (e.Status)
+            UpdateUI(e);
+        }
+        #endregion
+
+        #region Public Methods
+        public void RequestUIUpdates(UIUpdatedEventArgs e)
+        {
+            UpdateUI(e);
+        }
+        #endregion
+
+        #region Private Methods
+        private void UpdateUI(UIUpdatedEventArgs e)
+        {
+            switch (e.InterfaceUpdates.Status)
             {
                 case CONNECTED:
-                    ConnectionColour = STOP_COLOUR;
+                    ConnectionColour = START_COLOUR;
                     ConnectionText = "Connected";
+                    ButtonText = "Disconnect";
+                    DeviceName = e.InterfaceUpdates.Device.Name;
+                    ConnectionStrength = e.InterfaceUpdates.Device.Rssi.ToString();
+                    DeviceID = e.InterfaceUpdates.Device.Id.ToString();
+                    try
+                    {
+                        ServiceID = e.InterfaceUpdates.ServiceID;
+                        CharacteristicRX = e.InterfaceUpdates.CharacteristicIDs[1];
+                        CharacteristicTX = e.InterfaceUpdates.CharacteristicIDs[0];
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(ex);
+                    }
+
                     break;
 
                 case DISCONNECTED:
-                    ConnectionColour = START_COLOUR;
-                    ConnectionText = "Disconected";
+                    SetNullValues();
+                    ConnectionColour = STOP_COLOUR;
                     break;
 
-                case CONNECTING:
-                    ConnectionText = "Connecting...";
-                    ConnectionColour = WAIT_COLOUR;
+                case SCAN_START:
+                    ButtonText = "Stop scan";
+                    SetNullValues();
+                    break;
+
+                case SCAN_FINISH:
+                    SetNullValues();
                     break;
 
                 default:
                     break;
             }
-
-            if (e.RSSI > 0)
-                ConnectionStrength = e.RSSI.ToString();
-
-            if (!string.IsNullOrEmpty(e.DeviceName))
-                DeviceName = e.DeviceName;
-
         }
+        private void SetNullValues()
+        {
+            ConnectionColour = WAIT_COLOUR;
+            ConnectionText = "Unconnected";
+            ButtonText = "Scan for Brace+";
+            DeviceName = "-";
+            ConnectionStrength = "-";
+            DeviceID = "-";
+            ServiceID = "-";
+            CharacteristicRX = "-";
+            CharacteristicTX = "-";
+        }
+        #endregion
     }
 }
