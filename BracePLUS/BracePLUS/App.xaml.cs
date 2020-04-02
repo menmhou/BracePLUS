@@ -52,7 +52,9 @@ namespace BracePLUS
 
         protected override async void OnStart()
         {
-            AppCenter.Start("android=4587f74f-2879-4a99-864d-1ca78e951599;", typeof(Analytics), typeof(Crashes));
+            AppCenter.Start("android=4587f74f-2879-4a99-864d-1ca78e951599; +" +
+                            "ios=47dceb8a-a40d-4ffc-a718-eb1f04fc53f7;", 
+                            typeof(Analytics), typeof(Crashes));
 
             isConnected = false;
             await Client.StartScan();
