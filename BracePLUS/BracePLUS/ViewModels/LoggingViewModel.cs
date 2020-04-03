@@ -8,6 +8,7 @@ using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.Services;
+using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
 using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
@@ -72,7 +73,7 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-        #region Refreshing
+        #region Refresh
         private bool _isRefreshing;
         public bool IsRefreshing
         {
@@ -104,29 +105,23 @@ namespace BracePLUS.ViewModels
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
             LogCommand = new Command(() => ExecuteLogCommand());
 
-            App.Client.LocalFileListUpdated += Client_OnLocalFileListUpdated;
-            App.Client.LoggingFinished += Client_OnLoggingFinished;
-            App.Client.DownloadFinished += Client_OnDownloadFinished;
+            App.Client.LocalFileListUpdated += (s, e) => 
+            { 
+                RefreshObjects(); 
+            };
+            App.Client.LoggingFinished += async (s, e) => 
+            { 
+                await App.Client.DownloadFile(e.Filename); 
+            };
+            App.Client.DownloadFinished += (s, e) =>
+            {
+                UpdateObject(e.Filename);
+                RefreshObjects();
+            };
 
             RefreshObjects();
         }
 
-        #region Event Handlers
-        void Client_OnLocalFileListUpdated(object sender, EventArgs e)
-        {
-            RefreshObjects();
-        }
-        async void Client_OnLoggingFinished(object sender, LoggingFinishedEventArgs e)
-        {
-            // Debug.WriteLine($"LOGGING: Logging finished. Downloading file: {e.Filename}...");
-            await App.Client.DownloadFile(e.Filename);
-        }
-        void Client_OnDownloadFinished(object sender, FileDownloadedEventArgs e)
-        {
-            // Debug.WriteLine("LOGGING: Download finished. Updating object: " + e.Filename);
-            UpdateObject(e.Filename);
-        }
-        #endregion
         #region Command Methods
         private void ExecuteRefreshCommand()
         {
@@ -142,6 +137,13 @@ namespace BracePLUS.ViewModels
                 {
                     var filename = handler.GetFileName(DateTime.Now, extension: null);
                     await App.Client.Save(filename);
+
+                    // Create empty file
+                    List<byte[]> empty = new List<byte[]>();
+                    // FileManager.WriteFile(empty, filename, null, null);
+
+                    // Add to list of files
+                    RefreshObjects();
                 }
             }
             else
@@ -154,7 +156,6 @@ namespace BracePLUS.ViewModels
 
         public void RefreshObjects()
         {
-            // Debug.WriteLine("LOGGING: Refreshing objects...");
             LoadLocalFiles();
 
             int downloaded = 0;
@@ -182,6 +183,8 @@ namespace BracePLUS.ViewModels
         #region Private Methods
         private void LoadLocalFiles()
         {
+            Debug.WriteLine("LOGGING: Loading local files...");
+            // Create groups for data recordings from different times
             var todayObjects = new DataObjectGroup()
             {
                 Heading = "Today"
@@ -220,6 +223,7 @@ namespace BracePLUS.ViewModels
                     IsDownloaded = (data.Length > 6) ? true : false
                 };
 
+                // Assign object into correct group according to its time of creation.
                 if (dataObject.Location == "Mobile")
                 {
                     dataObject.Analyze();
@@ -254,6 +258,8 @@ namespace BracePLUS.ViewModels
             };
             DataObjectGroups = group;
 
+            Debug.WriteLine(" Done.");
+
             ReorderDataObjects();
         }
 
@@ -261,10 +267,13 @@ namespace BracePLUS.ViewModels
         {           
             try
             {
+                // Loop through all groups
                 for (int k = 0; k < DataObjectGroups.Count; k++)
                 {
                     var objects = DataObjectGroups[k];
 
+                    // In each group, cycle through each object and compare with all other objects.
+                    // If comparitive object found to have an earlier date, swap objects.
                     for (int j = 0; j < objects.Count; j++)
                     {
                         for (int i = 0; i < objects.Count - 1; i++)
@@ -329,7 +338,16 @@ namespace BracePLUS.ViewModels
 
         private void UpdateGraph(ObservableCollection<DataObjectGroup> dataObjectGroup)
         {
-            LoggedColumnSeries.Clear();
+            try
+            {
+                LoggedColumnSeries.Clear();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("LOGGING: Unable to update graph. " + ex.Message);
+                Crashes.TrackError(ex);
+                return;
+            }
 
             double[] temps = new double[7];
             double[] normals = new double[7];
@@ -346,13 +364,21 @@ namespace BracePLUS.ViewModels
                     if (temps[i] > 0) normals[i] = temps[i];
             }
 
-            LoggedColumnSeries.Add(new ChartDataModel("6 days", normals[6]));
-            LoggedColumnSeries.Add(new ChartDataModel("5 days", normals[5]));
-            LoggedColumnSeries.Add(new ChartDataModel("4 days", normals[4]));
-            LoggedColumnSeries.Add(new ChartDataModel("3 days", normals[3]));
-            LoggedColumnSeries.Add(new ChartDataModel("2 days", normals[2]));
-            LoggedColumnSeries.Add(new ChartDataModel("Yesterday", normals[1]));
-            LoggedColumnSeries.Add(new ChartDataModel("Today", normals[0]));
+            try
+            {
+                LoggedColumnSeries.Add(new ChartDataModel("6 days", normals[6]));
+                LoggedColumnSeries.Add(new ChartDataModel("5 days", normals[5]));
+                LoggedColumnSeries.Add(new ChartDataModel("4 days", normals[4]));
+                LoggedColumnSeries.Add(new ChartDataModel("3 days", normals[3]));
+                LoggedColumnSeries.Add(new ChartDataModel("2 days", normals[2]));
+                LoggedColumnSeries.Add(new ChartDataModel("Yesterday", normals[1]));
+                LoggedColumnSeries.Add(new ChartDataModel("Today", normals[0]));
+            }
+            catch (Exception ex)
+            {
+                Crashes.TrackError(ex);
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         private double GetNormalAverageFromDate(DateTime date, List<DataObject> dataObjects)

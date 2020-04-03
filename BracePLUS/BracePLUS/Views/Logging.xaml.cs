@@ -24,7 +24,7 @@ namespace BracePLUS.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            //viewModel.RefreshObjects();
+            viewModel.RefreshObjects();
         }
 
         async void listView_ItemSelected(object sender, SelectedItemChangedEventArgs e)
@@ -36,6 +36,7 @@ namespace BracePLUS.Views
             // Inspect file...
             try
             {
+                item.DebugObject();
                 await Navigation.PushAsync(new Inspect(item));
             }
             catch (Exception ex)

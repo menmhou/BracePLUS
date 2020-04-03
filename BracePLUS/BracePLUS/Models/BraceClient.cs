@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using BracePLUS.Extensions;
@@ -11,8 +10,10 @@ using Plugin.BLE.Abstractions.Exceptions;
 using Xamarin.Forms;
 using BracePLUS.Events;
 
+using Microsoft.AppCenter;
+
 using static BracePLUS.Extensions.Constants;
-using BracePLUS.Services;
+using Microsoft.AppCenter.Crashes;
 
 namespace BracePLUS.Models
 {
@@ -106,7 +107,7 @@ namespace BracePLUS.Models
 
                 if (DATA_IN.Count > 0)
                 {
-                    Device.BeginInvokeOnMainThread(async () =>
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
                     {
                         bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                             "Store data locally?", "Yes", "No");
@@ -129,7 +130,7 @@ namespace BracePLUS.Models
 
                 if (DATA_IN.Count > 0)
                 {
-                    Device.BeginInvokeOnMainThread(async () =>
+                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
                     {
                         bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                             "Store data locally?", "Yes", "No");
@@ -249,6 +250,7 @@ namespace BracePLUS.Models
                     }
                     catch (Exception ex)
                     {
+                        Crashes.TrackError(ex);
                         Debug.WriteLine("Unable to register characteristics: " + ex.Message);
                         return;
                     }
@@ -262,7 +264,7 @@ namespace BracePLUS.Models
                 EVENT(InterfaceUpdates, "Failed to connect :(");
                 App.isConnected = false;
 
-                Device.BeginInvokeOnMainThread( async () =>
+                Xamarin.Forms.Device.BeginInvokeOnMainThread( async () =>
                 {
                     await Application.Current.MainPage.DisplayAlert("Connection failure.",
                         $"Failed to connect to Brace+", "OK");
@@ -272,6 +274,7 @@ namespace BracePLUS.Models
             }
             catch (Exception e)
             {
+                Crashes.TrackError(e);
                 InterfaceUpdates.Status = DISCONNECTED;
                 EVENT(InterfaceUpdates, "Failed to connect: " + e.Message);
                 App.isConnected = false;
@@ -454,9 +457,11 @@ namespace BracePLUS.Models
                 }
                 catch (Exception ex)
                 {
-                    STATUS = CONNECTED;
+                    Crashes.TrackError(ex);
                     Debug.WriteLine("Unable to perform UI update: " + ex.Message);
                 }
+
+                STATUS = CONNECTED;
             }
         }
         private async Task HANDLE_LOGGING(byte[] args)
@@ -576,6 +581,7 @@ namespace BracePLUS.Models
                     }
                     catch (Exception e)
                     {
+                        Crashes.TrackError(e);
                         Debug.WriteLine("*************** STREAM EXCEPTION ***************");
                         Debug.WriteLine($"Received {stream.Length} bytes: {BitConverter.ToString(stream)}");
                         Debug.WriteLine("Copy stream to buffer failed with exception: " + e.Message);
@@ -610,24 +616,18 @@ namespace BracePLUS.Models
             // Save data
             try
             {
-                double z, z_max = 0.0;
-                // Extract highest Z value
-                for (int _byte = 8; _byte < 100; _byte += 6)
-                {
-                    var calibrated = NeuralNetCalib.CalibrateData(bytes);
-                    var normals = new List<double>();
-                    for (int i = 0; i < 16; i++)
-                    {
-                        z = calibrated[i, 2];
-                        if (z > z_max) z_max = z;
-                    }
-                }
                 // Send signal to Interface?
                 if (STATUS == SYS_STREAM_START)
                 {
+                    double[] z = new double[16];
+
+                    var calibrated = NeuralNetCalib.CalibrateData(bytes);
+                    for (int i = 0; i < 16; i++)
+                        z[i] = calibrated[i, Z_AXIS];
+
                     PressureUpdatedEventArgs args = new PressureUpdatedEventArgs
                     {
-                        Value = z_max
+                        Values = z
                     };
                     OnPressureUpdated(args);
                 }
@@ -648,7 +648,7 @@ namespace BracePLUS.Models
 
             InterfaceUpdates.Status = FILE_WRITTEN;
             EVENT(InterfaceUpdates, "File written: " + name);
-            Device.BeginInvokeOnMainThread(() =>
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
             {
                 //DependencyService.Get<IMessage>().ShortAlert("File written: " + file.Name);
             });
@@ -712,6 +712,7 @@ namespace BracePLUS.Models
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine($"Characteristic {c.Uuid} write failed with exception: {ex.Message}");
             }
             return false;
@@ -725,6 +726,7 @@ namespace BracePLUS.Models
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine($"Characteristic {c.Uuid} start updates failed with exception: {ex.Message}");
             }
         }
@@ -737,13 +739,14 @@ namespace BracePLUS.Models
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine($"Characteristic {c.Uuid} stop updates failed with exception: {ex.Message}");
             }
         }
 
         public void Write(string text, Color color)
         {
-            Device.BeginInvokeOnMainThread(() =>
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
             {
                 MessagingCenter.Send(this, "StatusMessage", text);
                 Debug.WriteLine(text);

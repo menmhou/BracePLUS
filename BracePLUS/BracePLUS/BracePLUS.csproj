@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\Configuration.cs" />
     <Compile Remove="ViewModels\VisualizeViewModel.cs" />
     <Compile Remove="Views\Visualize.xaml.cs" />
   </ItemGroup>

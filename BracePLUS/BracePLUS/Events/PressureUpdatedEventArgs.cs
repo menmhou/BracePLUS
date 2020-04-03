@@ -6,6 +6,6 @@ namespace BracePLUS.Events
 {
     public class PressureUpdatedEventArgs : EventArgs
     {
-        public double Value { get; set; }
+        public double[] Values { get; set; }
     }
 }

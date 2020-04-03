@@ -111,22 +111,23 @@ namespace BracePLUS.ViewModels
 
         // Private Properties
         private readonly MessageHandler handler;
-        private double offset = 0.0;
+        private double[] offsets;
 
         public INavigation Nav { get; set; }
 
-        private List<double> normals;
+        private double[] normals;
 
         public InterfaceViewModel()
         {
             handler = new MessageHandler();
+            offsets = new double[16];
 
             App.Client.PressureUpdated += Client_OnPressureUpdated;
             App.Client.StatusUpdated += Client_OnStatusUpdated;
             App.Client.UIUpdated += Client_OnUIUpdated;
 
             BarChartData = new ObservableCollection<ChartDataModel>();
-            normals = new List<double>();
+            normals = new double[16];
 
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SetupBLECommand = new Command(() => ExecuteSetupBLECommand());
@@ -209,25 +210,34 @@ namespace BracePLUS.ViewModels
             {
                 if (BarChartData.Count > 0) BarChartData.Clear();
 
-                var pressure = e.Value - offset;
+                // Retrieve values from event args and normalize with offsets
+                for (int i = 0; i < 16; i++)
+                    normals[i] = e.Values[i] - offsets[i];
+
+                // Find maximum value from array of values
+                double pressure = 0.0;
+                foreach (var val in normals)
+                    if (val > pressure) pressure = val;
+
+                Debug.WriteLine(normals[0]);
+
+                // Add max value to pressure
                 BarChartData.Add(new ChartDataModel("Pressure", pressure));
 
-                // Update average
-                normals.Add(pressure);
-                Average = handler.GetAverage(normals);
-
+                // Update average & maximum display labels
+                Average = handler.GetAverage(e.Values);
                 if (pressure > Maximum) Maximum = pressure;
 
                 #region Simulation
 #if SIMULATION
 
 #else
-                if (e.Value > MAX_PRESSURE)
+#endif
+                #endregion
+                if (pressure > MAX_PRESSURE)
                 {
                     App.Vibrate(1);
                 }
-#endif
-                #endregion
             });
         }
         #endregion
@@ -235,11 +245,11 @@ namespace BracePLUS.ViewModels
         #region Command Methods
         private async void ExecuteSetupBLECommand()
         {
-            await Nav.PushAsync(new BluetoothSetup(App.Client.InterfaceUpdates));
+            await Nav.PushAsync(new BluetoothSetup());
         }
         private async Task ExecuteStreamCommand()
         {
-            offset = 0.0;
+            offsets = new double[16];
             BarChartMaximum = 1.2;
             BarChartMinimum = 0.8;
 
@@ -266,14 +276,12 @@ namespace BracePLUS.ViewModels
                 try
                 {
                     Maximum = 0.0;
-                    normals.Clear();
 
-                    BarChartMaximum = 0.2;
-                    BarChartMinimum = -0.2;
+                    for (int i = 0; i < 16; i++)
+                        offsets[i] = normals[i] - 1;
 
-                    offset = BarChartData[0].Value;
-
-                    Debug.WriteLine($"Fetching offset: {offset}");
+                    BarChartMaximum = 1.2;
+                    BarChartMinimum = 0.8;
                 }
                 catch (Exception ex)
                 {

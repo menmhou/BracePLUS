@@ -9,8 +9,6 @@ using System.IO;
 using Xamarin.Essentials;
 using BracePLUS.Events;
 using static BracePLUS.Extensions.Constants;
-using CsvHelper;
-using System.Globalization;
 
 namespace BracePLUS.Models
 {

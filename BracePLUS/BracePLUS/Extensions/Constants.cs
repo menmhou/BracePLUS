@@ -28,13 +28,13 @@ namespace BracePLUS.Extensions
         public const string uartTxCharUUID = "49535343-1e4d-4bd9-ba61-23c647249616";
         public const string uartRxCharUUID = "49535343-8841-43f4-a8d4-ecbe34729bb3";
 
-        public const string SyncFusionLicense = "MjMwOTk1QDMxMzgyZTMxMmUzMEhoZGIzc1YxSEdEZnpWM1dPVUx5OTYrb3ZYTVlrNEtGMVdHc0U0T253MU09";
+        public const string SyncFusionLicense = "MjMyMDQyQDMxMzgyZTMxMmUzMENmYXE2WE5RVlF6TmxLVFNiMzB5eFk3TmJZZnlTVEdhV2JmZUtpZzFBMGM9;MjMyMDQzQDMxMzgyZTMxMmUzMERwOW85NWMxaGxSVFRRdDBHbGxyV1NpUU5XcHcxK1d0YU9mVTNTUEtiYnc9;MjMyMDQ0QDMxMzgyZTMxMmUzMFROUUFJMmI0UFg3SGpxbkFwWndQR3M4ZURrU0tlTzMvVU40dmU4UDNKYTg9;MjMyMDQ1QDMxMzgyZTMxMmUzMFlNOTM0ekd3OFlOaGlVZTg2czZNSnZLamFDMWN2eEJJdkVxNjJCdlFHYVk9";
 
         public const string DEV_NAME = "Brace+";
 
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
 
-        public const double BENCHMARK_PRESSURE = 0.91;
+        public const double BENCHMARK_PRESSURE = 1.000;
 
         // UI EVENTS
         public const int CONNECTED = 0;
@@ -67,8 +67,5 @@ namespace BracePLUS.Extensions
         public const int X_AXIS = 0;
         public const int Y_AXIS = 1;
         public const int Z_AXIS = 2;
-
-        // EMOJI DEFINITIONS
-        // public static long 
     }
 }

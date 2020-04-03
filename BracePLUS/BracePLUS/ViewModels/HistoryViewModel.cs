@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using BracePLUS.Events;
 using System.Threading.Tasks;
 using BracePLUS.Views;
+using Microsoft.AppCenter.Crashes;
 
 namespace BracePLUS.ViewModels
 {
@@ -201,6 +202,7 @@ namespace BracePLUS.ViewModels
                         }
                         catch (Exception ex)
                         {
+                            Crashes.TrackError(ex);
                             Debug.WriteLine("HISTORY: Object reordering failed: " + ex.Message);
                         }
                     }
@@ -209,6 +211,7 @@ namespace BracePLUS.ViewModels
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine("HISTORY: Object reordering failed: " + ex.Message);
             }
         }
@@ -234,10 +237,12 @@ namespace BracePLUS.ViewModels
                 }
                 catch (IOException ex)
                 {
+                    Crashes.TrackError(ex);
                     Debug.WriteLine(ex.Message);
                 }
                 catch (Exception ex)
                 {
+                    Crashes.TrackError(ex);
                     Debug.WriteLine("File writing failed with exception: " + ex.Message);
                 }
             }

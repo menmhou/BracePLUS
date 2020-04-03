@@ -25,7 +25,8 @@
                     <chart:ColumnSeries ItemsSource="{Binding LoggedColumnSeries}"
                                         XBindingPath="Name"
                                         YBindingPath="Value"
-                                        CornerRadius="6">
+                                        CornerRadius="6"
+                                        ListenPropertyChange="True">
                         <chart:ColumnSeries.ColorModel>
                             <chart:ChartColorModel Palette="Custom">
                                 <chart:ChartColorModel.CustomGradientColors>
@@ -60,7 +61,7 @@
             </chart:SfChart>
             <Grid VerticalOptions = "FillAndExpand">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="4*" />
+                    <RowDefinition Height="3*" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -72,6 +73,8 @@
                 <ListView x:Name="listView"
                           ItemsSource="{Binding DataObjectGroups}"
                           ItemSelected="listView_ItemSelected"
+                          RefreshCommand="{Binding RefreshCommand}"
+                          IsRefreshing="{Binding IsRefreshing}"
                           IsGroupingEnabled="True"
                           BackgroundColor="White"
                           HasUnevenRows="True"

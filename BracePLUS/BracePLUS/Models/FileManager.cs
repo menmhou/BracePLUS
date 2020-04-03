@@ -22,6 +22,10 @@ namespace BracePLUS.Models
             {
                 file.Write(header, 0, header.Length);
             }
+            catch (NullReferenceException ex)
+            {
+                Debug.WriteLine("Header write failed: " + ex.Message);
+            }
             catch (Exception ex)
             {
                 Debug.WriteLine("Header write failed: " + ex.Message);

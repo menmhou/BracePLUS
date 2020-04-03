@@ -12,6 +12,7 @@ using Xamarin.Essentials;
 using Microsoft.AppCenter;
 using Microsoft.AppCenter.Analytics;
 using Microsoft.AppCenter.Crashes;
+using BracePLUS.ViewModels;
 
 namespace BracePLUS
 {
@@ -19,7 +20,6 @@ namespace BracePLUS
     {
         // Models
         public static BraceClient Client;
-        public static Configuration Config;
         public static MessageHandler handler;
 
         // Global Members
@@ -33,6 +33,9 @@ namespace BracePLUS
         // Global variables
         public static bool isConnected;
 
+        // Global ViewModel so data bindings aren't reset everytime a new AsyncNavPush page is created.
+        public static BluetoothSetupViewModel BLEViewModel { get; set; }
+
         public App()
         {
             //Register Syncfusion license
@@ -44,9 +47,11 @@ namespace BracePLUS
             generator = new Random();
             handler = new MessageHandler();
 
+            // ClearFiles();
             RemovePersistentAnnoyingMarchFiles();
 
             Client = new BraceClient();
+            BLEViewModel = new BluetoothSetupViewModel();
             MainPage = new MainPage();
         }
 
@@ -85,6 +90,14 @@ namespace BracePLUS
             {
                 Debug.WriteLine("Vibration failed: " + ex.Message);
             }
+        }
+
+        private void ClearFiles()
+        {
+            var files = Directory.EnumerateFiles(FolderPath, "*");
+
+            foreach (var file in files)
+                File.Delete(file);
         }
 
         private void RemovePersistentAnnoyingMarchFiles()

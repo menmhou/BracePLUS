@@ -1,6 +1,7 @@
 ﻿using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
+using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -260,6 +261,7 @@ namespace BracePLUS.Views
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine("Number of normals: " + RawNormals.Count);
                 Debug.WriteLine("Max normals initialisation failed with exception: " + ex.Message);
             }
@@ -276,67 +278,61 @@ namespace BracePLUS.Views
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine("All nodes chart initialisation failed with exception: " + ex.Message);
             }
         }
 
         public void ToggleTarredData(ToggledEventArgs e)
         {
-            try
+            ChartData.Clear();
+            OffsetData = e.Value;
+
+            if (!e.Value)
             {
-                ChartData.Clear();
-                OffsetData = e.Value;
+                // UNTARRED DATA
 
-                if (!e.Value)
+                // Update chart axes
+                LineChartMinimum = 0.7;
+                LineChartMaximum = 1.2;
+
+                BarChartMinimum = 0.6;
+                BarChartMaximum = 1.4;
+
+                // Update chart data
+                // If less than 200 data points avaible, use total number of points
+                for (int i = 0; i < (RawNormals.Count > 200 ? 200 : RawNormals.Count); i++)
                 {
-                    // UNTARRED DATA
-
-                    // Update chart axes
-                    LineChartMinimum = 0.7;
-                    LineChartMaximum = 1.2;
-
-                    BarChartMinimum = 0.6;
-                    BarChartMaximum = 1.4;
-
-                    // Update chart data
-                    // If less than 200 data points avaible, use total number of points
-                    for (int i = 0; i < (RawNormals.Count > 200 ? 200 : RawNormals.Count); i++)
-                    {
-                        ChartData.Add(new ChartDataModel(i.ToString(), RawNormals[i]));
-                    }
-                }
-                else
-                {
-                    // TARRED DATA
-
-                    // Update chart axes
-                    LineChartMinimum = -0.2;
-                    LineChartMaximum = 0.2;
-
-                    BarChartMinimum = 0.9;
-                    BarChartMaximum = 1.5;
-
-                    // Update chart data
-                    // If less than 200 data points avaible, use total number of points
-                    for (int i = 0; i < (OffsetNormals.Count > 200 ? 200 : OffsetNormals.Count); i++)
-                    {
-                        ChartData.Add(new ChartDataModel(i.ToString(), OffsetNormals[i]));
-                    }
-                }
-
-                AllNodesData.Clear();
-                var nodes = handler.ExtractNodes(DataObj.CalibratedData, (int)SliderValue - 1);
-                for (int i = 0; i < 16; i++)
-                {
-                    if (OffsetData)
-                        AllNodesData.Add(new ChartDataModel((i + 1).ToString(), 1 + nodes[i] - NodeOffsets[i]));
-                    else
-                        AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));
+                    ChartData.Add(new ChartDataModel(i.ToString(), RawNormals[i]));
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Debug.WriteLine(ex.Message);
+                // TARRED DATA
+
+                // Update chart axes
+                LineChartMinimum = -0.2;
+                LineChartMaximum = 0.2;
+
+                BarChartMinimum = 0.9;
+                BarChartMaximum = 1.5;
+
+                // Update chart data
+                // If less than 200 data points avaible, use total number of points
+                for (int i = 0; i < (OffsetNormals.Count > 200 ? 200 : OffsetNormals.Count); i++)
+                {
+                    ChartData.Add(new ChartDataModel(i.ToString(), OffsetNormals[i]));
+                }
+            }
+
+            AllNodesData.Clear();
+            var nodes = handler.ExtractNodes(DataObj.CalibratedData, (int)SliderValue - 1);
+            for (int i = 0; i < 16; i++)
+            {
+                if (OffsetData)
+                    AllNodesData.Add(new ChartDataModel((i + 1).ToString(), 1 + nodes[i] - NodeOffsets[i]));
+                else
+                    AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));
             }
         }
 

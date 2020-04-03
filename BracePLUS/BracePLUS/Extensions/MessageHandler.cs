@@ -5,6 +5,7 @@ using System.Linq;
 using System.IO;
 using System.Diagnostics;
 using System.Globalization;
+using Microsoft.AppCenter.Crashes;
 
 namespace BracePLUS.Extensions
 {
@@ -222,10 +223,12 @@ namespace BracePLUS.Extensions
             }
             catch (FormatException ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine("Decoding filename failed. Format incorrect: " + ex.Message);
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine("Decoding filename failed with exception: " + ex.Message);
             }
 
@@ -276,6 +279,7 @@ namespace BracePLUS.Extensions
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine("File name generation failed with exception: " + ex.Message);
             }
 
@@ -336,6 +340,7 @@ namespace BracePLUS.Extensions
             }
             catch (Exception ex)
             {
+                Crashes.TrackError(ex);
                 Debug.WriteLine("Calibrated normals extraction failed: " + ex.Message);
             }
 
@@ -362,10 +367,18 @@ namespace BracePLUS.Extensions
         {
             double[] values = new double[16];
 
-            for (int i = 0; i < 16; i++)
+            try
             {
-                values[i] = data[index][i, 2];
+                for (int i = 0; i < 16; i++)
+                    values[i] = data[index][i, 2];
+               
             }
+            catch (Exception ex)
+            {
+                Crashes.TrackError(ex);
+                Debug.WriteLine(ex);
+            }
+            
 
             return values;
         }

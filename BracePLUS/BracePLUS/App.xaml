@@ -26,7 +26,7 @@
         <Color x:Key="AndroidNavigationBarColor"> #2196F3 </Color>
         <Color x:Key="iOSNavigationBarTextColor">Black </Color>
         <Color x:Key="AndroidNavigationBarTextColor"> White </Color>
-        <Color x:Key="ButtonBackgroundColor"> #0078E5 </Color>
+        <Color x:Key="ButtonBackgroundColor"> #167BEA </Color>
         <Color x:Key="AccentColor">#FFBF00</Color>
         <Color x:Key="DisabledColor">#E6DAB9</Color>
         <Color x:Key="TitleTextColor"> Red </Color>

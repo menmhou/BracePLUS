@@ -59,20 +59,7 @@
                                         Color="#167BEA"
                                         XBindingPath="Name"
                                         YBindingPath="Value" 
-                                        CornerRadius="16">
-                        <chart:ColumnSeries.ColorModel>
-                            <chart:ChartColorModel Palette="Custom">
-                                <chart:ChartColorModel.CustomGradientColors>
-                                    <chart:ChartGradientColor StartPoint="0.5,1" EndPoint="0.5,0">
-                                        <chart:ChartGradientColor.GradientStops>
-                                            <chart:ChartGradientStop Color="#A8EAEE" Offset= "0"/>
-                                            <chart:ChartGradientStop Color="#7BB0F9" Offset= "1"/>
-                                        </chart:ChartGradientColor.GradientStops>
-                                    </chart:ChartGradientColor>
-                                </chart:ChartColorModel.CustomGradientColors>
-                            </chart:ChartColorModel>
-                        </chart:ColumnSeries.ColorModel>
-                    </chart:ColumnSeries>
+                                        CornerRadius="16"/>
                 </chart:SfChart.Series>
 
                 <chart:SfChart.PrimaryAxis>

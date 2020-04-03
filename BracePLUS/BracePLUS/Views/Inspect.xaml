@@ -203,17 +203,23 @@
                          Margin="0, 12"
                          HeightRequest="1"
                          WidthRequest="100"/>
+                
+                <Label Text="{Binding Packets, StringFormat='Data packets: {0}'}"
+                       TextColor="Black"
+                       Margin="8, 0"
+                       FontSize="Large"/>
 
                 <Label Text="{Binding DataString}"
                        TextColor="Black"
                        FontSize="Large"
-                       Margin="8, 8, 8, 8">
+                       Margin="8">
                     <Label.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ShowDataCommand}"/>
                     </Label.GestureRecognizers>
                 </Label>
                 <Label Text="{Binding Filename}"
-                       FontSize="Medium"/>
+                       FontSize="Medium"
+                       Margin="8"/>
             </StackLayout>
         </ScrollView>
     </ContentPage.Content>

@@ -17,19 +17,12 @@ namespace BracePLUS.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class BluetoothSetup : ContentPage
     {
-        BluetoothSetupViewModel viewModel;
-
-        public BluetoothSetup(UserInterfaceUpdates inteface)
+        public BluetoothSetup()
         {
             InitializeComponent();
 
-            Debug.WriteLine("New viewmodel. interface updates:");
-            Debug.WriteLine("Status: " + inteface.Status);
-
-            BindingContext = viewModel = new BluetoothSetupViewModel()
-            {
-                InterfaceUpdates = inteface
-            };
+            // App.BLEViewModel.InterfaceUpdates = inteface;
+            BindingContext = App.BLEViewModel;
         }
     }
 }

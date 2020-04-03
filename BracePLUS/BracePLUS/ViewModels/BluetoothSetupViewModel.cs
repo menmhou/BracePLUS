@@ -11,7 +11,7 @@ using BracePLUS.Models;
 
 namespace BracePLUS.ViewModels
 {
-    class BluetoothSetupViewModel : MvxViewModel
+    public class BluetoothSetupViewModel : MvxViewModel
     {
         #region ConnectionText
         private string _connectionText;
@@ -142,8 +142,15 @@ namespace BracePLUS.ViewModels
             }
             else
             {
-                // Start scan
-                await App.Client.StartScan();
+                if (App.Client.STATUS == SCAN_START)
+                {
+                    // Start scan
+                    await App.Client.StopScan();
+                }
+                else
+                {
+                    await App.Client.StartScan();
+                }
             }
         }
         #endregion
@@ -153,7 +160,6 @@ namespace BracePLUS.ViewModels
             UpdateUI(e);
         }
         #endregion
-
         #region Public Methods
         public void RequestUIUpdates(UIUpdatedEventArgs e)
         {
@@ -192,8 +198,8 @@ namespace BracePLUS.ViewModels
                     break;
 
                 case SCAN_START:
-                    ButtonText = "Stop scan";
                     SetNullValues();
+                    ButtonText = "Stop scan";
                     break;
 
                 case SCAN_FINISH:
