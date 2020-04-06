@@ -219,8 +219,6 @@ namespace BracePLUS.ViewModels
                 foreach (var val in normals)
                     if (val > pressure) pressure = val;
 
-                Debug.WriteLine(normals[0]);
-
                 // Add max value to pressure
                 BarChartData.Add(new ChartDataModel("Pressure", pressure));
 
@@ -236,7 +234,7 @@ namespace BracePLUS.ViewModels
                 #endregion
                 if (pressure > MAX_PRESSURE)
                 {
-                    App.Vibrate(1);
+                    //App.Vibrate(1);
                 }
             });
         }

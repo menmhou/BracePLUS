@@ -234,7 +234,56 @@ namespace BracePLUS.Views
         }
         public event EventHandler LocalFileListUpdated;
         #endregion
+        #region Command Methods
+        private async Task ExecuteShareCommand()
+        {
+            var file = Path.Combine(App.FolderPath, DataObj.Directory);
 
+            await Share.RequestAsync(new ShareFileRequest
+            {
+                Title = DataObj.Filename,
+                File = new ShareFile(file)
+            });
+        }
+
+        private async Task ExecuteDeleteCommand()
+        {
+            if (await Application.Current.MainPage.DisplayAlert("Delete File?", "Delete file from local storage?", "Yes", "No"))
+            {
+                // Clear files from memory
+                var files = Directory.EnumerateFiles(App.FolderPath, "*");
+                foreach (var filename in files)
+                {
+                    if (filename == DataObj.Directory)
+                    {
+                        File.Delete(filename);
+                        MessagingCenter.Send(this, "Remove", DataObj);
+                    }
+                }
+                OnLocalFileListUpdated(EventArgs.Empty);
+
+                await Nav.PopAsync();
+            }
+        }
+
+        private async void ExecuteShowGraphCommand()
+        {
+            Debug.WriteLine("Graph tapped.");
+
+            await Nav.PushAsync(new GraphView
+            {
+                BindingContext = DataObj
+            });
+        }
+
+        private async void ExecuteShowDataCommand()
+        {
+            await Nav.PushAsync(new RawDataView
+            {
+                BindingContext = DataObj
+            });
+        }
+        #endregion
         public void InitDataObject()
         {
             if (!DataObj.IsDownloaded) return;
@@ -335,57 +384,6 @@ namespace BracePLUS.Views
                     AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));
             }
         }
-
-        #region Command Methods
-        private async Task ExecuteShareCommand()
-        {
-            var file = Path.Combine(App.FolderPath, DataObj.Directory);
-
-            await Share.RequestAsync(new ShareFileRequest
-            {
-                Title = DataObj.Filename,
-                File = new ShareFile(file)
-            });
-        }
-
-        private async Task ExecuteDeleteCommand()
-        {
-            if (await Application.Current.MainPage.DisplayAlert("Delete File?", "Delete file from local storage?", "Yes", "No"))
-            {
-                // Clear files from memory
-                var files = Directory.EnumerateFiles(App.FolderPath, "*");
-                foreach (var filename in files)
-                {
-                    if (filename == DataObj.Directory)
-                    {
-                        File.Delete(filename);
-                        MessagingCenter.Send(this, "Remove", DataObj);
-                    }
-                }
-                OnLocalFileListUpdated(EventArgs.Empty);
-
-                await Nav.PopAsync();
-            }
-        }
-
-        private async void ExecuteShowGraphCommand()
-        {
-            Debug.WriteLine("Graph tapped.");
-
-            await Nav.PushAsync(new GraphView
-            {
-                BindingContext = DataObj
-            });
-        }
-
-        private async void ExecuteShowDataCommand()
-        {
-            await Nav.PushAsync(new RawDataView
-            {
-                BindingContext = DataObj
-            });
-        }
-        #endregion
 
         private void SliderValueUpdated(double value)
         {

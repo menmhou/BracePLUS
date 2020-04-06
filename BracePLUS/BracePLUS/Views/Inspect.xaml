@@ -140,13 +140,14 @@
 
                     <chart:SfChart.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ShowGraphCommand}"/>
+                        <ClickGestureRecognizer Command="{Binding ShowGraphCommand}"/>
                     </chart:SfChart.GestureRecognizers>
 
                     <chart:SfChart.ChartBehaviors>
                         <chart:ChartZoomPanBehavior EnableSelectionZooming="True"
-                                                EnableDoubleTap="True"
-                                                MaximumZoomLevel="25"
-                                                ZoomMode="X"/>
+                                                    EnableDoubleTap="True"
+                                                    MaximumZoomLevel="25"
+                                                    ZoomMode="X"/>
                     </chart:SfChart.ChartBehaviors>
 
                     <chart:SfChart.Series>

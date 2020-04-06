@@ -14,6 +14,7 @@ using Microsoft.AppCenter;
 
 using static BracePLUS.Extensions.Constants;
 using Microsoft.AppCenter.Crashes;
+using Plugin.BLE.Abstractions;
 
 namespace BracePLUS.Models
 {
@@ -239,6 +240,9 @@ namespace BracePLUS.Models
                         // Register characteristics
                         uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
                         uartRx = await service.GetCharacteristicAsync(uartRxCharGUID);
+
+                        // Increase speed of data transfer using this characteristic write type
+                        uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
 
                         // Begin communication system
                         COMMS_MENU(uartTx);
@@ -588,7 +592,7 @@ namespace BracePLUS.Models
                         Debug.WriteLine($"Stream length: {stream.Length}, packet index: {packetIndex}");
                     }
 
-                    // Check for packet header
+                    // Check all packets received
                     if (packetIndex >= 100)
                     {
                         // Request next packet if header present.
