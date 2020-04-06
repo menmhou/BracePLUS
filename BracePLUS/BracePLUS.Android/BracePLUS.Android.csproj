@@ -176,10 +176,16 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\LoggingIconWhite.png" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\BraceRenderColour.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\BraceRenderGreyscale.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties XamarinHotReloadDebuggerTimeoutExceptionBracePLUSAndroidHideInfoBar="True" XamarinHotReloadUnhandledDeviceExceptionBracePLUSAndroidHideInfoBar="True" />
+      <UserProperties XamarinHotReloadUnhandledDeviceExceptionBracePLUSAndroidHideInfoBar="True" XamarinHotReloadDebuggerTimeoutExceptionBracePLUSAndroidHideInfoBar="True" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

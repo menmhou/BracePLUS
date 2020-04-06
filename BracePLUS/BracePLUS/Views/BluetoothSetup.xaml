@@ -17,7 +17,10 @@
                    HorizontalOptions="FillAndExpand"
                    WidthRequest="200"
                    HorizontalTextAlignment="Center"/>
-    
+
+            <Image Aspect="AspectFill"
+                   Source="{Binding ConnectionImage}"/>
+
             <Label Text="{Binding DeviceName, StringFormat='Device name: {0}'}"
                    Margin="8, 0"
                    FontSize="30"/>

@@ -25,6 +25,18 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
+        #region Connection Image
+        private string _connectionImage;
+        public string ConnectionImage
+        {
+            get => _connectionImage;
+            set
+            {
+                _connectionImage = value;
+                RaisePropertyChanged(() => ConnectionImage);
+            }
+        }
+        #endregion
         #region ConnectionColour
         private Color _connectionColour;
         public Color ConnectionColour
@@ -176,6 +188,7 @@ namespace BracePLUS.ViewModels
                     ConnectionColour = START_COLOUR;
                     ConnectionText = "Connected";
                     ButtonText = "Disconnect";
+                    ConnectionImage = "BraceRenderGreyscale.jpg";
                     DeviceName = e.InterfaceUpdates.Device.Name;
                     ConnectionStrength = e.InterfaceUpdates.Device.Rssi.ToString();
                     DeviceID = e.InterfaceUpdates.Device.Id.ToString();
@@ -221,6 +234,7 @@ namespace BracePLUS.ViewModels
             ServiceID = "-";
             CharacteristicRX = "-";
             CharacteristicTX = "-";
+            ConnectionImage = "BraceRenderGreyscale.jpg";
         }
         #endregion
     }
