@@ -63,6 +63,7 @@ namespace BracePLUS.Extensions
         public static Xamarin.Forms.Color START_COLOUR = Xamarin.Forms.Color.FromHex("#0078E5");
         public static Xamarin.Forms.Color WAIT_COLOUR = Xamarin.Forms.Color.FromHex("#005096");
         public static Xamarin.Forms.Color STOP_COLOUR = Xamarin.Forms.Color.FromHex("#FE0000");
+        public static Xamarin.Forms.Color CONNECTED_COLOUR = Xamarin.Forms.Color.FromHex("#09B609");
 
         public const int X_AXIS = 0;
         public const int Y_AXIS = 1;

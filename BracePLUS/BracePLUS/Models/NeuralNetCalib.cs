@@ -5,7 +5,7 @@ namespace BracePLUS.Models
 {
     class NeuralNetCalib
     {
-        public static double[,] CalibrateData(byte[] buf)
+        public static double[,] CalibratePacket(byte[] buf)
         {
             var Outputs = new double[16, 3];
 

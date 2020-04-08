@@ -62,9 +62,9 @@ namespace BracePLUS.ViewModels
             GetFilenamesCommand = new Command(async () => await ExecuteGetFilenamesCommand());
 
             // Events
-            App.Client.DownloadFinished += Client_OnDownloadFinished;
+            App.Client.DownloadFinished += (s, e) => UpdateObject(e.Filename);
             App.Client.FileSyncFinished += Client_OnFileSyncFinished;
-            App.Client.LocalFileListUpdated += Client_OnLocalFileListUpdated;
+            App.Client.LocalFileListUpdated += (s, e) => RefreshObjects();
 
             MessagingCenter.Subscribe<InspectViewModel, DataObject>(this, "Remove", (sender, arg) =>
             {
@@ -74,17 +74,9 @@ namespace BracePLUS.ViewModels
         }
 
         #region Event Handlers
-        void Client_OnDownloadFinished(object sender, FileDownloadedEventArgs e)
-        {
-           UpdateObject(e.Filename);
-        }
         void Client_OnFileSyncFinished(object sender, MobileSyncFinishedEventArgs e)
         {
             AddMobileFilenames(e.Files);
-            RefreshObjects();
-        }
-        void Client_OnLocalFileListUpdated(object sender, EventArgs e)
-        {
             RefreshObjects();
         }
         #endregion

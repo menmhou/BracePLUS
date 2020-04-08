@@ -8,17 +8,22 @@
              Title="Bluetooth Setup">
     <ContentPage.Content>
         <StackLayout BackgroundColor="White"
-                     Padding="10">
+                     Margin="10"
+                     Spacing="10">
 
-            <Label Text="{Binding ConnectionText}"
-                   FontSize="36"
-                   TextColor="Black"
-                   Margin="24"
-                   HorizontalOptions="FillAndExpand"
-                   WidthRequest="200"
-                   HorizontalTextAlignment="Center"/>
+            <Frame BackgroundColor="{Binding ConnectionColour}"
+                   CornerRadius="20">
+                <StackLayout>
+                    <Label Text="{Binding ConnectionText}"
+                           FontSize="36"
+                           TextColor="White"
+                           HorizontalOptions="FillAndExpand"
+                           HorizontalTextAlignment="Center"/>   
+                </StackLayout>
+                
+            </Frame>
 
-            <Image Aspect="AspectFill"
+            <Image Aspect="AspectFit"
                    Source="{Binding ConnectionImage}"/>
 
             <Label Text="{Binding DeviceName, StringFormat='Device name: {0}'}"
@@ -27,23 +32,7 @@
 
             <Label Text="{Binding ConnectionStrength, StringFormat='Connection strength: {0}'}"
                    Margin="8, 0"
-                   FontSize="25"/>
-
-            <Label Text="{Binding DeviceID, StringFormat='ID: {0}'}"
-                   Margin="8, 0"
-                   FontSize="22"/>
-            
-            <Label Text="{Binding ServiceID, StringFormat='Service UUID: {0}'}"
-                   Margin="8, 0"
-                   FontSize="20"/>
-            
-            <Label Text="{Binding CharacteristicRX, StringFormat='RX Characteristic: {0}'}"
-                   Margin="8, 0"
-                   FontSize="16"/>
-
-            <Label Text="{Binding CharacteristicRX, StringFormat='TX Characteristic: {0}'}"
-                   Margin="8, 0"
-                   FontSize="16"/>
+                   FontSize="30"/>
 
             <Button Text="{Binding ButtonText}"
                     FontSize="22"

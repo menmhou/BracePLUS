@@ -142,7 +142,7 @@ namespace BracePLUS.ViewModels
             ButtonCommand = new Command(async () => await ExecuteButtonCommand());
 
             // Assign event method
-            App.Client.UIUpdated += Client_OnUIUpdated;
+            App.Client.UIUpdated += (s, e) => UpdateUI(e);
         }
 
         #region Commands
@@ -167,12 +167,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-        #region Events
-        void Client_OnUIUpdated(object sender, UIUpdatedEventArgs e)
-        {
-            UpdateUI(e);
-        }
-        #endregion
         #region Public Methods
         public void RequestUIUpdates(UIUpdatedEventArgs e)
         {
@@ -186,29 +180,16 @@ namespace BracePLUS.ViewModels
             switch (e.InterfaceUpdates.Status)
             {
                 case CONNECTED:
-                    ConnectionColour = START_COLOUR;
+                    ConnectionColour = CONNECTED_COLOUR;
                     ConnectionText = "Connected";
                     ButtonText = "Disconnect";
-                    ConnectionImage = "BraceRenderGreyscale.jpg";
+                    ConnectionImage = "BraceRenderColour.jpg";
                     DeviceName = e.InterfaceUpdates.Device.Name;
                     ConnectionStrength = e.InterfaceUpdates.Device.Rssi.ToString();
-                    DeviceID = e.InterfaceUpdates.Device.Id.ToString();
-                    try
-                    {
-                        ServiceID = e.InterfaceUpdates.ServiceID;
-                        CharacteristicRX = e.InterfaceUpdates.CharacteristicIDs[1];
-                        CharacteristicTX = e.InterfaceUpdates.CharacteristicIDs[0];
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex);
-                    }
-
                     break;
 
                 case DISCONNECTED:
                     SetNullValues();
-                    ConnectionColour = STOP_COLOUR;
                     break;
 
                 case SCAN_START:
@@ -217,7 +198,7 @@ namespace BracePLUS.ViewModels
                     break;
 
                 case SCAN_FINISH:
-                    SetNullValues();
+                    // if (!App.isConnected) SetNullValues();
                     break;
 
                 default:

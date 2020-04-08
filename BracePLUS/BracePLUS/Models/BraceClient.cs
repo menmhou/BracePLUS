@@ -451,12 +451,6 @@ namespace BracePLUS.Models
                 {
                     InterfaceUpdates.Status = CONNECTED;
                     InterfaceUpdates.Device = Brace;
-                    InterfaceUpdates.ServiceID = uartServiceUUID;
-                    InterfaceUpdates.CharacteristicIDs = new List<string>()
-                    {
-                        uartTxCharUUID,
-                        uartRxCharUUID
-                    };
                     EVENT(InterfaceUpdates, msg);
                 }
                 catch (Exception ex)
@@ -464,8 +458,6 @@ namespace BracePLUS.Models
                     Crashes.TrackError(ex);
                     Debug.WriteLine("Unable to perform UI update: " + ex.Message);
                 }
-
-                STATUS = CONNECTED;
             }
         }
         private async Task HANDLE_LOGGING(byte[] args)
@@ -625,7 +617,7 @@ namespace BracePLUS.Models
                 {
                     double[] z = new double[16];
 
-                    var calibrated = NeuralNetCalib.CalibrateData(bytes);
+                    var calibrated = NeuralNetCalib.CalibratePacket(bytes);
                     for (int i = 0; i < 16; i++)
                         z[i] = calibrated[i, Z_AXIS];
 

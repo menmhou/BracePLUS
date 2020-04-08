@@ -9,7 +9,5 @@ namespace BracePLUS.Models
     {
         public int Status { get; set; }
         public IDevice Device { get; set; }
-        public string ServiceID { get; set; }
-        public List<string> CharacteristicIDs { get; set; }
     }
 }

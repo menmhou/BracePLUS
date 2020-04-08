@@ -329,7 +329,7 @@ namespace BracePLUS.Models
                         buf[j] = bytes[3 + j + i * 128];
 
                     // Perform calibration on one 128byte buffer
-                    var calibLine = NeuralNetCalib.CalibrateData(buf);
+                    var calibLine = NeuralNetCalib.CalibratePacket(buf);
 
                     _calibData.Add(calibLine);
                 }
