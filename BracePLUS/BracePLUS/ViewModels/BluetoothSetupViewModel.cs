@@ -37,6 +37,18 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
+        #region Image Opacity
+        private double _imageOpacity;
+        public double ImageOpacity
+        {
+            get => _imageOpacity;
+            set
+            {
+                _imageOpacity = value;
+                RaisePropertyChanged(() => ImageOpacity);
+            }
+        }
+        #endregion
         #region ConnectionColour
         private Color _connectionColour;
         public Color ConnectionColour
@@ -73,54 +85,6 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-        #region Device ID
-        private string _deviceID;
-        public string DeviceID
-        {
-            get => _deviceID;
-            set
-            {
-                _deviceID = value;
-                RaisePropertyChanged(() => DeviceID);
-            }
-        }
-        #endregion
-        #region Service ID
-        private string _serviceID;
-        public string ServiceID
-        {
-            get => _serviceID;
-            set
-            {
-                _serviceID = value;
-                RaisePropertyChanged(() => ServiceID);
-            }
-        }
-        #endregion
-        #region Characteristic RX
-        private string _characteristicRX;
-        public string CharacteristicRX
-        {
-            get => _characteristicRX;
-            set
-            {
-                _characteristicRX = value;
-                RaisePropertyChanged(() => CharacteristicRX);
-            }
-        }
-        #endregion
-        #region Characteristic TX
-        private string _characteristicTX;
-        public string CharacteristicTX
-        {
-            get => _characteristicTX;
-            set
-            {
-                _characteristicTX = value;
-                RaisePropertyChanged(() => CharacteristicTX);
-            }
-        }
-        #endregion
         #region Button
         private string _buttonText;
         public string ButtonText
@@ -135,14 +99,12 @@ namespace BracePLUS.ViewModels
         public Command ButtonCommand { get; set; }
         #endregion
 
-        public UserInterfaceUpdates InterfaceUpdates { get; set; }
-
         public BluetoothSetupViewModel()
         {
             ButtonCommand = new Command(async () => await ExecuteButtonCommand());
-
+            ImageOpacity = 1.0;
             // Assign event method
-            App.Client.UIUpdated += (s, e) => UpdateUI(e);
+            App.Client.UIUpdated += async (s, e) => await UpdateUI(e);
         }
 
         #region Commands
@@ -167,15 +129,9 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
-        #region Public Methods
-        public void RequestUIUpdates(UIUpdatedEventArgs e)
-        {
-            UpdateUI(e);
-        }
-        #endregion
 
         #region Private Methods
-        private void UpdateUI(UIUpdatedEventArgs e)
+        private async Task UpdateUI(UIUpdatedEventArgs e)
         {
             switch (e.InterfaceUpdates.Status)
             {
@@ -183,22 +139,27 @@ namespace BracePLUS.ViewModels
                     ConnectionColour = CONNECTED_COLOUR;
                     ConnectionText = "Connected";
                     ButtonText = "Disconnect";
-                    ConnectionImage = "BraceRenderColour.jpg";
+                    await FadeImages("BraceRenderGreyscale.jpg", "BraceRenderColour.jpg");
                     DeviceName = e.InterfaceUpdates.Device.Name;
                     ConnectionStrength = e.InterfaceUpdates.Device.Rssi.ToString();
                     break;
 
                 case DISCONNECTED:
                     SetNullValues();
+                    await FadeImages("BraceRenderColour.jpg", "BraceRenderGreyscale.jpg");
                     break;
 
                 case SCAN_START:
                     SetNullValues();
                     ButtonText = "Stop scan";
+                    ConnectionImage = "BraceRenderGreyscale.jpg";
                     break;
 
                 case SCAN_FINISH:
-                    // if (!App.isConnected) SetNullValues();
+                    if (!App.isConnected)
+                    {
+                        SetNullValues();
+                    }
                     break;
 
                 default:
@@ -212,11 +173,27 @@ namespace BracePLUS.ViewModels
             ButtonText = "Scan for Brace+";
             DeviceName = "-";
             ConnectionStrength = "-";
-            DeviceID = "-";
-            ServiceID = "-";
-            CharacteristicRX = "-";
-            CharacteristicTX = "-";
-            ConnectionImage = "BraceRenderGreyscale.jpg";
+        }
+        private async Task FadeImages(string startImage, string finalImage)
+        {
+            // Initial step is set a clear image
+            ConnectionImage = startImage;
+            ImageOpacity = 1.0;
+
+            // Fade to 0.5 opacity in 500ms
+            for (double i = 1000; i > 500; i -= 10)
+            {
+                ImageOpacity = i / 1000.0;
+                await Task.Delay(10);
+            }
+            ConnectionImage = finalImage;
+            // Fade back to 1.0 in 500ms
+            for (double i = 500; i < 1000; i += 10)
+            {
+                ImageOpacity = i / 1000.0;
+                await Task.Delay(10);
+            }
+            ImageOpacity = 1.0;
         }
         #endregion
     }

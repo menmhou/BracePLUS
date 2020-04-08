@@ -219,12 +219,13 @@ namespace BracePLUS.Models
                 if (brace != null)
                 {
                     await adapter.ConnectToDeviceAsync(brace);
+                    App.isConnected = true;
                     await adapter.StopScanningForDevicesAsync();
                 }
                 else
                 {
                     App.isConnected = false;
-                    Write("Brace+ not found.", info);
+                    Write("Brace+ not found", info);
                     return;
                 }
 

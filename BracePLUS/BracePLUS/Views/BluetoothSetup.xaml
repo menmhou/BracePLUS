@@ -24,6 +24,7 @@
             </Frame>
 
             <Image Aspect="AspectFit"
+                   Opacity="{Binding ImageOpacity}"
                    Source="{Binding ConnectionImage}"/>
 
             <Label Text="{Binding DeviceName, StringFormat='Device name: {0}'}"
