@@ -141,6 +141,7 @@ namespace BracePLUS.ViewModels
         {
             ButtonCommand = new Command(async () => await ExecuteButtonCommand());
 
+            // Assign event method
             App.Client.UIUpdated += Client_OnUIUpdated;
         }
 
