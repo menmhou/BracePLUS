@@ -1,6 +1,7 @@
 ﻿using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
+using BracePLUS.Services;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
 using System;
@@ -198,6 +199,7 @@ namespace BracePLUS.Views
         // Public Interface Commands
         public Command ShareCommand { get; set; }
         public Command DeleteCommand { get; set; }
+        public Command CloudUploadCommand { get; set; }
         public Command ShowDataCommand { get; set; }
         public Command ShowGraphCommand { get; set; }
         #endregion
@@ -206,12 +208,14 @@ namespace BracePLUS.Views
 
         public InspectViewModel()
         {
-            handler = new MessageHandler();
+            // Commands
             ShareCommand = new Command(async () => await ExecuteShareCommand());
             DeleteCommand = new Command(async () => await ExecuteDeleteCommand());
             ShowDataCommand = new Command(() => ExecuteShowDataCommand());
             ShowGraphCommand = new Command(() => ExecuteShowGraphCommand());
+            CloudUploadCommand = new Command(async () => await ExecuteCloudUploadCommand());
 
+            handler = new MessageHandler();
             DataObj = new DataObject();
             ChartData = new ObservableCollection<ChartDataModel>();
             AllNodesData = new ObservableCollection<ChartDataModel>();
@@ -245,7 +249,6 @@ namespace BracePLUS.Views
                 File = new ShareFile(file)
             });
         }
-
         private async Task ExecuteDeleteCommand()
         {
             if (await Application.Current.MainPage.DisplayAlert("Delete File?", "Delete file from local storage?", "Yes", "No"))
@@ -265,17 +268,18 @@ namespace BracePLUS.Views
                 await Nav.PopAsync();
             }
         }
-
         private async void ExecuteShowGraphCommand()
         {
-            Debug.WriteLine("Graph tapped.");
-
             await Nav.PushAsync(new GraphView
             {
                 BindingContext = DataObj
             });
         }
-
+        private async Task ExecuteCloudUploadCommand()
+        {
+            Debug.WriteLine($"Uploading {DataObj.Filename}");
+            await BlobStorageService.SaveBlockBlob("patient0", DataObj.RawData, DataObj.Filename);
+        }
         private async void ExecuteShowDataCommand()
         {
             await Nav.PushAsync(new RawDataView

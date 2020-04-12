@@ -34,6 +34,7 @@ namespace BracePLUS.Models
         // Public Properties
         public IDevice Brace { get; set; }
         public static List<byte[]> DATA_IN { get; set; }
+        public List<string> Messages { get; set; }
 
         // UI Assistant
         StackLayout stack;
@@ -55,7 +56,6 @@ namespace BracePLUS.Models
         public List<string> MobileFileList;
 
         string downloadFilename = "";
-        private int watch_counter = 0;
         public UserInterfaceUpdates InterfaceUpdates;
         #endregion
 
@@ -68,7 +68,7 @@ namespace BracePLUS.Models
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
 
-            messages = new List<string>();
+            Messages = new List<string>();
             MobileFileList = new List<string>();
             DATA_IN = new List<byte[]>();
 
@@ -78,7 +78,7 @@ namespace BracePLUS.Models
                 if (e.NewState.ToString() != "On")
                 {
                     Debug.WriteLine($"The bluetooth state changed to {e.NewState}");
-                    Write(string.Format($"The bluetooth state changed to {e.NewState}"), debug);
+                    Write(string.Format($"The bluetooth state changed to {e.NewState}"));
                 }
             };
             // New BLE device discovered event
@@ -225,7 +225,7 @@ namespace BracePLUS.Models
                 else
                 {
                     App.isConnected = false;
-                    Write("Brace+ not found", info);
+                    Write("Brace+ not found");
                     return;
                 }
 
@@ -507,7 +507,7 @@ namespace BracePLUS.Models
             }
             else
             {
-                Write("HANDLE SYNC: Received file: " + file, info);
+                Write("HANDLE SYNC: Received file: " + file);
                 MobileFileList.Add(file);
             }
         }
@@ -694,7 +694,7 @@ namespace BracePLUS.Models
                     Status = msg
                 };
                 OnStatusUpdate(a);
-                Write(msg, _event);
+                Write(msg);
             }
         }
 
@@ -741,32 +741,9 @@ namespace BracePLUS.Models
             }
         }
 
-        public void Write(string text, Color color)
+        public void Write(string text)
         {
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
-            {
-                MessagingCenter.Send(this, "StatusMessage", text);
-                Debug.WriteLine(text);
-
-                stack.Children.Insert(0, new Label
-                {
-                    Text = text,
-                    TextColor = color,
-                    Margin = 3,
-                    FontSize = 15                    
-                });
-
-                if (stack.Children.Count > 200)
-                {
-                    stack.Children.RemoveAt(200);
-                }
-            });
-        }
-
-        private void Watch()
-        {
-            Debug.WriteLine(watch_counter);
-            watch_counter++;
+            Messages.Add(text);
         }
         #endregion
     }

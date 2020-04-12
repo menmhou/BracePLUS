@@ -13,7 +13,8 @@
                      Command="{Binding ShareCommand}"/>
         <ToolbarItem IconImageSource="BinIconWhite.png"
                      Command="{Binding DeleteCommand}"/>
-        
+        <ToolbarItem Text="Upload"
+                     Command="{Binding CloudUploadCommand}"/>
     </ContentPage.ToolbarItems>
    
     <ContentPage.Content>
@@ -138,11 +139,6 @@
                                VerticalOptions="FillAndExpand"
                                HorizontalOptions="FillAndExpand">
 
-                    <chart:SfChart.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding ShowGraphCommand}"/>
-                        <ClickGestureRecognizer Command="{Binding ShowGraphCommand}"/>
-                    </chart:SfChart.GestureRecognizers>
-
                     <chart:SfChart.ChartBehaviors>
                         <chart:ChartZoomPanBehavior EnableSelectionZooming="True"
                                                     EnableDoubleTap="True"
@@ -166,6 +162,11 @@
                                             Maximum="{Binding LineChartMaximum}"/>
                     </chart:SfChart.SecondaryAxis>
                 </chart:SfChart>
+                
+                <Button Text="Expand"
+                        Command="{Binding ShowGraphCommand}">
+                    
+                </Button>
 
                 <BoxView BackgroundColor="LightGray"
                          Margin="0, 12"

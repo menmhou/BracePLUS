@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                x:Class="BracePLUS.Views.DebugView">
+
+    <ContentPage.Content>
+        <TableView HasUnevenRows="True"
+                   BackgroundColor="#EEEEEE">
+            <TableRoot>
+
+                <TableSection Title="Connection">
+                    <ViewCell>
+                        <StackLayout Spacing="10">
+                            <Label Text="{Binding ConnectedDevice}"/>
+                            <Label Text="{Binding SignalStrength}"/>
+                            <Label Text="{Binding ServiceID}"/>
+                            <Label Text="{Binding CharTxID}"/>
+                            <Label Text="{Binding CharRxID}"/>
+
+                        </StackLayout>
+                    </ViewCell>
+                </TableSection>
+                
+                <TableSection Title="Event Log">
+                    <ViewCell>
+                        <ScrollView>
+                            <StackLayout x:Name="MessageStack"
+                                         BackgroundColor="White"
+                                         Spacing="5"
+                                         HorizontalOptions="FillAndExpand"
+                                         VerticalOptions="FillAndExpand">
+                            </StackLayout>
+                        </ScrollView>
+                    </ViewCell>
+                </TableSection>
+            </TableRoot>
+        </TableView>
+    </ContentPage.Content>
+</ContentPage>
+

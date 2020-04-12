@@ -35,6 +35,10 @@ namespace BracePLUS
 
         // Global ViewModel so data bindings aren't reset everytime a new AsyncNavPush page is created.
         public static BluetoothSetupViewModel BLEViewModel { get; set; }
+        public static DebugViewModel DebugViewModel { get; set; }
+
+        // Private variables
+        static int watch_counter = 0;
 
         public App()
         {
@@ -52,7 +56,14 @@ namespace BracePLUS
 
             Client = new BraceClient();
             BLEViewModel = new BluetoothSetupViewModel();
+            DebugViewModel = new DebugViewModel();
             MainPage = new MainPage();
+        }
+
+        public static void Watch()
+        {
+            Debug.WriteLine(watch_counter);
+            watch_counter++;
         }
 
         protected override async void OnStart()

@@ -32,6 +32,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Views\DebugView.xaml.cs">
+      <DependentUpon>DebugView.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Update="App.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
@@ -59,7 +65,7 @@
     <EmbeddedResource Update="Views\RawDataView.xaml">
       <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
     </EmbeddedResource>
-    <EmbeddedResource Update="Views\Settings.xaml">
+    <EmbeddedResource Update="Views\DebugView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </EmbeddedResource>
   </ItemGroup>

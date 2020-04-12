@@ -48,20 +48,7 @@
                     <On Platform="Android" Value="FilesIcon.png" />
                 </OnPlatform>
             </NavigationPage.Icon>
-            
-        </NavigationPage>
 
-        <!-- Settings page -->
-        <NavigationPage Title="Settings">
-            <x:Arguments>
-                <views:Settings />
-            </x:Arguments>
-            <NavigationPage.Icon>
-                <OnPlatform x:TypeArguments="FileImageSource">
-                    <On Platform="iOS" Value="settings_icon.png" />
-                    <On Platform="Android" Value="settings_icon.png" />
-                </OnPlatform>
-            </NavigationPage.Icon>
         </NavigationPage>
 
     </TabbedPage.Children>

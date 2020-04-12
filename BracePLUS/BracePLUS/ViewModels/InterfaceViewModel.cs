@@ -108,10 +108,13 @@ namespace BracePLUS.ViewModels
         public Command StreamCommand { get; set; }
         public Command SetupBLECommand { get; set; }
         public Command TareCommand { get; set; }
+        public Command ShowDebugCommand { get; set; }
+
 
         // Private Properties
         private readonly MessageHandler handler;
         private double[] offsets;
+        private int tapCounter = 0;
 
         public INavigation Nav { get; set; }
 
@@ -132,6 +135,7 @@ namespace BracePLUS.ViewModels
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SetupBLECommand = new Command(() => ExecuteSetupBLECommand());
             TareCommand = new Command(() => ExecuteTareCommand());
+            ShowDebugCommand = new Command(() => ExecuteShowDebugCommand());
 
             StreamText = "Stream";
             BarChartMaximum = 1.2;
@@ -286,6 +290,16 @@ namespace BracePLUS.ViewModels
                     Debug.WriteLine("Couldnt fetch offset value: " + ex.Message);
                 }
             }   
+        }
+        private async void ExecuteShowDebugCommand()
+        {
+            Debug.WriteLine($"Status pressed. Tap counter: {tapCounter}");
+            tapCounter++;
+            if (tapCounter == 5)
+            {
+                await Nav.PushAsync(new DebugView(App.Client.Messages));
+                tapCounter = 0;
+            }
         }
         #endregion
     }

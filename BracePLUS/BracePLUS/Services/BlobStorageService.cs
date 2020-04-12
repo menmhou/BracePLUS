@@ -6,11 +6,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BlobStorageTutorial
+namespace BracePLUS.Services
 {
     class BlobStorageService
     {
-        readonly static CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=xamarinstorageaccmhou;AccountKey=Rws7K4rp/H30YwE+98OTtyagugaV42lt1Iev8yGTBoqSkRidAW11zSuW3uwymYzdZkCDQ2q78rWIbNytwMU9/Q==;EndpointSuffix=core.windows.net");
+        readonly static CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=braceplusstorageaccount;AccountKey=h4BGm0+zUl/MlK7EMEH9rScJCXQcsP8sKS7cqH+qc6KXPCx7/sbQr/JiocbjJbkel+T42BSgbfpzuNoQ95XLoQ==;EndpointSuffix=core.windows.net");
         readonly static CloudBlobClient cloudBlobClient = cloudStorageAccount.CreateCloudBlobClient();
 
         public List<string> names;
