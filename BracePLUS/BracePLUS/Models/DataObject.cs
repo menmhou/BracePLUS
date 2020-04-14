@@ -228,7 +228,12 @@ namespace BracePLUS.Models
                     Debug.WriteLine("Unable to retrieve calibration. " + ex.Message);
                 }
 
+                // Extract list of normals
                 var normals = handler.ExtractNormals(CalibratedData);
+
+                // Add to list of normals for data chart
+                for (int i = 0; i < normals.Count; i++)
+                    NormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
 
                 try
                 {

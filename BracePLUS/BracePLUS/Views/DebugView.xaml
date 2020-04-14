@@ -10,12 +10,15 @@
 
                 <TableSection Title="Connection">
                     <ViewCell>
-                        <StackLayout Spacing="10">
-                            <Label Text="{Binding ConnectedDevice}"/>
-                            <Label Text="{Binding SignalStrength}"/>
-                            <Label Text="{Binding ServiceID}"/>
-                            <Label Text="{Binding CharTxID}"/>
-                            <Label Text="{Binding CharRxID}"/>
+                        <StackLayout Spacing="10"
+                                     BackgroundColor="White"
+                                     Margin="10">
+                            
+                            <Label Text="{Binding ConnectedDevice, StringFormat='Connected Device: {0}'}" FontSize="Medium"/>
+                            <Label Text="{Binding RSSI, StringFormat='Signal Strength: {0}'}" FontSize="Medium"/>
+                            <Label Text="{Binding ServiceID, StringFormat='Service ID: {0}'}" FontSize="Medium"/>
+                            <Label Text="{Binding CharTxID, StringFormat='Tx Characteristic ID: {0}'}" FontSize="Medium"/>
+                            <Label Text="{Binding CharRxID, StringFormat='Rx Characteristic ID: {0}'}" FontSize="Medium"/>
 
                         </StackLayout>
                     </ViewCell>
@@ -27,6 +30,7 @@
                             <StackLayout x:Name="MessageStack"
                                          BackgroundColor="White"
                                          Spacing="5"
+                                         Margin="10"
                                          HorizontalOptions="FillAndExpand"
                                          VerticalOptions="FillAndExpand">
                             </StackLayout>

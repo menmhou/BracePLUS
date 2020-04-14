@@ -290,10 +290,11 @@ namespace BracePLUS.Views
         #endregion
         public void InitDataObject()
         {
+            // If data not downloaded, do not proceed with initialisation
             if (!DataObj.IsDownloaded) return;
             Packets = (DataObj.RawData.Length - 6) / 128;
 
-            // Take pure calibrated data
+            // Take calibrated data
             RawNormals = handler.ExtractNormals(DataObj.CalibratedData);
 
             // Create offset from initial value (0th index is sometimes wrong- needs fixing.)
@@ -307,7 +308,8 @@ namespace BracePLUS.Views
             try
             {
                 // If less than 200 data points avaible, use total number of points
-                for (int i = 0; i < (RawNormals.Count > 200 ? 200 : RawNormals.Count); i++)
+                var axis_max = RawNormals.Count > 200 ? 200 : RawNormals.Count;
+                for (int i = 0; i < axis_max; i++)
                 {
                     ChartData.Add(new ChartDataModel(i.ToString(), RawNormals[i]));
                 }

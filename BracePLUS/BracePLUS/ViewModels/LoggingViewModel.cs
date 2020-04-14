@@ -139,7 +139,7 @@ namespace BracePLUS.ViewModels
                     await App.Client.Save(filename);
 
                     // Create empty file
-                    List<byte[]> empty = new List<byte[]>();
+                    // List<byte[]> empty = new List<byte[]>();
                     // FileManager.WriteFile(empty, filename, null, null);
 
                     // Add to list of files

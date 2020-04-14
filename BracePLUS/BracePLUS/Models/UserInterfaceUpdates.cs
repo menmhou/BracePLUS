@@ -9,5 +9,8 @@ namespace BracePLUS.Models
     {
         public int Status { get; set; }
         public IDevice Device { get; set; }
+        public string ServiceId { get; set; }
+        public string UartTxId { get; set; }
+        public string UartRxId { get; set; }
     }
 }

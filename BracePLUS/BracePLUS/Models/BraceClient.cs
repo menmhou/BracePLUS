@@ -37,11 +37,7 @@ namespace BracePLUS.Models
         public List<string> Messages { get; set; }
 
         // UI Assistant
-        StackLayout stack;
         private readonly MessageHandler handler;
-        static readonly Color debug = Color.Red;
-        static readonly Color info = Color.Blue;
-        static readonly Color _event = Color.Green;
         public bool isStreaming;
         public bool isSaving;
 
@@ -144,18 +140,23 @@ namespace BracePLUS.Models
                     });
                 }
             };
-            // BLE Device conneciton event
-            adapter.DeviceConnected += (s, e) =>
+            // BLE Device connection event
+            SystemConnected += async (s, e) =>
             {
-                InterfaceUpdates.Status = DISCONNECTED;
+                // Prepare and send UI updates event
+                InterfaceUpdates.Status = CONNECTED;
                 InterfaceUpdates.Device = e.Device;
+                InterfaceUpdates.ServiceId = uartServiceUUID;
+                InterfaceUpdates.UartRxId = uartRxCharUUID;
+                InterfaceUpdates.UartTxId = uartTxCharUUID;
                 EVENT(InterfaceUpdates, $"Connected to: {e.Device.Name}");
+
+                // Set app connection status to true
                 App.isConnected = true;
+
+                // Begin system initialisation
+                await InitBrace();
             };
-        }
-        public void RegisterStack(StackLayout s)
-        {
-            stack = s;
         }
         #endregion
 
@@ -200,6 +201,11 @@ namespace BracePLUS.Models
             LoggingFinished?.Invoke(this, e);
         }
         public event EventHandler<LoggingFinishedEventArgs> LoggingFinished;
+        protected virtual void OnSystemConnected(SystemConnectedEventArgs e)
+        {
+            SystemConnected?.Invoke(this, e);
+        }
+        public event EventHandler<SystemConnectedEventArgs> SystemConnected;
         #endregion
 
         #region Model Client Logic Methods
@@ -210,6 +216,7 @@ namespace BracePLUS.Models
             // Check system bluetooth is turned on.
             if (!ble.IsOn)
             {
+                // Show alert
                 await Application.Current.MainPage.DisplayAlert("Bluetooth off.", "Please turn on bluetooth to connect to devices.", "OK");
                 return;
             }
@@ -249,9 +256,12 @@ namespace BracePLUS.Models
                         COMMS_MENU(uartTx);
                         await RUN_BLE_START_UPDATES(uartTx);
 
-                        // Brief propogation delay
-                        await Task.Delay(2500);
-                        await InitBrace();
+                        // Tell the system the connection is complete.
+                        SystemConnectedEventArgs args = new SystemConnectedEventArgs
+                        {
+                            Device = Brace
+                        };
+                        OnSystemConnected(args);                        
                     }
                     catch (Exception ex)
                     {
@@ -349,6 +359,8 @@ namespace BracePLUS.Models
         }
         public async Task InitBrace()
         {
+            // Brief delay
+            await Task.Delay(2500);
             // Send init command
             InterfaceUpdates.Status = SYS_INIT;
             EVENT(InterfaceUpdates, "Initalising device...");
@@ -405,6 +417,7 @@ namespace BracePLUS.Models
             c.ValueUpdated += async (o, args) =>
             {
                 var bytes = args.Characteristic.Value;
+
                 switch (STATUS)
                 {
                     // Do action according to current status of system...
@@ -701,18 +714,20 @@ namespace BracePLUS.Models
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
         {
             var b = Encoding.ASCII.GetBytes(s);
+            bool success;
 
             try
             {
                 await c.WriteAsync(b);
-                return true;
+                success = true;
             }
             catch (Exception ex)
             {
+                success = false;
                 Crashes.TrackError(ex);
                 Debug.WriteLine($"Characteristic {c.Uuid} write failed with exception: {ex.Message}");
             }
-            return false;
+            return success;
         }
 
         async Task RUN_BLE_START_UPDATES(ICharacteristic c)
