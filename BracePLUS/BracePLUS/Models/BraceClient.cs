@@ -9,12 +9,10 @@ using Plugin.BLE.Abstractions.Contracts;
 using Plugin.BLE.Abstractions.Exceptions;
 using Xamarin.Forms;
 using BracePLUS.Events;
-
-using Microsoft.AppCenter;
-
 using static BracePLUS.Extensions.Constants;
 using Microsoft.AppCenter.Crashes;
 using Plugin.BLE.Abstractions;
+using Plugin.Toast;
 
 namespace BracePLUS.Models
 {
@@ -382,6 +380,7 @@ namespace BracePLUS.Models
         {
             // Set the filename to be written by brace
             downloadFilename = filename;
+            CrossToastPopUp.Current.ShowToastMessage("Logging to file: " + filename + ".dat...");
 
             // Request long-term logging function from brace
             InterfaceUpdates.Status = LOGGING_START;
@@ -390,6 +389,8 @@ namespace BracePLUS.Models
         }
         public async Task GetMobileFiles()
         {
+            CrossToastPopUp.Current.ShowToastMessage("Syncing mobile files");
+
             // Request list of files from brace
             InterfaceUpdates.Status = SYNC_START;
             EVENT(InterfaceUpdates, "Beginning file sync");
@@ -398,6 +399,7 @@ namespace BracePLUS.Models
         public async Task DownloadFile(string _filename)
         {
             Debug.WriteLine("filename: " + _filename);
+            CrossToastPopUp.Current.ShowToastMessage("Downloading file: " + _filename);
 
             if (_filename.Length > 8)
                downloadFilename = _filename.Remove(8);
@@ -658,10 +660,6 @@ namespace BracePLUS.Models
 
             InterfaceUpdates.Status = FILE_WRITTEN;
             EVENT(InterfaceUpdates, "File written: " + name);
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
-            {
-                //DependencyService.Get<IMessage>().ShortAlert("File written: " + file.Name);
-            });
             OnLocalFileListUpdated(EventArgs.Empty);
 
             DATA_IN.Clear();
@@ -710,7 +708,6 @@ namespace BracePLUS.Models
                 Write(msg);
             }
         }
-
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
         {
             var b = Encoding.ASCII.GetBytes(s);
@@ -729,7 +726,6 @@ namespace BracePLUS.Models
             }
             return success;
         }
-
         async Task RUN_BLE_START_UPDATES(ICharacteristic c)
         {
             try
@@ -742,7 +738,6 @@ namespace BracePLUS.Models
                 Debug.WriteLine($"Characteristic {c.Uuid} start updates failed with exception: {ex.Message}");
             }
         }
-
         async Task RUN_BLE_STOP_UPDATES(ICharacteristic c)
         {
             try

@@ -4,6 +4,7 @@ using BracePLUS.Models;
 using BracePLUS.Services;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
+using Plugin.Toast;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -43,13 +44,13 @@ namespace BracePLUS.Views
             set { }
         }
         private bool _offsetData;
-        public bool OffsetData
+        public bool TareData
         {
             get => _offsetData;
             set
             {
                 _offsetData = value;
-                RaisePropertyChanged(() => OffsetData);
+                RaisePropertyChanged(() => TareData);
             }
         }
         #endregion
@@ -221,7 +222,7 @@ namespace BracePLUS.Views
             AllNodesData = new ObservableCollection<ChartDataModel>();
             RawNormals = new List<double>();
             OffsetNormals = new List<double>();
-            OffsetData = false;
+            TareData = false;
             NodeOffsets = new double[16];
 
             LineChartMinimum = 0.6;
@@ -241,11 +242,35 @@ namespace BracePLUS.Views
         #region Command Methods
         private async Task ExecuteShareCommand()
         {
-            var file = Path.Combine(App.FolderPath, DataObj.Directory);
+            string file, title;
+            Debug.WriteLine("Sharing file: ");
+            DataObj.DebugObject();
+            if (TareData)
+            {
+                try
+                {
+                    file = Path.Combine(App.FolderPath, DataObj.DirectoryCSV);
+                    title = DataObj.FilenameCSV;
+                    CrossToastPopUp.Current.ShowToastMessage("Unable to share CSV file");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
 
+                    // If CSV unavailable, default to raw data
+                    file = Path.Combine(App.FolderPath, DataObj.Directory);
+                    title = DataObj.Filename;
+                }
+            }
+            else
+            {
+                file = Path.Combine(App.FolderPath, DataObj.Directory);
+                title = DataObj.Filename;
+            }
+            
             await Share.RequestAsync(new ShareFileRequest
             {
-                Title = DataObj.Filename,
+                Title = title,
                 File = new ShareFile(file)
             });
         }
@@ -341,7 +366,7 @@ namespace BracePLUS.Views
         public void ToggleTarredData(ToggledEventArgs e)
         {
             ChartData.Clear();
-            OffsetData = e.Value;
+            TareData = e.Value;
 
             if (!e.Value)
             {
@@ -384,7 +409,7 @@ namespace BracePLUS.Views
             var nodes = handler.ExtractNodes(DataObj.CalibratedData, (int)SliderValue - 1);
             for (int i = 0; i < 16; i++)
             {
-                if (OffsetData)
+                if (TareData)
                     AllNodesData.Add(new ChartDataModel((i + 1).ToString(), 1 + nodes[i] - NodeOffsets[i]));
                 else
                     AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));
@@ -402,7 +427,7 @@ namespace BracePLUS.Views
                 var nodes = handler.ExtractNodes(DataObj.CalibratedData, val-1);
                 for (int i = 0; i < 16; i++)
                 {
-                    if (OffsetData)
+                    if (TareData)
                         AllNodesData.Add(new ChartDataModel((i + 1).ToString(), 1 + nodes[i] - NodeOffsets[i]));
                     else
                         AllNodesData.Add(new ChartDataModel((i + 1).ToString(), nodes[i]));

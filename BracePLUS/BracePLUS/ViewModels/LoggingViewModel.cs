@@ -8,6 +8,7 @@ using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.Services;
+using BracePLUS.Views;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
 using Plugin.Toast;
@@ -89,6 +90,7 @@ namespace BracePLUS.ViewModels
         #endregion
 
         public Command LogCommand { get; set; }
+        public INavigation Nav { get; set; }
 
         // Private Properties
         private readonly MessageHandler handler;
@@ -97,6 +99,7 @@ namespace BracePLUS.ViewModels
         {
             handler = new MessageHandler();
 
+            // List of different data object groups
             DataObjectGroups = new ObservableCollection<DataObjectGroup>();
             LoggedColumnSeries = new ObservableCollection<ChartDataModel>();
 
@@ -138,9 +141,6 @@ namespace BracePLUS.ViewModels
                 {
                     // Create filename using current datetime
                     var filename = handler.GetFileName(DateTime.Now, extension: null);
-
-                    // Show message to indicate logging has started
-                    CrossToastPopUp.Current.ShowToastMessage($"Logging to file: {filename}.dat...");
 
                     // Request start saving from client
                     await App.Client.Save(filename);
@@ -258,8 +258,6 @@ namespace BracePLUS.ViewModels
             };
             DataObjectGroups = group;
 
-            Debug.WriteLine(" Done.");
-
             ReorderDataObjects();
         }
 
@@ -316,7 +314,7 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        private void UpdateObject(string objName)
+        private async void UpdateObject(string objName)
         {
             // Scan through all objects, if found update data and analyze.
             for (int i = 0; i < DataObjectGroups.Count; i++)

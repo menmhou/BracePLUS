@@ -14,8 +14,15 @@ namespace BracePLUS.Models
             for (int i = 4; i < 100; i += 6)
             {
                 // Check for null values
-                for (int j = 0; j < 6; j++)
-                    if (buf[i + j] == 0xFF) skip = true;
+                if (buf[i] == 0xFF && 
+                    buf[i + 1] == 0xFF &&
+                    buf[i + 2] == 0xFF &&
+                    buf[i + 3] == 0xFF &&
+                    buf[i + 4] == 0xFF &&
+                    buf[i + 5] == 0xFF)
+                {
+                    skip = true;
+                }
                 
                 // if not null, proceed with calib
                 if (!skip)
@@ -45,19 +52,19 @@ namespace BracePLUS.Models
                     var L2Out = CalculateLayer2(L1Out);
                     var dOutput = CalculateOutput(L2Out);
 
-                    /*
+                    
                     Debug.WriteLine("NN Inputs:");
                     foreach (var val in raw)
-                        Debug.WriteLine(string.Format("{0:4X}", val));
+                        Debug.WriteLine(val);
                     
                     Debug.WriteLine("NN Outputs:");
                     foreach (var val in dOutput)
                         Debug.WriteLine(val);
-                    */
+                    
 
                     // Re-pack back into output buffer with correct index
                     for (int j = 0; j < 3; j++)
-                        Outputs[(i - 7) / 6, j] = dOutput[j];
+                        Outputs[(i - 4) / 6, j] = dOutput[j];
                 }
                 skip = false;
             }

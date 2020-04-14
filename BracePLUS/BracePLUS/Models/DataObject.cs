@@ -20,6 +20,7 @@ namespace BracePLUS.Models
         public bool IsDownloaded { get; set; }
         public DateTime Date { get; set; }
         public string Directory { get; set; }
+        public string DirectoryCSV { get; set; }
         public string Filename { get; set; }
         public string FilenameCSV { get; set; }
         public string Location { get; set; }
@@ -171,6 +172,10 @@ namespace BracePLUS.Models
             Debug.WriteLine($"*** RawData Object: {Name} ***");
             Debug.WriteLine($"*** Date of creation: {Date} ***");
             Debug.WriteLine($"*** Directory: {Directory} ***");
+
+            if (!string.IsNullOrEmpty(DirectoryCSV))
+                Debug.WriteLine($"*** CSV Directory: {DirectoryCSV} ***");
+
             Debug.WriteLine($"*** Downloaded? {IsDownloaded} ***");
             if (IsDownloaded)
             {
@@ -218,6 +223,7 @@ namespace BracePLUS.Models
             if (RawData.Length > 6) // (only contains header/footer)
             {
                 FilenameCSV = Filename.Remove(8).Insert(8, "_CALIB.csv");
+                DirectoryCSV = Path.Combine(App.FolderPath, FilenameCSV);
 
                 try
                 {
@@ -283,7 +289,7 @@ namespace BracePLUS.Models
             }
         }
 
-        public List<double[,]> RetrieveCalibration(byte[] bytes, string name)
+        private List<double[,]> RetrieveCalibration(byte[] bytes, string name)
         {
             // Check if data already retrieved
             try
@@ -402,5 +408,11 @@ namespace BracePLUS.Models
                 return "RawData string null";
             }
         }
+    }
+
+    public class DataObjectGroup : List<DataObject>
+    {
+        public string Heading { get; set; }
+        public List<DataObject> DataObjects => this;
     }
 }

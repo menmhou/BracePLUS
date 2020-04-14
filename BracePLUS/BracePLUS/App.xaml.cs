@@ -51,7 +51,7 @@ namespace BracePLUS
             generator = new Random();
             handler = new MessageHandler();
 
-            // ClearFiles();
+            //ClearFiles();
             RemovePersistentAnnoyingMarchFiles();
 
             Client = new BraceClient();

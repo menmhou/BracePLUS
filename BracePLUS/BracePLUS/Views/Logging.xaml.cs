@@ -18,7 +18,10 @@ namespace BracePLUS.Views
         {
             InitializeComponent();
 
-            BindingContext = viewModel = new LoggingViewModel();
+            BindingContext = viewModel = new LoggingViewModel()
+            {
+                Nav = Navigation
+            };
         }
 
         protected override void OnAppearing()
@@ -36,8 +39,14 @@ namespace BracePLUS.Views
             // Inspect file...
             try
             {
-                item.DebugObject();
-                await Navigation.PushAsync(new Inspect(item));
+                if (item.IsDownloaded)
+                {
+                    await Navigation.PushAsync(new Inspect(item));
+                }
+                else
+                {
+                    await App.Client.DownloadFile(item.Filename);
+                }
             }
             catch (Exception ex)
             {
