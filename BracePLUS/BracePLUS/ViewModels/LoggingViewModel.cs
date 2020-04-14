@@ -10,6 +10,7 @@ using BracePLUS.Models;
 using BracePLUS.Services;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
+using Plugin.Toast;
 using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
 
@@ -135,15 +136,14 @@ namespace BracePLUS.ViewModels
             {
                 if (App.Client.STATUS != LOGGING_START)
                 {
+                    // Create filename using current datetime
                     var filename = handler.GetFileName(DateTime.Now, extension: null);
+
+                    // Show message to indicate logging has started
+                    CrossToastPopUp.Current.ShowToastMessage($"Logging to file: {filename}.dat...");
+
+                    // Request start saving from client
                     await App.Client.Save(filename);
-
-                    // Create empty file
-                    // List<byte[]> empty = new List<byte[]>();
-                    // FileManager.WriteFile(empty, filename, null, null);
-
-                    // Add to list of files
-                    RefreshObjects();
                 }
             }
             else

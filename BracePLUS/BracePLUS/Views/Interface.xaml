@@ -45,7 +45,6 @@
                         VerticalOptions="CenterAndExpand"
                         Grid.Column="1"
                         Grid.RowSpan="2"/>
-
             </Grid>
             
             <chart:SfChart Margin="40, 10"
@@ -91,6 +90,7 @@
                    FontSize="Large"
                    MaxLines="1"
                    HorizontalTextAlignment="End">
+                
                 <Label.GestureRecognizers>
                     <TapGestureRecognizer NumberOfTapsRequired="1"
                                           Command="{Binding ShowDebugCommand}"/>

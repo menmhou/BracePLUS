@@ -14,6 +14,7 @@ using BracePLUS.Extensions;
 using System;
 using BracePLUS.Views;
 using System.Collections.Generic;
+using Plugin.Toast;
 
 namespace BracePLUS.ViewModels
 {
@@ -293,12 +294,19 @@ namespace BracePLUS.ViewModels
         }
         private async void ExecuteShowDebugCommand()
         {
-            Debug.WriteLine($"Status pressed. Tap counter: {tapCounter}");
             tapCounter++;
-            if (tapCounter == 5)
+            if (tapCounter == 7)
             {
                 await Nav.PushAsync(new DebugView(App.Client.Messages));
                 tapCounter = 0;
+            }
+            else if (tapCounter < 6 && tapCounter > 2)
+            {
+                CrossToastPopUp.Current.ShowToastMessage($"{7 - tapCounter} taps away from debug mode...");
+            }
+            else if (tapCounter == 6)
+            {
+                CrossToastPopUp.Current.ShowToastMessage($"1 tap away from debug mode...");
             }
         }
         #endregion
