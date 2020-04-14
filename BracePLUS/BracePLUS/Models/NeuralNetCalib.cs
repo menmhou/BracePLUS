@@ -8,46 +8,58 @@ namespace BracePLUS.Models
         public static double[,] CalibratePacket(byte[] buf)
         {
             var Outputs = new double[16, 3];
+            bool skip = false;
 
+            // Cycle through each node (bunch of 6 values - 2bytes*3 axis) in buffer 
             for (int i = 4; i < 100; i += 6)
             {
-                var raw = new short[3]
-                {
-                    (short)(buf[i] * 256 + buf[i+1]),
-                    (short)(buf[i+2] * 256 + buf[i+3]),
-                    (short)(buf[i+4] * 256 + buf[i+5])
-                };
-
-                // Create milliTelsa values
-                var Bxyz = new double[3]
-                {
-                    raw[0] * 0.751,
-                    raw[1] * 0.751,
-                    raw[2] * 1.210
-                };
-
-                // Convert to Gauss
-                for (int j = 0; j < 3; j++)
-                    Bxyz[j] *= 0.01;
+                // Check for null values
+                for (int j = 0; j < 6; j++)
+                    if (buf[i + j] == 0xFF) skip = true;
                 
-                var InOut = GetInputs(Bxyz);
-                var L1Out = CalculateLayer1(InOut);
-                var L2Out = CalculateLayer2(L1Out);
-                var dOutput = CalculateOutput(L2Out);
+                // if not null, proceed with calib
+                if (!skip)
+                {
+                    // Create new array to hold raw single node data
+                    var raw = new short[3]
+                    {
+                        (short)(buf[i] * 256 + buf[i + 1]),
+                        (short)(buf[i + 2] * 256 + buf[i + 3]),
+                        (short)(buf[i + 4] * 256 + buf[i + 5])
+                    };
 
-                /*
-                Debug.WriteLine("NN Inputs:");
-                foreach (var val in raw)
-                    Debug.WriteLine(string.Format("{0:4X}", val));
+                    // Create milliTelsa values
+                    var Bxyz = new double[3]
+                    {
+                        raw[0] * 0.751,
+                        raw[1] * 0.751,
+                        raw[2] * 1.210
+                    };
+
+                    // Convert to Gauss
+                    for (int j = 0; j < 3; j++)
+                        Bxyz[j] *= 0.01;
+
+                    var InOut = GetInputs(Bxyz);
+                    var L1Out = CalculateLayer1(InOut);
+                    var L2Out = CalculateLayer2(L1Out);
+                    var dOutput = CalculateOutput(L2Out);
+
+                    /*
+                    Debug.WriteLine("NN Inputs:");
+                    foreach (var val in raw)
+                        Debug.WriteLine(string.Format("{0:4X}", val));
                     
-                Debug.WriteLine("NN Outputs:");
-                foreach (var val in dOutput)
-                    Debug.WriteLine(val);
-                */
+                    Debug.WriteLine("NN Outputs:");
+                    foreach (var val in dOutput)
+                        Debug.WriteLine(val);
+                    */
 
-                // Re-pack back into output buffer with correct index
-                for (int j = 0; j < 3; j++)
-                    Outputs[(i-7)/6, j] = dOutput[j];
+                    // Re-pack back into output buffer with correct index
+                    for (int j = 0; j < 3; j++)
+                        Outputs[(i - 7) / 6, j] = dOutput[j];
+                }
+                skip = false;
             }
 
             return Outputs;

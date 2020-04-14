@@ -146,6 +146,7 @@ namespace BracePLUS.ViewModels
 
                 case DISCONNECTED:
                     SetNullValues();
+                    ConnectionText = "Disconnected";
                     await FadeImages("BraceRenderColour.jpg", "BraceRenderGreyscale.jpg");
                     break;
 

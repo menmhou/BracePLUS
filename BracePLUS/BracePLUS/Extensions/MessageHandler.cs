@@ -492,7 +492,7 @@ namespace BracePLUS.Extensions
             int n = values.Length;
 
             foreach (var val in values)
-                sum += val;
+                if (val != 0) sum += val;
 
             return sum / n;
         }
@@ -503,7 +503,7 @@ namespace BracePLUS.Extensions
             int n = values.Length;
 
             foreach (var val in values)
-                sum += val;
+                if (val != 0) sum += val;
 
             return sum / n;
         }
@@ -514,7 +514,7 @@ namespace BracePLUS.Extensions
             int n = values.Count;
 
             foreach (var val in values)
-                sum += val;
+                if (val != 0) sum += val;
 
             return sum / n;
         }
