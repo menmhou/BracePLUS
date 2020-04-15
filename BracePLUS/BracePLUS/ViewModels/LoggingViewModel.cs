@@ -185,6 +185,7 @@ namespace BracePLUS.ViewModels
         {
             Debug.WriteLine("LOGGING: Loading local files...");
             // Create groups for data recordings from different times
+            App.Watch(1);
             var todayObjects = new DataObjectGroup()
             {
                 Heading = "Today"
@@ -201,11 +202,16 @@ namespace BracePLUS.ViewModels
             {
                 Heading = "Older"
             };
+            App.Watch(2);
 
             var files = Directory.EnumerateFiles(App.FolderPath, "*.txt");
 
+            App.Watch(3);
+            int c = 4;
             foreach (var filename in files)
             {
+                App.Watch(c);
+                c++;
                 // Get info about file
                 FileInfo fi = new FileInfo(filename);
 
@@ -314,7 +320,7 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        private async void UpdateObject(string objName)
+        private void UpdateObject(string objName)
         {
             // Scan through all objects, if found update data and analyze.
             for (int i = 0; i < DataObjectGroups.Count; i++)

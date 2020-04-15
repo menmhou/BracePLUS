@@ -38,7 +38,6 @@ namespace BracePLUS
         public static DebugViewModel DebugViewModel { get; set; }
 
         // Private variables
-        static int watch_counter = 0;
 
         public App()
         {
@@ -60,10 +59,9 @@ namespace BracePLUS
             MainPage = new MainPage();
         }
 
-        public static void Watch()
+        public static void Watch(int c)
         {
-            Debug.WriteLine(watch_counter);
-            watch_counter++;
+            Debug.WriteLine(c);
         }
 
         protected override async void OnStart()
