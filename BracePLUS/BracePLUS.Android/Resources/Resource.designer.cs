@@ -20212,25 +20212,31 @@ namespace BracePLUS.Droid
 			public const int splash_logo = 2131165542;
 			
 			// aapt resource value: 0x7F070167
-			public const int StarFilled = 2131165543;
+			public const int splash_screen = 2131165543;
 			
 			// aapt resource value: 0x7F070168
-			public const int StarUnfilled = 2131165544;
+			public const int StarFilled = 2131165544;
 			
 			// aapt resource value: 0x7F070169
-			public const int SwapChartLogo = 2131165545;
+			public const int StarUnfilled = 2131165545;
 			
 			// aapt resource value: 0x7F07016A
-			public const int SyncIconWhite = 2131165546;
+			public const int SwapChartLogo = 2131165546;
 			
 			// aapt resource value: 0x7F07016B
-			public const int tooltip_frame_dark = 2131165547;
+			public const int SyncIconWhite = 2131165547;
 			
 			// aapt resource value: 0x7F07016C
-			public const int tooltip_frame_light = 2131165548;
+			public const int tooltip_frame_dark = 2131165548;
 			
 			// aapt resource value: 0x7F07016D
-			public const int UpArrow = 2131165549;
+			public const int tooltip_frame_light = 2131165549;
+			
+			// aapt resource value: 0x7F07016E
+			public const int UpArrow = 2131165550;
+			
+			// aapt resource value: 0x7F07016F
+			public const int XamarinLogo = 2131165551;
 			
 			static Drawable()
 			{

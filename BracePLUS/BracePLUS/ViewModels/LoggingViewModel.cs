@@ -185,7 +185,6 @@ namespace BracePLUS.ViewModels
         {
             Debug.WriteLine("LOGGING: Loading local files...");
             // Create groups for data recordings from different times
-            App.Watch(1);
             var todayObjects = new DataObjectGroup()
             {
                 Heading = "Today"
@@ -202,16 +201,11 @@ namespace BracePLUS.ViewModels
             {
                 Heading = "Older"
             };
-            App.Watch(2);
 
             var files = Directory.EnumerateFiles(App.FolderPath, "*.txt");
 
-            App.Watch(3);
-            int c = 4;
             foreach (var filename in files)
             {
-                App.Watch(c);
-                c++;
                 // Get info about file
                 FileInfo fi = new FileInfo(filename);
 
@@ -285,8 +279,8 @@ namespace BracePLUS.ViewModels
                             try
                             {
                                 // Get date of current and next object
-                                int date1 = Int32.Parse(objects[i].Filename.Remove(8));
-                                int date2 = Int32.Parse(objects[i + 1].Filename.Remove(8));
+                                int date1 = int.Parse(objects[i].Filename.Remove(8));
+                                int date2 = int.Parse(objects[i + 1].Filename.Remove(8));
 
                                 // If date2 > date1, respective dataobjects swap
                                 if (date2 > date1)

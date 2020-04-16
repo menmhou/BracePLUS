@@ -185,10 +185,16 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\BraceRenderGreyscale.jpg" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\XamarinLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\splash_screen.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties XamarinHotReloadDebuggerTimeoutExceptionBracePLUSAndroidHideInfoBar="True" XamarinHotReloadUnhandledDeviceExceptionBracePLUSAndroidHideInfoBar="True" />
+      <UserProperties XamarinHotReloadUnhandledDeviceExceptionBracePLUSAndroidHideInfoBar="True" XamarinHotReloadDebuggerTimeoutExceptionBracePLUSAndroidHideInfoBar="True" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

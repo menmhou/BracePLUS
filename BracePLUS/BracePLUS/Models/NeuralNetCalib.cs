@@ -136,10 +136,10 @@ namespace BracePLUS.Models
             for (int i = 0; i < 3; i++)
                 outputs[i] = offsetResult[i] + OutputLayerGains[i];
 
+            outputs[2] *= -1.00;
+
             return outputs;
         }
-
-        
 
         #region Definitions
         private const int xoffset = 0;

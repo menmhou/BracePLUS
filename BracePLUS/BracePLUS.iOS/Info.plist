@@ -23,7 +23,7 @@
 	<key>MinimumOSVersion</key>
 	<string>8.0</string>
 	<key>CFBundleDisplayName</key>
-	<string>BracePLUS</string>
+	<string>BracePlus</string>
 	<key>CFBundleIdentifier</key>
 	<string>leeds.ac.uk.BracePlus</string>
 	<key>CFBundleVersion</key>
@@ -34,21 +34,16 @@
 	<string>BracePLUS</string>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/AppIcon.appiconset</string>
-  <key>UIBackgroundModes</key>
-  <array>
-    <!--for connecting to devices (client)-->
-    <string>bluetooth-central</string>
-
-    <!--for server configurations if needed-->
-    <string>bluetooth-peripheral</string>
-  </array>
-
-  <!--Description of the Bluetooth request message (required on iOS 10, deprecated)-->
-  <key>NSBluetoothPeripheralUsageDescription</key>
-  <string>YOUR CUSTOM MESSAGE</string>
-
-  <!--Description of the Bluetooth request message (required on iOS 13)-->
-  <key>NSBluetoothAlwaysUsageDescription</key>
-  <string>YOUR CUSTOM MESSAGE</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
+		<string>bluetooth-peripheral</string>
+	</array>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>YOUR CUSTOM MESSAGE</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>YOUR CUSTOM MESSAGE</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
 </dict>
 </plist>
