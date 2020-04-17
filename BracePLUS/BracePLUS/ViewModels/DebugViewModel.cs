@@ -80,16 +80,16 @@ namespace BracePLUS.ViewModels
         {
             App.Client.UIUpdated += ((s, e) =>
             {
-                switch (e.InterfaceUpdates.Status)
+                switch (e.Status)
                 {
                     case CONNECTED:
                         try
                         {
-                            ConnectedDevice = e.InterfaceUpdates.Device.Name;
-                            RSSI = e.InterfaceUpdates.Device.Rssi.ToString();
-                            ServiceID = e.InterfaceUpdates.ServiceId;
-                            CharTxID = e.InterfaceUpdates.UartTxId;
-                            CharRxID = e.InterfaceUpdates.UartRxId;
+                            ConnectedDevice = e.Device.Name;
+                            RSSI = e.Device.Rssi.ToString();
+                            ServiceID = e.ServiceId;
+                            CharTxID = e.UartTxId;
+                            CharRxID = e.UartRxId;
                         }
                         catch (Exception ex)
                         {

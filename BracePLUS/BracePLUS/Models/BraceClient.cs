@@ -13,9 +13,17 @@ using static BracePLUS.Extensions.Constants;
 using Microsoft.AppCenter.Crashes;
 using Plugin.BLE.Abstractions;
 using Plugin.Toast;
+using System.Threading;
 
 namespace BracePLUS.Models
 {
+    /// <summary>
+    /// The main Brace+ Communication class.
+    /// </summary>
+    /// <remarks>
+    /// Contains all methods for handling user BLE requests via the Interface and Logging pages, 
+    /// as well as back-end BLE services and properties for communicating with the client device.
+    /// </remarks>
     public class BraceClient : BindableObject
     {
         #region Model Properties
@@ -30,8 +38,11 @@ namespace BracePLUS.Models
         public Guid uartRxCharGUID = Guid.Parse(uartRxCharUUID);
 
         // Public Properties
+        // Device object to hold data about remote device.
         public IDevice Brace { get; set; }
+        // List of array of bytes to hold each data packet as it is received.
         public static List<byte[]> DATA_IN { get; set; }
+        // List of messages used to update the Debug view and generate the event log.
         public List<string> Messages { get; set; }
 
         // UI Assistant
@@ -50,14 +61,16 @@ namespace BracePLUS.Models
         public List<string> MobileFileList;
 
         string downloadFilename = "";
-        public UserInterfaceUpdates InterfaceUpdates;
         #endregion
 
         #region Model Instanciation
+        /// <summary>
+        /// Model Instanciation.
+        /// Initialise all members and attach necessary events with lambda functions.
+        /// </summary>
         public BraceClient()
         {
             handler = new MessageHandler();
-            InterfaceUpdates = new UserInterfaceUpdates();
 
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
@@ -83,8 +96,13 @@ namespace BracePLUS.Models
 
                 else
                 {
-                    InterfaceUpdates.Status = DEVICE_FOUND;
-                    EVENT(InterfaceUpdates, string.Format($"Discovered device: {name}"));
+                    UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                    {
+                        Status = DEVICE_FOUND,
+                        Message = $"Discovered device: {name}"
+                    };
+
+                    EVENT(args);
 
                     if (e.Device.Name == DEV_NAME || e.Device.Name == "RN_BLE")
                     {
@@ -95,10 +113,14 @@ namespace BracePLUS.Models
             // BLE Device connection lost event
             adapter.DeviceConnectionLost += (s, e) =>
             {
-                InterfaceUpdates.Status = DISCONNECTED;
-                EVENT(InterfaceUpdates, "Disconnected from " + e.Device.Name);
+                UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                {
+                    Status = DISCONNECTED,
+                    Message = $"Disconnected from {e.Device.Name}"
+                };
+                EVENT(args);
                 App.isConnected = false;
-                buffer = RELEASE_DATA(buffer, false);
+                RELEASE_DATA(buffer, false);
 
                 if (DATA_IN.Count > 0)
                 {
@@ -118,10 +140,14 @@ namespace BracePLUS.Models
             // BLE Device disconnection event
             adapter.DeviceDisconnected += (s, e) =>
             {
-                InterfaceUpdates.Status = DISCONNECTED;
-                EVENT(InterfaceUpdates, "Disconnected");
+                UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                {
+                    Status = DISCONNECTED,
+                    Message = "Disconnected"
+                };
+                EVENT(args);
                 App.isConnected = false;
-                buffer = RELEASE_DATA(buffer, false);
+                RELEASE_DATA(buffer, false);
 
                 if (DATA_IN.Count > 0)
                 {
@@ -138,42 +164,15 @@ namespace BracePLUS.Models
                     });
                 }
             };
-            // BLE Device connection event
-            SystemConnected += async (s, e) =>
-            {
-                // Prepare and send UI updates event
-                InterfaceUpdates.Status = CONNECTED;
-                InterfaceUpdates.Device = e.Device;
-                InterfaceUpdates.ServiceId = uartServiceUUID;
-                InterfaceUpdates.UartRxId = uartRxCharUUID;
-                InterfaceUpdates.UartTxId = uartTxCharUUID;
-                EVENT(InterfaceUpdates, $"Connected to: {e.Device.Name}");
-
-                // Set app connection status to true
-                App.isConnected = true;
-
-                // Begin system initialisation
-                await InitBrace();
-            };
         }
         #endregion
 
         #region Events
-        protected virtual void OnDownloadFinished(FileDownloadedEventArgs e)
-        {
-            DownloadFinished?.Invoke(this, e);
-        }
-        public event EventHandler<FileDownloadedEventArgs> DownloadFinished;
         protected virtual void OnFileSyncFinished(MobileSyncFinishedEventArgs e)
         {
             FileSyncFinished?.Invoke(this, e);
         }
         public event EventHandler<MobileSyncFinishedEventArgs> FileSyncFinished;
-        protected virtual void OnLocalFileListUpdated(EventArgs e)
-        {
-            LocalFileListUpdated?.Invoke(this, e);
-        }
-        public event EventHandler LocalFileListUpdated;
         protected virtual void OnPressureUpdated(PressureUpdatedEventArgs e)
         {
             PressureUpdated?.Invoke(this, e);
@@ -184,29 +183,21 @@ namespace BracePLUS.Models
             DownloadProgress?.Invoke(this, e);
         }
         public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
-        protected virtual void OnStatusUpdate(StatusEventArgs e)
-        {
-            StatusUpdated?.Invoke(this, e);
-        }
-        public event EventHandler<StatusEventArgs> StatusUpdated;
         protected virtual void OnUIUpdated(UIUpdatedEventArgs e)
         {
             UIUpdated?.Invoke(this, e);
         }
         public event EventHandler<UIUpdatedEventArgs> UIUpdated;
-        protected virtual void OnLoggingFinished(LoggingFinishedEventArgs e)
-        {
-            LoggingFinished?.Invoke(this, e);
-        }
-        public event EventHandler<LoggingFinishedEventArgs> LoggingFinished;
-        protected virtual void OnSystemConnected(SystemConnectedEventArgs e)
-        {
-            SystemConnected?.Invoke(this, e);
-        }
-        public event EventHandler<SystemConnectedEventArgs> SystemConnected;
+
         #endregion
 
         #region Model Client Logic Methods
+        /// <summary>
+        /// Receives connection request from user-interface.
+        /// Check device bluetooth is on, attempt connection and register service and characteristics.
+        /// If successful, begin main communication menu algorithm.
+        /// </summary>
+        /// <param name="brace">Virtual BLE device containing data about remote physical device.</param>
         public async Task Connect(IDevice brace)
         {
             Brace = brace;
@@ -221,11 +212,12 @@ namespace BracePLUS.Models
 
             try
             {
+                // Attempt connection to device
                 if (brace != null)
                 {
                     await adapter.ConnectToDeviceAsync(brace);
-                    App.isConnected = true;
                     await adapter.StopScanningForDevicesAsync();
+                    App.isConnected = true;
                 }
                 else
                 {
@@ -234,6 +226,7 @@ namespace BracePLUS.Models
                     return;
                 }
 
+                // Register service with virtual device using known service GUID.
                 service = await brace.GetServiceAsync(uartServiceGUID);
 
                 if (service != null)
@@ -249,17 +242,28 @@ namespace BracePLUS.Models
 
                         // Increase speed of data transfer using this characteristic write type
                         uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
+                        uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
 
                         // Begin communication system
-                        COMMS_MENU(uartTx);
-                        await RUN_BLE_START_UPDATES(uartTx);
+                        var t = Task.Run(() => COMMS_MENU(uartTx));
 
-                        // Tell the system the connection is complete.
-                        SystemConnectedEventArgs args = new SystemConnectedEventArgs
+                        // Prepare and send UI updates event
+                        UIUpdatedEventArgs args = new UIUpdatedEventArgs
                         {
-                            Device = Brace
+                            Status = CONNECTED,
+                            Message = $"Connected to: {Brace.Name}",
+                            Device = Brace,
+                            ServiceId = uartServiceUUID,
+                            UartRxId = uartRxCharUUID,
+                            UartTxId = uartTxCharUUID
                         };
-                        OnSystemConnected(args);                        
+                        EVENT(args);
+
+                        // Set app connection status to true
+                        App.isConnected = true;
+
+                        // Begin system initialisation
+                        await InitBrace();
                     }
                     catch (Exception ex)
                     {
@@ -273,8 +277,14 @@ namespace BracePLUS.Models
             catch (DeviceConnectionException e)
             {
                 Debug.WriteLine("Connection failed with exception: " + e.Message);
-                InterfaceUpdates.Status = DISCONNECTED;
-                EVENT(InterfaceUpdates, "Failed to connect :(");
+
+                UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                {
+                    Status = DISCONNECTED,
+                    Message = "Failed to connect."
+                };
+                EVENT(args);
+
                 App.isConnected = false;
 
                 Xamarin.Forms.Device.BeginInvokeOnMainThread( async () =>
@@ -288,12 +298,20 @@ namespace BracePLUS.Models
             catch (Exception e)
             {
                 Crashes.TrackError(e);
-                InterfaceUpdates.Status = DISCONNECTED;
-                EVENT(InterfaceUpdates, "Failed to connect: " + e.Message);
+                UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                {
+                    Status = DISCONNECTED,
+                    Message = "Failed to connect."
+                };
+                EVENT(args);
                 App.isConnected = false;
                 return;
             }
         }
+
+        /// <summary>
+        /// Receives request from UI to disconnect with remote device.
+        /// </summary>
         public async Task Disconnect()
         {
             // Stop updates from BLE device
@@ -308,6 +326,12 @@ namespace BracePLUS.Models
 
             App.isConnected = false;
         }
+
+        /// <summary>
+        /// Receives start scan request from UI.
+        /// Adapter begins to scan for nearby devices. Any discovered devices generates a DeviceDiscovered event (see Model Instanciation region).
+        /// If Brace+ not found after a timeout, stop scanning.
+        /// </summary>
         public async Task StartScan()
         {
             // Check if device BLE is turned on.
@@ -320,8 +344,15 @@ namespace BracePLUS.Models
             // If already scanning, don't request second scan (will confuse BLE adapter)
             if (adapter.IsScanning) return;
 
-            InterfaceUpdates.Status = SCAN_START;
-            EVENT(InterfaceUpdates, "Starting scan...");
+            // Send UI update event for starting a scan.
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = SCAN_START,
+                Message = "Starting scan..."
+            };
+            EVENT(args);
+
+            // Start scan for devices.
             await adapter.StartScanningForDevicesAsync();
 
             // If no devices found after timeout, stop scan.
@@ -332,12 +363,27 @@ namespace BracePLUS.Models
                 await StopScan();
             }
         }
+
+        /// <summary>
+        /// Receives stop scan request from UI.
+        /// </summary>
         public async Task StopScan()
         {
-            InterfaceUpdates.Status = SCAN_FINISH;
-            EVENT(InterfaceUpdates, "Stopping scan.");
+            // Send UI update event for stopping scan.
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = SCAN_FINISH,
+                Message = "Stopping scan."
+            };
+            EVENT(args);
+
             await adapter.StopScanningForDevicesAsync();
         }
+
+        /// <summary>
+        /// Receives stream request from UI.
+        /// Check UART characteristics are properly registered, then send request stream command out to remote device.
+        /// </summary>
         public async Task Stream()
         {
             // Stream data wirelessly
@@ -350,71 +396,136 @@ namespace BracePLUS.Models
             // Flush out data
             DATA_IN.Clear();
 
-            InterfaceUpdates.Status = SYS_STREAM_START;
-            EVENT(InterfaceUpdates, "Starting data stream...");
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = SYS_STREAM_START,
+                Message = "Starting data stream..."
+            };
+            EVENT(args);
+
             // Request stream from menu
             await RUN_BLE_WRITE(uartRx, "S");
         }
+
+        /// <summary>
+        /// Send initialisation command to remote device.
+        /// Requires a brief delay due to internal config which happens on remote device.
+        /// System isn't ready to receive commands immediately after connection.
+        /// </summary>
+        /// <returns></returns>
         public async Task InitBrace()
         {
             // Brief delay
             await Task.Delay(2500);
-            // Send init command
-            InterfaceUpdates.Status = SYS_INIT;
-            EVENT(InterfaceUpdates, "Initalising device...");
+
+            // Send init event and BLE command
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = SYS_INIT,
+                Message = "Initalising device..."
+            };
+            EVENT(args);
+
             await RUN_BLE_WRITE(uartRx, "I");
         }
+
+        /// <summary>
+        /// Receives stop stream request from UI.
+        /// Send stop command to remote device and write all received data to file.
+        /// </summary>
         public async Task StopStream()
         {
             // Stop stream from menu (any character apart from "S")
             await RUN_BLE_WRITE(uartRx, ".");
 
-            InterfaceUpdates.Status = SYS_STREAM_FINISH;
-            EVENT(InterfaceUpdates, "Stream finished.");
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = SYS_STREAM_FINISH,
+                Message = "Stream finished."
+            };
+            EVENT(args);
 
             byte[] b = new byte[] { 0x0A, 0x0B, 0x0C };
             WRITE_FILE(DATA_IN, name: handler.GetFileName(DateTime.Now), header: b, footer: b);
             STATUS = SYS_STREAM_FINISH;
         }
-        public async Task Save(string filename)
+
+        /// <summary>
+        /// Begin logging to file on the remote device.
+        /// Show popup to for confirmation of logging command being sent.
+        /// </summary>
+        /// <param name="filename">Name of the file to be written to on the remote device.</param>
+        public async Task StartLogging(string filename)
         {
-            // Set the filename to be written by brace
-            downloadFilename = filename;
-            CrossToastPopUp.Current.ShowToastMessage("Logging to file: " + filename + ".dat...");
+            string msg = $"Logging to file: {filename}.dat...";
 
             // Request long-term logging function from brace
-            InterfaceUpdates.Status = LOGGING_START;
-            EVENT(InterfaceUpdates);
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = LOGGING_START,
+                Message = msg
+            };
+            EVENT(args);
             await RUN_BLE_WRITE(uartRx, "D");
+
+            // Set the filename to be written by brace
+            downloadFilename = filename;
+            CrossToastPopUp.Current.ShowToastMessage(msg);
         }
+
+        /// <summary>
+        /// Retrieve list of files on remote device.
+        /// </summary>
         public async Task GetMobileFiles()
         {
-            CrossToastPopUp.Current.ShowToastMessage("Syncing mobile files");
-
             // Request list of files from brace
-            InterfaceUpdates.Status = SYNC_START;
-            EVENT(InterfaceUpdates, "Beginning file sync");
-            await RUN_BLE_WRITE(uartRx, "F");
-        }
-        public async Task DownloadFile(string _filename)
-        {
-            Debug.WriteLine("filename: " + _filename);
-            CrossToastPopUp.Current.ShowToastMessage("Downloading file: " + _filename);
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = SYNC_START,
+                Message = "Beginning file sync"
+            };
+            EVENT(args);
 
-            if (_filename.Length > 8)
-               downloadFilename = _filename.Remove(8);
+            await RUN_BLE_WRITE(uartRx, "F");
+
+            // Show popup
+            CrossToastPopUp.Current.ShowToastMessage("Syncing mobile files");
+        }
+
+        /// <summary>
+        /// Request file download from remote device.
+        /// Format filename to be maximum of 8 characters long, then send download request.
+        /// Filename will be send to remote device in HANDLE_DOWNLOAD() function.
+        /// </summary>
+        /// <param name="filename">Name of the file to download.</param>
+        public async Task DownloadFile(string filename)
+        { 
+            // Show popup for user interaction
+            Debug.WriteLine("filename: " + filename);
+
+            // Check filename is no more than 8 chars long
+            if (filename.Length > 8)
+               downloadFilename = filename.Remove(8);
             else
-                downloadFilename = _filename;
+                downloadFilename = filename;
             
+            // Send UI update event and BLE command.
             downloadProgress = 0;
-            InterfaceUpdates.Status = DOWNLOAD_START;
-            EVENT(InterfaceUpdates, "Downloading file: " + _filename);
+
+            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            {
+                Status = DOWNLOAD_START,
+                Message = $"Downloading file: {downloadFilename}"
+            };
+            EVENT(args);
+
             await RUN_BLE_WRITE(uartRx, "G");
         }
+
         #endregion
 
         #region Backend Functions
-        private void COMMS_MENU(ICharacteristic c)
+        private async Task COMMS_MENU(ICharacteristic c)
         {
             c.ValueUpdated += async (o, args) =>
             {
@@ -455,7 +566,9 @@ namespace BracePLUS.Models
                         break;
                 }
             };
+            await RUN_BLE_START_UPDATES(c);
         }
+
         private void HANDLE_INIT(byte[] args)
         {
             var input = Encoding.ASCII.GetString(args);
@@ -463,46 +576,46 @@ namespace BracePLUS.Models
 
             if (input == "^")
             {
-                try
+                UIUpdatedEventArgs e = new UIUpdatedEventArgs
                 {
-                    InterfaceUpdates.Status = CONNECTED;
-                    InterfaceUpdates.Device = Brace;
-                    EVENT(InterfaceUpdates, msg);
-                }
-                catch (Exception ex)
-                {
-                    Crashes.TrackError(ex);
-                    Debug.WriteLine("Unable to perform UI update: " + ex.Message);
-                }
+                    Status = IDLE,
+                    Message = msg,
+                    Device = Brace
+                };
+                EVENT(e);
             }
         }
+
         private async Task HANDLE_LOGGING(byte[] args)
         {
             var input = Encoding.ASCII.GetString(args);
+
             // If filename requested, send over
             if (input == "E")
             {
                 await RUN_BLE_WRITE(uartRx, downloadFilename);
 
-                InterfaceUpdates.Status = LOGGING_START;
-                EVENT(InterfaceUpdates, "Logging to file: " + downloadFilename + ".dat");
+                UIUpdatedEventArgs e = new UIUpdatedEventArgs
+                {
+                    Status = LOGGING_START,
+                    Message = $"Logging to file: {downloadFilename}.dat"
+                };
+                EVENT(e);
             }
             else
             {
-                // If not filename, decode message and display
-                var msg = handler.Translate(input, STATUS);
+                var msg = handler.Translate(input, LOGGING_FINISH);
 
-                InterfaceUpdates.Status = LOGGING_FINISH;
-                EVENT(InterfaceUpdates, msg);
-
-                await Task.Delay(1000);
-                LoggingFinishedEventArgs e = new LoggingFinishedEventArgs
+                UIUpdatedEventArgs ui = new UIUpdatedEventArgs
                 {
-                    Filename = downloadFilename
+                    Status = LOGGING_FINISH,
+                    Filename = downloadFilename,
+                    Message = msg
                 };
-                OnLoggingFinished(e);
+                EVENT(ui);
             }
         }
+
         private void HANDLE_SYNC(byte[] bytes)
         {
             var file = Encoding.ASCII.GetString(bytes);   
@@ -526,9 +639,9 @@ namespace BracePLUS.Models
                 MobileFileList.Add(file);
             }
         }
+
         private async Task HANDLE_DOWNLOAD(byte[] bytes)
         {
-           //  Debug.WriteLine($"File upload bytes: {BitConverter.ToString(bytes)}");
             var input = Encoding.ASCII.GetString(bytes);
             int len = bytes.Length;
             // Check message (min stream data len = 8)
@@ -540,13 +653,27 @@ namespace BracePLUS.Models
             }
             else if (input == "^")
             {
-                FILE_DOWNLOAD_FINISHED(bytes);
+                var msg = handler.Translate(input, DOWNLOAD_FINISH);
+
+                // Write header for mobile file
+                byte[] b = new byte[] { 0x0D, 0x0E, 0x0F };
+
+                downloadProgress = 0;
+                downloadFilename += ".txt";
+                WRITE_FILE(DATA_IN, name: downloadFilename, header: b, footer: b);
+
+                UIUpdatedEventArgs e = new UIUpdatedEventArgs
+                {
+                    Status = DOWNLOAD_FINISH,
+                    Filename = downloadFilename,
+                    Message = msg
+                };
+                EVENT(e);
                 return;
             }
 
             try
             {
-                // Debug.WriteLine("Download received...");
                 // Add buffer to local array
                 bytes.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
                 packetIndex += len;
@@ -570,11 +697,11 @@ namespace BracePLUS.Models
                 downloadProgress += 1;
                 // Request next packet if header present.
                 await RUN_BLE_WRITE(uartRx, "g");
-                //Debug.WriteLine("Download: Release data");
                 // Send buffer to be written to file and empty all values.
-                buffer = RELEASE_DATA(buffer);
+                var t = Task.Run(() => RELEASE_DATA(buffer));
             }
         }
+
         private async Task HANDLE_STREAM(byte[] stream)
         {
             switch (STATUS)
@@ -606,21 +733,28 @@ namespace BracePLUS.Models
                         // Request next packet if header present.
                         await RUN_BLE_WRITE(uartRx, "S");
                         // Send buffer to be written to file and empty all values.
-                        buffer = RELEASE_DATA(buffer);
+                        var t = Task.Run(() => RELEASE_DATA(buffer));
                     }
+
                     break;
 
                 case SYS_STREAM_FINISH:
                     var input = Encoding.ASCII.GetString(stream);
                     var msg = handler.Translate(input, SYS_STREAM_FINISH);
 
-                    InterfaceUpdates.Status = SYS_STREAM_FINISH;
-                    EVENT(InterfaceUpdates, msg);
+                    UIUpdatedEventArgs ui = new UIUpdatedEventArgs
+                    {
+                        Status = SYS_STREAM_FINISH,
+                        Message = msg
+                    };
+                    EVENT(ui);
+
                     STATUS = IDLE;
                     break;
             }
         }
-        private byte[] RELEASE_DATA(byte[] bytes, bool save = true)
+
+        private void RELEASE_DATA(byte[] bytes, bool save = true)
         {
             // Reset packet index
             packetIndex = 0;
@@ -632,8 +766,10 @@ namespace BracePLUS.Models
                 if (STATUS == SYS_STREAM_START)
                 {
                     double[] z = new double[16];
-
+                    // Perform calibration
                     var calibrated = NeuralNetCalib.CalibratePacket(bytes);
+
+                    // Place calibrated z axis data in array and send with event
                     for (int i = 0; i < 16; i++)
                         z[i] = calibrated[i, Z_AXIS];
 
@@ -652,62 +788,41 @@ namespace BracePLUS.Models
                 Debug.WriteLine($"Failed to write {BitConverter.ToString(bytes)} to app with exception: {ex.Message}");
             }
             // Return empty array of same size
-            return new byte[bytes.Length];
+            buffer =  new byte[bytes.Length];
         }
+
         private void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
         {
             FileManager.WriteFile(data, name, header, footer);
 
-            InterfaceUpdates.Status = FILE_WRITTEN;
-            EVENT(InterfaceUpdates, "File written: " + name);
-            OnLocalFileListUpdated(EventArgs.Empty);
+            UIUpdatedEventArgs e = new UIUpdatedEventArgs
+            {
+                Status = FILE_WRITTEN,
+                Filename = name,
+                Message = $"File written: {name}."
+            };
+            EVENT(e);
 
             DATA_IN.Clear();
         }
-        private void FILE_DOWNLOAD_FINISHED(byte[] bytes)
+
+        public void EVENT(UIUpdatedEventArgs args)
         {
-            // Write header for mobile file
-            var input = Encoding.ASCII.GetString(bytes);
-            byte[] b = new byte[] { 0x0D, 0x0E, 0x0F };
-
-            downloadProgress = 0;
-            downloadFilename += ".txt";
-            WRITE_FILE(DATA_IN, name: downloadFilename, header: b, footer: b);
-
-            FileDownloadedEventArgs args = new FileDownloadedEventArgs
+            try
             {
-                Filename = downloadFilename,
-                Data = DATA_IN
-            };
-            OnDownloadFinished(args);
+                STATUS = args.Status;
+                OnUIUpdated(args);
 
-            var msg = handler.Translate(input, DOWNLOAD_FINISH);
-
-            InterfaceUpdates.Status = DOWNLOAD_FINISH;
-            EVENT(InterfaceUpdates, msg);
-
-            return;
-        }
-        public void EVENT(UserInterfaceUpdates args, string msg = "")
-        {
-            UIUpdatedEventArgs e = new UIUpdatedEventArgs
+                Write(args.Message);
+            }
+            catch (Exception ex)
             {
-                InterfaceUpdates = args
-            };
-
-            STATUS = args.Status;
-            OnUIUpdated(e);
-
-            if (!string.IsNullOrWhiteSpace(msg))
-            {
-                StatusEventArgs a = new StatusEventArgs
-                {
-                    Status = msg
-                };
-                OnStatusUpdate(a);
-                Write(msg);
+                Debug.WriteLine("Unable to perform UI Update.");
+                Debug.WriteLine(ex.Message);
+                Crashes.TrackError(ex);
             }
         }
+
         async Task<bool> RUN_BLE_WRITE(ICharacteristic c, string s)
         {
             var b = Encoding.ASCII.GetBytes(s);
@@ -726,6 +841,7 @@ namespace BracePLUS.Models
             }
             return success;
         }
+
         async Task RUN_BLE_START_UPDATES(ICharacteristic c)
         {
             try
@@ -738,6 +854,7 @@ namespace BracePLUS.Models
                 Debug.WriteLine($"Characteristic {c.Uuid} start updates failed with exception: {ex.Message}");
             }
         }
+
         async Task RUN_BLE_STOP_UPDATES(ICharacteristic c)
         {
             try
@@ -751,8 +868,9 @@ namespace BracePLUS.Models
             }
         }
 
-        public void Write(string text)
+        void Write(string text)
         {
+            Debug.WriteLine(text);
             Messages.Add(text);
         }
         #endregion

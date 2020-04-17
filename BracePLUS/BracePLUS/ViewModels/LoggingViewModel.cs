@@ -109,18 +109,23 @@ namespace BracePLUS.ViewModels
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
             LogCommand = new Command(() => ExecuteLogCommand());
 
-            App.Client.LocalFileListUpdated += (s, e) => 
-            { 
-                RefreshObjects(); 
-            };
-            App.Client.LoggingFinished += async (s, e) => 
-            { 
-                await App.Client.DownloadFile(e.Filename); 
-            };
-            App.Client.DownloadFinished += (s, e) =>
+            App.Client.UIUpdated += async (s, e) =>
             {
-                UpdateObject(e.Filename);
-                RefreshObjects();
+                switch (e.Status)
+                {
+                    case FILE_WRITTEN:
+                        RefreshObjects();
+                        break;
+
+                    case LOGGING_FINISH:
+                        await App.Client.DownloadFile(e.Filename);
+                        break;
+
+                    case DOWNLOAD_FINISH:
+                        UpdateObject(e.Filename);
+                        RefreshObjects();
+                        break;
+                }
             };
 
             RefreshObjects();
@@ -143,7 +148,7 @@ namespace BracePLUS.ViewModels
                     var filename = handler.GetFileName(DateTime.Now, extension: null);
 
                     // Request start saving from client
-                    await App.Client.Save(filename);
+                    await App.Client.StartLogging(filename);
                 }
             }
             else

@@ -96,7 +96,6 @@
     <PackageReference Include="Xamarin.Essentials" Version="1.5.2" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MessageAndroid.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -194,7 +193,7 @@
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties XamarinHotReloadUnhandledDeviceExceptionBracePLUSAndroidHideInfoBar="True" XamarinHotReloadDebuggerTimeoutExceptionBracePLUSAndroidHideInfoBar="True" />
+      <UserProperties XamarinHotReloadDebuggerTimeoutExceptionBracePLUSAndroidHideInfoBar="True" XamarinHotReloadUnhandledDeviceExceptionBracePLUSAndroidHideInfoBar="True" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

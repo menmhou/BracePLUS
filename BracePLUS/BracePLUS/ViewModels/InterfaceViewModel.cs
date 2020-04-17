@@ -127,7 +127,6 @@ namespace BracePLUS.ViewModels
             offsets = new double[16];
 
             App.Client.PressureUpdated += Client_OnPressureUpdated;
-            App.Client.StatusUpdated += Client_OnStatusUpdated;
             App.Client.UIUpdated += Client_OnUIUpdated;
 
             BarChartData = new ObservableCollection<ChartDataModel>();
@@ -171,13 +170,12 @@ namespace BracePLUS.ViewModels
         }
 
         #region Events
-        void Client_OnStatusUpdated(object sender, StatusEventArgs e)
-        {
-            Status = e.Status;
-        }
         void Client_OnUIUpdated(object sender, UIUpdatedEventArgs e)
         {
-            switch (e.InterfaceUpdates.Status)
+            if (!string.IsNullOrEmpty(e.Message))
+                Status = e.Message;
+
+            switch (e.Status)
             {
                 case CONNECTED:
                     ButtonColour = STOP_COLOUR;
@@ -217,7 +215,10 @@ namespace BracePLUS.ViewModels
 
                 // Retrieve values from event args and normalize with offsets
                 for (int i = 0; i < 16; i++)
+                {
                     normals[i] = e.Values[i] - offsets[i];
+                }
+                    
 
                 // Find maximum value from array of values
                 double pressure = 0.0;

@@ -13,6 +13,7 @@ using Microsoft.AppCenter;
 using Microsoft.AppCenter.Analytics;
 using Microsoft.AppCenter.Crashes;
 using BracePLUS.ViewModels;
+using System.Threading.Tasks;
 
 namespace BracePLUS
 {
@@ -64,14 +65,15 @@ namespace BracePLUS
             Debug.WriteLine(c);
         }
 
-        protected override async void OnStart()
+        protected override void OnStart()
         {
             AppCenter.Start("android=4587f74f-2879-4a99-864d-1ca78e951599; +" +
                             "ios=47dceb8a-a40d-4ffc-a718-eb1f04fc53f7;", 
                             typeof(Analytics), typeof(Crashes));
 
             isConnected = false;
-            await Client.StartScan();
+
+            var t = Task.Run(()=> Client.StartScan());
         }
 
         protected override void OnSleep()

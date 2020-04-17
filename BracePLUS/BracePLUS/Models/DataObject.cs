@@ -235,30 +235,25 @@ namespace BracePLUS.Models
                 }
 
                 // Extract list of normals
-                var normals = handler.ExtractNormals(CalibratedData);
+                var normals = handler.ExtractMaximumNormals(CalibratedData);
+                var averages = handler.ExtractAverageNormals(CalibratedData);
 
                 // Add to list of normals for data chart
-                for (int i = 0; i < normals.Count; i++)
-                    NormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                for (int i = 0; i < averages.Count; i++)
+                    NormalData.Add(new ChartDataModel(i.ToString(), averages[i]));
 
                 try
                 {
                     Duration = GetDuration();
-                    AveragePressure = handler.GetAverage(normals);
+                    AveragePressure = handler.GetAverage(averages);
+                    MaxPressure = handler.GetMaximum(normals);
+
+                    Debug.WriteLine($"Av: {AveragePressure}, max: {MaxPressure}");
 
                     if (AveragePressure > BENCHMARK_PRESSURE)
                         UpDownImage = "UpArrow.png";
                     else
-                        UpDownImage = "DownArrow.png";
-
-                    MaxPressure = handler.GetMaximum(normals);
-
-                    // Filenames are given at different times:
-                    // At the end when streaming is finished.
-                    // At the beginning when logging is first requested.
-                    var t_finish = handler.DecodeFilename(Filename);
-                    DateTime t_start = t_finish.AddSeconds(Duration * -1.0);
-                    StartTime = new DateTime(t_start.Year, t_start.Month, t_start.Day, t_start.Hour, t_start.Minute, t_start.Second);
+                        UpDownImage = "DownArrow.png";                    
                 }
                 catch (Exception ex)
                 {
@@ -269,18 +264,17 @@ namespace BracePLUS.Models
                 {
                     if (PreviewNormalData.Count < 1)
                     {
-                        for (int i = 0; i < (normals.Count > 50 ? 50 : normals.Count); i++)
+                        for (int i = 0; i < (averages.Count > 50 ? 50 : averages.Count); i++)
                         {
-                            PreviewNormalData.Add(new ChartDataModel(i.ToString(), normals[i]));
+                            PreviewNormalData.Add(new ChartDataModel(i.ToString(), averages[i]));
                         }
                     }
+                    ChartEnabled = "True";
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine("Unable to add chart preview data: " + ex.Message);
-                }
-
-                ChartEnabled = "True";
+                }   
             }
             else
             {

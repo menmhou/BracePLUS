@@ -13,16 +13,6 @@ namespace BracePLUS.Extensions
     {
         private static readonly Random random = new Random();
 
-        public static string RandomString(int length)
-        {
-            // Taken from :
-            // https://stackoverflow.com/a/1344242/12383548
-
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            return new string(Enumerable.Repeat(chars, length)
-              .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
-
         public string Translate(string str, int status = 0)
         {
             string msg = "";
@@ -30,7 +20,7 @@ namespace BracePLUS.Extensions
             switch (status)
             {
                 case SYS_INIT:
-                    if (str == "^") msg = DEV_NAME + " Connected and Active.";
+                    if (str == "^") msg = "Brace+ Ready.";
                     else if (str == ".") msg = "System Initialisation Failed.";
                     else if (str == "i") msg = "Initalising system.";
                     break;
@@ -123,23 +113,6 @@ namespace BracePLUS.Extensions
             }
            
             return msg;
-        }
-
-        public string[] DecodeSDStatus(byte[] bytes)
-        {
-            string[] cardInfo = new string[4];
-
-            int FSType = bytes[0] * 256 + bytes[1];
-            double cardSize = (bytes[2] * 256 + bytes[3]) * 512E-9;
-            int fileSize = bytes[4] * 256 + bytes[5];
-            int bufSize = bytes[6] * 256 + bytes[7];
-
-            cardInfo[0] = string.Format("FS Type: FAT{0}", FSType);
-            cardInfo[1] = string.Format("Card Size (GB): {0}", cardSize);
-            cardInfo[2] = string.Format("File Size (MB): {0}", fileSize);
-            cardInfo[3] = string.Format("Buffer size (bytes): {0}", bufSize);
-
-            return cardInfo;
         }
 
         public DateTime DecodeFilename(string file, int file_format = FILE_FORMAT_MMDDHHmm)
@@ -319,7 +292,7 @@ namespace BracePLUS.Extensions
             return normals;
         }
 
-        public List<double> ExtractNormals(List<double[,]> calibData)
+        public List<double> ExtractMaximumNormals(List<double[,]> calibData)
         {
             var normals = new List<double>();
 
@@ -341,7 +314,40 @@ namespace BracePLUS.Extensions
             catch (Exception ex)
             {
                 Crashes.TrackError(ex);
-                Debug.WriteLine("Calibrated normals extraction failed: " + ex.Message);
+                Debug.WriteLine("Calibrated maximum normals extraction failed: " + ex.Message);
+            }
+
+            return normals;
+        }
+
+        public List<double> ExtractAverageNormals(List<double[,]> calibData)
+        {
+            var normals = new List<double>();
+
+            try
+            {
+                for (int j = 0; j < calibData.Count; j++)
+                {
+                    double sum = 0;
+                    int n = 0;
+
+                    for (int i = 0; i < 16; i++)
+                    {
+                        var val = calibData[j][i, 2];
+                        if (val != 0)
+                        {
+                            sum += val;
+                            n++;
+                        }
+                    }
+
+                    normals.Add(sum / n);
+                }
+            }
+            catch (Exception ex)
+            {
+                Crashes.TrackError(ex);
+                Debug.WriteLine("Calibrated maximum normals extraction failed: " + ex.Message);
             }
 
             return normals;
@@ -379,7 +385,6 @@ namespace BracePLUS.Extensions
                 Debug.WriteLine(ex);
             }
             
-
             return values;
         }
 
@@ -481,6 +486,16 @@ namespace BracePLUS.Extensions
             }
         }
 
+        public static string RandomString(int length)
+        {
+            // Taken from :
+            // https://stackoverflow.com/a/1344242/12383548
+
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
         public string GetSafeFilename(string filename)
         {
             return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
@@ -500,10 +515,16 @@ namespace BracePLUS.Extensions
         public double GetAverage(double[] values)
         {
             double sum = 0;
-            int n = values.Length;
+            int n = 0;
 
             foreach (var val in values)
-                if (val != 0) sum += val;
+            {
+                if (val != 0)
+                {
+                    sum += val;
+                    n++;
+                }
+            }
 
             return sum / n;
         }
@@ -511,10 +532,16 @@ namespace BracePLUS.Extensions
         public double GetAverage(List<double> values)
         {
             double sum = 0;
-            int n = values.Count;
+            int n = 0;
 
             foreach (var val in values)
-                if (val != 0) sum += val;
+            {
+                if (val != 0)
+                {
+                    sum += val;
+                    n++;
+                }
+            }
 
             return sum / n;
         }
@@ -526,7 +553,6 @@ namespace BracePLUS.Extensions
             foreach (double val in values)
                 if (val > max) max = val;
             
-
             return max;
         }
     }

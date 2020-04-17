@@ -62,9 +62,24 @@ namespace BracePLUS.ViewModels
             GetFilenamesCommand = new Command(async () => await ExecuteGetFilenamesCommand());
 
             // Events
-            App.Client.DownloadFinished += (s, e) => UpdateObject(e.Filename);
-            App.Client.FileSyncFinished += Client_OnFileSyncFinished;
-            App.Client.LocalFileListUpdated += (s, e) => RefreshObjects();
+            App.Client.FileSyncFinished += (s, e) =>
+            {
+                AddMobileFilenames(e.Files);
+                RefreshObjects();
+            };
+            App.Client.UIUpdated += (s, e) =>
+            {
+                switch (e.Status)
+                {
+                    case DOWNLOAD_FINISH:
+                        UpdateObject(e.Filename);
+                        break;
+
+                    case FILE_WRITTEN:
+                        RefreshObjects();
+                        break;
+                }
+            };
 
             MessagingCenter.Subscribe<InspectViewModel, DataObject>(this, "Remove", (sender, arg) =>
             {
@@ -72,14 +87,6 @@ namespace BracePLUS.ViewModels
                 LoadLocalFiles();
             });
         }
-
-        #region Event Handlers
-        void Client_OnFileSyncFinished(object sender, MobileSyncFinishedEventArgs e)
-        {
-            AddMobileFilenames(e.Files);
-            RefreshObjects();
-        }
-        #endregion
 
         #region Command Methods
         private void ExecuteRefreshCommand()

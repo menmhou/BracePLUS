@@ -124,7 +124,7 @@ namespace BracePLUS.ViewModels
                 }
                 else
                 {
-                    await App.Client.StartScan();
+                    var t = Task.Run(() => App.Client.StartScan());
                 }
             }
         }
@@ -133,15 +133,15 @@ namespace BracePLUS.ViewModels
         #region Private Methods
         private async Task UpdateUI(UIUpdatedEventArgs e)
         {
-            switch (e.InterfaceUpdates.Status)
+            switch (e.Status)
             {
                 case CONNECTED:
                     ConnectionColour = CONNECTED_COLOUR;
                     ConnectionText = "Connected";
                     ButtonText = "Disconnect";
                     await FadeImages("BraceRenderGreyscale.jpg", "BraceRenderColour.jpg");
-                    DeviceName = e.InterfaceUpdates.Device.Name;
-                    ConnectionStrength = e.InterfaceUpdates.Device.Rssi.ToString();
+                    DeviceName = e.Device.Name;
+                    ConnectionStrength = e.Device.Rssi.ToString();
                     break;
 
                 case DISCONNECTED:

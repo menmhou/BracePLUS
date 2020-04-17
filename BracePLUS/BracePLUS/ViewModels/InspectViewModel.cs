@@ -320,7 +320,7 @@ namespace BracePLUS.Views
             Packets = (DataObj.RawData.Length - 6) / 128;
 
             // Take calibrated data
-            RawNormals = handler.ExtractNormals(DataObj.CalibratedData);
+            RawNormals = handler.ExtractMaximumNormals(DataObj.CalibratedData);
 
             // Create offset from initial value (0th index is sometimes wrong- needs fixing.)
             var offset = RawNormals[1];

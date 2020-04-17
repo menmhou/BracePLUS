@@ -8,7 +8,7 @@
              Title="Bluetooth Setup">
     <ContentPage.Content>
         <StackLayout BackgroundColor="White"
-                     Margin="10"
+                     Padding="10"
                      Spacing="10">
 
             <Frame BackgroundColor="{Binding ConnectionColour}"
