@@ -18,10 +18,6 @@ namespace BracePLUS.Extensions
         public const int MAGTRIX =      100;	// 6bytes * 16nodes + 4 time bytes
         public const int MAGBOARD =     388;	// 6bytes * 64nodes + 4 time bytes
 
-        public const int BUF_SIZE =     128;     // Constant for DataObject.list data object sizes
-        public const string LOCAL =     "Saved locally";      // Define file location on app
-        public const string BRACE_SD =  "Saved on Brace+";    // Define file location on brace+
-
         public const double MAX_PRESSURE = 1.1;
 
         public const string uartServiceUUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
@@ -68,5 +64,9 @@ namespace BracePLUS.Extensions
         public const int X_AXIS = 0;
         public const int Y_AXIS = 1;
         public const int Z_AXIS = 2;
+
+        public const long LOCAL = 0x000A0B0C;
+        public const long MOBILE = 0x000D0E0F;
+        public const long SIM = 0x000B0D0F;
     }
 }

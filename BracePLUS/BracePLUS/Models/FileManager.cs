@@ -15,45 +15,48 @@ namespace BracePLUS.Models
         {
             // Create file instance
             var filename = Path.Combine(App.FolderPath, name);
-            FileStream file = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.Write);
 
-            // Header may be null so write in try/catch
-            try
+            using (BinaryWriter writer = new BinaryWriter(new FileStream(filename, FileMode.OpenOrCreate, FileAccess.Write)))
             {
-                file.Write(header, 0, header.Length);
-            }
-            catch (NullReferenceException ex)
-            {
-                Debug.WriteLine("Header write failed: " + ex.Message);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Header write failed: " + ex.Message);
-            }
-
-            try
-            {
-                // Write file data in chunks of 128 bytes
-                foreach (var bytes in data)
+                // Header may be null so write in try/catch
+                try
                 {
-                    file.Write(bytes, 0, 128);
-                };
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Data write failed: " + ex.Message);
-            }
+                    writer.Write(header, 0, header.Length);
+                }
+                catch (NullReferenceException ex)
+                {
+                    Debug.WriteLine("Header write failed: " + ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Header write failed: " + ex.Message);
+                }
 
-            // Footer may be null so write in try/catch
-            try
-            {
-                file.Write(footer, 0, footer.Length);
+                try
+                {
+                    // Write file data in chunks of 128 bytes
+                    foreach (var bytes in data)
+                    {
+                        writer.Write(bytes);
+                    };
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Data write failed: " + ex.ToString());
+                }
+
+                // Footer may be null so write in try/catch
+                try
+                {
+                    writer.Write(footer, 0, footer.Length);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Footer write failed: " + ex.Message);
+                }
+                writer.Close();
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Footer write failed: " + ex.Message);
-            }
-            file.Close();
+            
         }
 
         public static void WriteFile(List<byte[,]> data, string name, byte[] header = null, byte[] footer = null)

@@ -103,7 +103,7 @@ namespace BracePLUS
             }
         }
 
-        private void ClearFiles()
+        public static void ClearFiles()
         {
             var files = Directory.EnumerateFiles(FolderPath, "*");
 

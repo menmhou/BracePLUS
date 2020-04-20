@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using BracePLUS.Extensions;
 using BracePLUS.Models;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
@@ -75,10 +76,24 @@ namespace BracePLUS.ViewModels
         #endregion
 
         // View commands
+        public Command SimulateData { get; set; }
+        public Command ClearFiles { get; set; }
+
+        // Private members
+        Random random;
+        MessageHandler handler;
 
         public DebugViewModel()
         {
-            App.Client.UIUpdated += ((s, e) =>
+            random = new Random();
+            handler = new MessageHandler();
+
+            // Commands
+            SimulateData = new Command(() => ExecuteSimulateData());
+            ClearFiles = new Command(() => ExecuteClearFiles());
+
+            // Events
+            App.Client.UIUpdated += (s, e) =>
             {
                 switch (e.Status)
                 {
@@ -116,7 +131,47 @@ namespace BracePLUS.ViewModels
                     default:
                         break;
                 }
-            });
+            };
+        }
+
+        private async void ExecuteClearFiles()
+        {
+            var clear = await Application.Current.MainPage.DisplayAlert("Clear files", "Do you wish to clear all files? This cannot be undone.", "Yes", "No");
+
+            if (clear)
+                App.ClearFiles();
+        }
+ 
+        private void ExecuteSimulateData()
+        {
+            var _f = handler.GetFileName(DateTime.Now, file_format: FILE_FORMAT_MMDDHHmm);
+
+            var filename = _f.Remove(8);
+            filename += "_SIM.txt";
+
+            var sim_data = new List<byte[]>();
+
+            for (int i = 0; i < random.Next(20, 50); i++)
+            {
+                byte[] temp = new byte[100];
+                for (int j = 4; j < 100; j++)
+                {
+                    long t = j + i*100;
+
+                    temp[0] = (byte)((t >> 24) & 0xFF);
+                    temp[1] = (byte)((t >> 16) & 0xFF);
+                    temp[2] = (byte)((t >> 8) & 0xFF);
+                    temp[3] = (byte)(t & 0xFF);
+
+                    temp[j] = (byte)random.Next(0xFF);
+                }
+
+                sim_data.Add(temp);
+            }
+
+            var b = new byte[3] { 0x0B, 0x0D, 0x0F };
+
+            FileManager.WriteFile(sim_data, filename, header: b, footer: b);
         }
 
         private void SetNullValues()

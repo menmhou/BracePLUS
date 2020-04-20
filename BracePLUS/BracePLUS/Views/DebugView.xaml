@@ -7,7 +7,6 @@
         <TableView HasUnevenRows="True"
                    BackgroundColor="#EEEEEE">
             <TableRoot>
-
                 <TableSection Title="Connection">
                     <ViewCell>
                         <StackLayout Spacing="10"
@@ -20,6 +19,28 @@
                             <Label Text="{Binding CharTxID, StringFormat='Tx Characteristic ID: {0}'}" FontSize="Medium"/>
                             <Label Text="{Binding CharRxID, StringFormat='Rx Characteristic ID: {0}'}" FontSize="Medium"/>
 
+                        </StackLayout>
+                    </ViewCell>
+                </TableSection>
+
+                <TableSection Title="Simulation">
+                    <ViewCell>
+                        <StackLayout>
+                            <Button Text="Generate simulated data"
+                                Margin="0, 6"
+                                FontSize="20"
+                                HeightRequest="60"
+                                Command="{Binding SimulateData}"
+                                VerticalOptions="FillAndExpand"
+                                HorizontalOptions="FillAndExpand"/>
+
+                            <Button Text="Clear files"
+                                Margin="0, 6"
+                                FontSize="20"
+                                HeightRequest="60"
+                                Command="{Binding ClearFiles}"
+                                VerticalOptions="FillAndExpand"
+                                HorizontalOptions="FillAndExpand"/>
                         </StackLayout>
                     </ViewCell>
                 </TableSection>

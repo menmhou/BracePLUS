@@ -115,6 +115,29 @@ namespace BracePLUS.Extensions
             return msg;
         }
 
+        public string DecodeLocation(byte[] header)
+        {
+            string location = "";
+            long _header = ((long)header[0] << 16) | ((long)header[1] << 8) | (header[2]);
+
+            switch (_header)
+            {
+                case MOBILE:
+                    location = "Mobile";
+                    break;
+
+                case LOCAL:
+                    location = "Local";
+                    break;
+
+                case SIM:
+                    location = "Simulation";
+                    break;
+            }
+
+            return location;
+        }
+
         public DateTime DecodeFilename(string file, int file_format = FILE_FORMAT_MMDDHHmm)
         {
             DateTime filetime = DateTime.Now;

@@ -303,6 +303,7 @@ namespace BracePLUS.Views
         private async Task ExecuteCloudUploadCommand()
         {
             Debug.WriteLine($"Uploading {DataObj.Filename}");
+            CrossToastPopUp.Current.ShowToastMessage($"Uploading {DataObj.Filename}");
             await BlobStorageService.SaveBlockBlob("patient0", DataObj.RawData, DataObj.Filename);
         }
         private async void ExecuteShowDataCommand()
@@ -313,6 +314,7 @@ namespace BracePLUS.Views
             });
         }
         #endregion
+
         public void InitDataObject()
         {
             // If data not downloaded, do not proceed with initialisation

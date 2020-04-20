@@ -146,6 +146,8 @@ namespace BracePLUS.ViewModels
                
                 // Download data ready to be read by data object
                 var data = File.ReadAllBytes(filename);
+                var header = new byte[3];
+                Array.Copy(data, header, 3);
 
                 DataObject dataObject = new DataObject
                 {
@@ -153,7 +155,7 @@ namespace BracePLUS.ViewModels
                     Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm),
                     Filename = fi.Name,
                     Directory = filename,
-                    Location = (data[0] == 0x0A) ? "Local" : "Mobile",
+                    Location = handler.DecodeLocation(header),
                     RawData = data,
                     IsDownloaded = (data.Length > 6) ? true : false
                 };
