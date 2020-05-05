@@ -111,7 +111,10 @@ namespace BracePLUS.ViewModels
 
         public void RefreshObjects()
         {
-            Debug.WriteLine("HISTORY: Refreshing objects...");
+            var msg = "HISTORY: Refreshing objects...";
+            Debug.WriteLine(msg);
+            MessagingCenter.Send(App.Client, "StatusMessage", msg);
+
             LoadLocalFiles();
 
             int downloaded = 0;
@@ -134,7 +137,10 @@ namespace BracePLUS.ViewModels
 
         private void LoadLocalFiles()
         {
-            Debug.WriteLine("HISTORY: Loading local files...");
+            var msg = "HISTORY: Loading local files...";
+            Debug.WriteLine(msg);
+            MessagingCenter.Send(App.Client, "StatusMessage", msg);
+
             ObservableCollection<DataObject> tempData = new ObservableCollection<DataObject>();
 
             var files = Directory.EnumerateFiles(App.FolderPath, "*.txt");
@@ -164,13 +170,15 @@ namespace BracePLUS.ViewModels
             }
             DataObjects = tempData;
 
-           
             ReorderDataObjects();
         }
 
         private void ReorderDataObjects()
         {
-            Debug.WriteLine("HISTORY: Reordering files...");
+            var msg = "HISTORY: Reordering files...";
+            Debug.WriteLine(msg);
+            MessagingCenter.Send(App.Client, "StatusMessage", msg);
+
             var data = DataObjects;
 
             try
@@ -203,7 +211,6 @@ namespace BracePLUS.ViewModels
                         }
                         catch (Exception ex)
                         {
-                            Crashes.TrackError(ex);
                             Debug.WriteLine("HISTORY: Object reordering failed: " + ex.Message);
                         }
                     }
@@ -212,7 +219,6 @@ namespace BracePLUS.ViewModels
             }
             catch (Exception ex)
             {
-                Crashes.TrackError(ex);
                 Debug.WriteLine("HISTORY: Object reordering failed: " + ex.Message);
             }
         }
@@ -234,16 +240,16 @@ namespace BracePLUS.ViewModels
                     file.Write(header, 0, header.Length);
                     file.Close();
 
-                    Debug.WriteLine($"Internally written file: {_file}");
+                    var msg = $"Internally written file: {_file}";
+                    Debug.WriteLine(msg);
+                    MessagingCenter.Send(App.Client, "StatusMessage", msg);
                 }
                 catch (IOException ex)
                 {
-                    Crashes.TrackError(ex);
                     Debug.WriteLine(ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    Crashes.TrackError(ex);
                     Debug.WriteLine("File writing failed with exception: " + ex.Message);
                 }
             }

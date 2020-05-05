@@ -245,6 +245,9 @@ namespace BracePLUS.Views
             string file, title;
             Debug.WriteLine("Sharing file: ");
             DataObj.DebugObject();
+
+            MessagingCenter.Send(App.Client, "StatusMessage", $"Sharing file: {DataObj.Filename}");
+            
             if (TareData)
             {
                 try
@@ -343,7 +346,6 @@ namespace BracePLUS.Views
             }
             catch (Exception ex)
             {
-                Crashes.TrackError(ex);
                 Debug.WriteLine("Number of normals: " + RawNormals.Count);
                 Debug.WriteLine("Max normals initialisation failed with exception: " + ex.Message);
             }

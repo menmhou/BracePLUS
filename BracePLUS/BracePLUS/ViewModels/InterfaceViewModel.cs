@@ -273,8 +273,13 @@ namespace BracePLUS.ViewModels
                 await Application.Current.MainPage.DisplayAlert("Not connected.", "Please connect to a device to stream data.", "OK");
             }
         }
-        private void ExecuteTareCommand()
+        private async void ExecuteTareCommand()
         {
+            if (!App.isConnected)
+            {
+                await Application.Current.MainPage.DisplayAlert("Not streaming.", "Please connect to a device and stream data to tare values.", "OK");
+            }
+
             if (App.Client.STATUS == SYS_STREAM_START)
             {
                 try
@@ -298,7 +303,7 @@ namespace BracePLUS.ViewModels
             tapCounter++;
             if (tapCounter == 7)
             {
-                await Nav.PushAsync(new DebugView(App.Client.Messages));
+                await Nav.PushAsync(App.DebugView);
                 tapCounter = 0;
             }
             else if (tapCounter < 6 && tapCounter > 2)

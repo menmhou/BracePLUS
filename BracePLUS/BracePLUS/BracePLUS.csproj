@@ -16,20 +16,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="15.0.4" />
-    <PackageReference Include="Microsoft.AppCenter" Version="3.1.0" />
-    <PackageReference Include="Microsoft.AppCenter.Analytics" Version="3.1.0" />
-    <PackageReference Include="Microsoft.AppCenter.Crashes" Version="3.1.0" />
+    <PackageReference Include="CsvHelper" Version="15.0.5" />
+    <PackageReference Include="Microsoft.AppCenter" Version="3.2.1" />
+    <PackageReference Include="Microsoft.AppCenter.Analytics" Version="3.2.1" />
+    <PackageReference Include="Microsoft.AppCenter.Crashes" Version="3.2.1" />
     <PackageReference Include="MvvmCross" Version="6.4.2" />
     <PackageReference Include="MvvmCross.Forms" Version="6.4.2" />
     <PackageReference Include="Plugin.BLE" Version="2.1.1" />
     <PackageReference Include="Plugin.Toast" Version="2.1.2" />
-    <PackageReference Include="Syncfusion.Xamarin.Core" Version="18.1.0.44" />
-    <PackageReference Include="Syncfusion.Xamarin.SfChart" Version="18.1.0.44" />
+    <PackageReference Include="Syncfusion.Xamarin.Core" Version="18.1.0.46" />
+    <PackageReference Include="Syncfusion.Xamarin.SfChart" Version="18.1.0.46" />
     <PackageReference Include="System.Runtime" Version="4.3.1" />
     <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
-    <PackageReference Include="Xamarin.Forms" Version="4.5.0.617" />  
-    <PackageReference Include="Xamarin.Essentials" Version="1.5.2" />
+    <PackageReference Include="Xamarin.Forms" Version="4.6.0.726" />  
+    <PackageReference Include="Xamarin.Essentials" Version="1.5.3.1" />
   </ItemGroup>
 
   <ItemGroup>

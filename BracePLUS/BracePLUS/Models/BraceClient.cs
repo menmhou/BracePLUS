@@ -10,7 +10,6 @@ using Plugin.BLE.Abstractions.Exceptions;
 using Xamarin.Forms;
 using BracePLUS.Events;
 using static BracePLUS.Extensions.Constants;
-using Microsoft.AppCenter.Crashes;
 using Plugin.BLE.Abstractions;
 using Plugin.Toast;
 using System.Threading;
@@ -62,7 +61,6 @@ namespace BracePLUS.Models
 
         string downloadFilename = "";
         #endregion
-
         #region Model Instanciation
         /// <summary>
         /// Model Instanciation.
@@ -124,7 +122,7 @@ namespace BracePLUS.Models
 
                 if (DATA_IN.Count > 0)
                 {
-                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
+                    Device.BeginInvokeOnMainThread(async () =>
                     {
                         bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                             "Store data locally?", "Yes", "No");
@@ -145,13 +143,15 @@ namespace BracePLUS.Models
                     Status = DISCONNECTED,
                     Message = "Disconnected"
                 };
+
                 EVENT(args);
+
                 App.isConnected = false;
                 RELEASE_DATA(buffer, false);
 
                 if (DATA_IN.Count > 0)
                 {
-                    Xamarin.Forms.Device.BeginInvokeOnMainThread(async () =>
+                    Device.BeginInvokeOnMainThread(async () =>
                     {
                         bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
                             "Store data locally?", "Yes", "No");
@@ -203,28 +203,47 @@ namespace BracePLUS.Models
             Brace = brace;
 
             // Check system bluetooth is turned on.
-            if (!ble.IsOn)
+            if (!ble.IsOn && brace != null)
             {
                 // Show alert
                 await Application.Current.MainPage.DisplayAlert("Bluetooth off.", "Please turn on bluetooth to connect to devices.", "OK");
+                App.isConnected = false;
                 return;
             }
 
             try
             {
                 // Attempt connection to device
-                if (brace != null)
+
+                var param = new ConnectParameters(autoConnect: true);
+
+                try
                 {
-                    await adapter.ConnectToDeviceAsync(brace);
-                    await adapter.StopScanningForDevicesAsync();
-                    App.isConnected = true;
+                    await adapter.ConnectToDeviceAsync(brace, connectParameters: param);
                 }
-                else
+                catch (DeviceConnectionException e)
                 {
+                    Debug.WriteLine("Connection failed with exception: " + e.Message);
+                    UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                    {
+                        Status = DISCONNECTED,
+                        Message = "Failed to connect."
+                    };
+                    EVENT(args);
+
                     App.isConnected = false;
-                    Write("Brace+ not found");
+
+                    Device.BeginInvokeOnMainThread(async () =>
+                    {
+                        await Application.Current.MainPage.DisplayAlert("Connection failure.",
+                            $"Failed to connect to Brace+", "OK");
+                    });
+
                     return;
                 }
+              
+                // If connection successful, stop scanning for devices.
+                await adapter.StopScanningForDevicesAsync();
 
                 // Register service with virtual device using known service GUID.
                 service = await brace.GetServiceAsync(uartServiceGUID);
@@ -242,7 +261,7 @@ namespace BracePLUS.Models
 
                         // Increase speed of data transfer using this characteristic write type
                         uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
-                        uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
+                        // uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
 
                         // Begin communication system
                         var t = Task.Run(() => COMMS_MENU(uartTx));
@@ -267,37 +286,14 @@ namespace BracePLUS.Models
                     }
                     catch (Exception ex)
                     {
-                        Crashes.TrackError(ex);
                         Debug.WriteLine("Unable to register characteristics: " + ex.Message);
                         return;
                     }
 
                 }
             }
-            catch (DeviceConnectionException e)
-            {
-                Debug.WriteLine("Connection failed with exception: " + e.Message);
-
-                UIUpdatedEventArgs args = new UIUpdatedEventArgs
-                {
-                    Status = DISCONNECTED,
-                    Message = "Failed to connect."
-                };
-                EVENT(args);
-
-                App.isConnected = false;
-
-                Xamarin.Forms.Device.BeginInvokeOnMainThread( async () =>
-                {
-                    await Application.Current.MainPage.DisplayAlert("Connection failure.",
-                        $"Failed to connect to Brace+", "OK");
-                });
-
-                return;
-            }
             catch (Exception e)
             {
-                Crashes.TrackError(e);
                 UIUpdatedEventArgs args = new UIUpdatedEventArgs
                 {
                     Status = DISCONNECTED,
@@ -720,7 +716,6 @@ namespace BracePLUS.Models
                     }
                     catch (Exception e)
                     {
-                        Crashes.TrackError(e);
                         Debug.WriteLine("*************** STREAM EXCEPTION ***************");
                         Debug.WriteLine($"Received {stream.Length} bytes: {BitConverter.ToString(stream)}");
                         Debug.WriteLine("Copy stream to buffer failed with exception: " + e.Message);
@@ -812,14 +807,12 @@ namespace BracePLUS.Models
             {
                 STATUS = args.Status;
                 OnUIUpdated(args);
-
                 Write(args.Message);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("Unable to perform UI Update.");
                 Debug.WriteLine(ex.Message);
-                Crashes.TrackError(ex);
             }
         }
 
@@ -836,7 +829,6 @@ namespace BracePLUS.Models
             catch (Exception ex)
             {
                 success = false;
-                Crashes.TrackError(ex);
                 Debug.WriteLine($"Characteristic {c.Uuid} write failed with exception: {ex.Message}");
             }
             return success;
@@ -850,7 +842,6 @@ namespace BracePLUS.Models
             }
             catch (Exception ex)
             {
-                Crashes.TrackError(ex);
                 Debug.WriteLine($"Characteristic {c.Uuid} start updates failed with exception: {ex.Message}");
             }
         }
@@ -863,7 +854,6 @@ namespace BracePLUS.Models
             }
             catch (Exception ex)
             {
-                Crashes.TrackError(ex);
                 Debug.WriteLine($"Characteristic {c.Uuid} stop updates failed with exception: {ex.Message}");
             }
         }
@@ -871,7 +861,7 @@ namespace BracePLUS.Models
         void Write(string text)
         {
             Debug.WriteLine(text);
-            Messages.Add(text);
+            MessagingCenter.Send(this, "StatusMessage", text);
         }
         #endregion
     }

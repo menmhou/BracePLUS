@@ -3,16 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
-using BracePLUS.Services;
-using BracePLUS.Views;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
-using Plugin.Toast;
-using Syncfusion.SfChart.XForms;
 using Xamarin.Forms;
 
 using static BracePLUS.Extensions.Constants;
@@ -188,7 +182,10 @@ namespace BracePLUS.ViewModels
         #region Private Methods
         private void LoadLocalFiles()
         {
-            Debug.WriteLine("LOGGING: Loading local files...");
+            var msg = "LOGGING: Loading local files...";
+            Debug.WriteLine(msg);
+            MessagingCenter.Send(App.Client, "StatusMessage", msg);
+
             // Create groups for data recordings from different times
             var todayObjects = new DataObjectGroup()
             {
@@ -350,7 +347,6 @@ namespace BracePLUS.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine("LOGGING: Unable to update graph. " + ex.Message);
-                Crashes.TrackError(ex);
                 return;
             }
 

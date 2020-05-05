@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BracePLUS.Models;
 using BracePLUS.ViewModels;
 using Xamarin.Forms;
 
@@ -8,34 +9,28 @@ namespace BracePLUS.Views
 {
     public partial class DebugView : ContentPage
     {
-        public DebugView(List<string> messages)
+        public DebugView()
         {
             InitializeComponent();
             BindingContext = App.DebugViewModel;
 
-            foreach (var msg in messages)
-                Write(msg);
-        }
-
-        private void Write(string text)
-        {
-            Xamarin.Forms.Device.BeginInvokeOnMainThread(() =>
+            MessagingCenter.Subscribe<BraceClient, string>(this, "StatusMessage", (sender, arg) =>
             {
-                MessagingCenter.Send(this, "StatusMessage", text);
-                Debug.WriteLine(text);
-
-                MessageStack.Children.Insert(0, new Label
+                Device.BeginInvokeOnMainThread(() =>
                 {
-                    Text = text,
-                    TextColor = Color.Blue,
-                    Margin = 3,
-                    FontSize = 15
+                    MessageStack.Children.Insert(0, new Label
+                    {
+                        Text = arg,
+                        TextColor = Color.Blue,
+                        Margin = 3,
+                        FontSize = 15
+                    });
+
+                    if (MessageStack.Children.Count > 200)
+                    {
+                        MessageStack.Children.RemoveAt(200);
+                    }
                 });
-
-                if (MessageStack.Children.Count > 200)
-                {
-                    MessageStack.Children.RemoveAt(200);
-                }
             });
         }
     }
