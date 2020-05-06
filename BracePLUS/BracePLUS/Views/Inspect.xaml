@@ -9,9 +9,9 @@
              x:Class="BracePLUS.Views.Inspect">
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem IconImageSource="ShareIconWhite.png"
+        <ToolbarItem Text="Share"
                      Command="{Binding ShareCommand}"/>
-        <ToolbarItem IconImageSource="BinIconWhite.png"
+        <ToolbarItem Text="Delete"
                      Command="{Binding DeleteCommand}"/>
         <ToolbarItem Text="Upload"
                      Command="{Binding CloudUploadCommand}"/>
@@ -53,7 +53,8 @@
                            TextColor="DimGray"/>
                     
                     <Switch IsToggled="false" 
-                            Toggled="Switch_Toggled"/>
+                            Toggled="Switch_Toggled"
+                            Grid.Column="1"/>
                 </Grid>
                 
 

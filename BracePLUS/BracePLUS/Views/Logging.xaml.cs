@@ -27,7 +27,7 @@ namespace BracePLUS.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            viewModel.RefreshObjects();
+            //viewModel.RefreshObjects();
         }
 
         async void listView_ItemSelected(object sender, SelectedItemChangedEventArgs e)

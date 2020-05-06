@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
 using Microsoft.AppCenter.Crashes;
@@ -122,7 +123,7 @@ namespace BracePLUS.ViewModels
                         break;
 
                     case SCAN_FINISH:
-                        if (!App.isConnected)
+                        if (!App.IsConnected)
                         {
                             SetNullValues();
                         }
@@ -137,6 +138,9 @@ namespace BracePLUS.ViewModels
         private async void ExecuteClearFiles()
         {
             var clear = await Application.Current.MainPage.DisplayAlert("Clear files", "Do you wish to clear all files? This cannot be undone.", "Yes", "No");
+
+            var msg = "Clearing app files.";
+            MessagingCenter.Send(App.Client, "StatusMessage", msg);
 
             if (clear)
                 App.ClearFiles();
@@ -153,15 +157,15 @@ namespace BracePLUS.ViewModels
 
             for (int i = 0; i < random.Next(20, 50); i++)
             {
-                byte[] temp = new byte[100];
-                for (int j = 4; j < 100; j++)
+                byte[] temp = new byte[128];
+                for (int j = 4; j < 128; j++)
                 {
-                    long t = j + i*100;
+                    long t = j + i*128;
 
-                    temp[0] = (byte)((t >> 24) & 0xFF);
-                    temp[1] = (byte)((t >> 16) & 0xFF);
-                    temp[2] = (byte)((t >> 8) & 0xFF);
-                    temp[3] = (byte)(t & 0xFF);
+                    temp[3] = (byte)((t >> 24) & 0xFF);
+                    temp[2] = (byte)((t >> 16) & 0xFF);
+                    temp[1] = (byte)((t >> 8) & 0xFF);
+                    temp[0] = (byte)(t & 0xFF);
 
                     temp[j] = (byte)random.Next(0xFF);
                 }
@@ -171,7 +175,7 @@ namespace BracePLUS.ViewModels
 
             var b = new byte[3] { 0x0B, 0x0D, 0x0F };
 
-            FileManager.WriteFile(sim_data, filename, header: b, footer: b);
+            App.Client.WRITE_FILE(sim_data, filename, header: b, footer: b);
         }
 
         private void SetNullValues()

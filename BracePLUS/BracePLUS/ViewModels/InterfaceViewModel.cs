@@ -126,9 +126,6 @@ namespace BracePLUS.ViewModels
             handler = new MessageHandler();
             offsets = new double[16];
 
-            App.Client.PressureUpdated += Client_OnPressureUpdated;
-            App.Client.UIUpdated += Client_OnUIUpdated;
-
             BarChartData = new ObservableCollection<ChartDataModel>();
             normals = new double[16];
 
@@ -138,12 +135,17 @@ namespace BracePLUS.ViewModels
             ShowDebugCommand = new Command(() => ExecuteShowDebugCommand());
 
             StreamText = "Stream";
+            Status = "Unconnected";
+
             BarChartMaximum = 1.2;
             BarChartMinimum = 0.8;
 
             Maximum = 0.0;
 
             ButtonColour = START_COLOUR;
+
+            App.Client.PressureUpdated += Client_OnPressureUpdated;
+            App.Client.UIUpdated += Client_OnUIUpdated;
 
             #region Simulation
 #if SIMULATION
@@ -257,7 +259,7 @@ namespace BracePLUS.ViewModels
             BarChartMaximum = 1.2;
             BarChartMinimum = 0.8;
 
-            if (App.isConnected)
+            if (App.IsConnected)
             {
                 if(App.Client.STATUS == SYS_STREAM_START)
                 {
@@ -275,7 +277,7 @@ namespace BracePLUS.ViewModels
         }
         private async void ExecuteTareCommand()
         {
-            if (!App.isConnected)
+            if (!App.IsConnected)
             {
                 await Application.Current.MainPage.DisplayAlert("Not streaming.", "Please connect to a device and stream data to tare values.", "OK");
             }

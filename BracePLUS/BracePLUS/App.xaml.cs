@@ -32,7 +32,7 @@ namespace BracePLUS
         public static double GlobalAverage { get; set; }
 
         // Global variables
-        public static bool isConnected;
+        public static bool IsConnected = false;
 
         // Global ViewModel so data bindings aren't reset everytime a new AsyncNavPush page is created.
         public static BluetoothSetupViewModel BLEViewModel { get; set; }
@@ -67,15 +67,10 @@ namespace BracePLUS
             Debug.WriteLine(c);
         }
 
-        protected override void OnStart()
+        protected override async void OnStart()
         {
-            AppCenter.Start("android=4587f74f-2879-4a99-864d-1ca78e951599; +" +
-                            "ios=47dceb8a-a40d-4ffc-a718-eb1f04fc53f7;", 
-                            typeof(Analytics), typeof(Crashes));
-
-            isConnected = false;
-
-            var t = Task.Run(()=> Client.StartScan());
+            await Task.Delay(1000);
+            await Client.StartScan();
         }
 
         protected override void OnSleep()

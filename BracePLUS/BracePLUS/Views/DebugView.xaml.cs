@@ -16,14 +16,16 @@ namespace BracePLUS.Views
 
             MessagingCenter.Subscribe<BraceClient, string>(this, "StatusMessage", (sender, arg) =>
             {
+                var msg = DateTime.Now.ToString() + " " + arg;
+
                 Device.BeginInvokeOnMainThread(() =>
                 {
                     MessageStack.Children.Insert(0, new Label
                     {
-                        Text = arg,
+                        Text = msg,
                         TextColor = Color.Blue,
                         Margin = 3,
-                        FontSize = 15
+                        FontSize = 12
                     });
 
                     if (MessageStack.Children.Count > 200)

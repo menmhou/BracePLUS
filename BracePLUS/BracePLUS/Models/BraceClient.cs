@@ -117,7 +117,7 @@ namespace BracePLUS.Models
                     Message = $"Disconnected from {e.Device.Name}"
                 };
                 EVENT(args);
-                App.isConnected = false;
+                App.IsConnected = false;
                 RELEASE_DATA(buffer, false);
 
                 if (DATA_IN.Count > 0)
@@ -146,7 +146,7 @@ namespace BracePLUS.Models
 
                 EVENT(args);
 
-                App.isConnected = false;
+                App.IsConnected = false;
                 RELEASE_DATA(buffer, false);
 
                 if (DATA_IN.Count > 0)
@@ -207,7 +207,7 @@ namespace BracePLUS.Models
             {
                 // Show alert
                 await Application.Current.MainPage.DisplayAlert("Bluetooth off.", "Please turn on bluetooth to connect to devices.", "OK");
-                App.isConnected = false;
+                App.IsConnected = false;
                 return;
             }
 
@@ -231,7 +231,7 @@ namespace BracePLUS.Models
                     };
                     EVENT(args);
 
-                    App.isConnected = false;
+                    App.IsConnected = false;
 
                     Device.BeginInvokeOnMainThread(async () =>
                     {
@@ -279,7 +279,7 @@ namespace BracePLUS.Models
                         EVENT(args);
 
                         // Set app connection status to true
-                        App.isConnected = true;
+                        App.IsConnected = true;
 
                         // Begin system initialisation
                         await InitBrace();
@@ -297,10 +297,10 @@ namespace BracePLUS.Models
                 UIUpdatedEventArgs args = new UIUpdatedEventArgs
                 {
                     Status = DISCONNECTED,
-                    Message = "Failed to connect."
+                    Message = $"Failed to connect: {e.Message}"
                 };
                 EVENT(args);
-                App.isConnected = false;
+                App.IsConnected = false;
                 return;
             }
         }
@@ -320,7 +320,7 @@ namespace BracePLUS.Models
                 await adapter.DisconnectDeviceAsync(device);
             }
 
-            App.isConnected = false;
+            App.IsConnected = false;
         }
 
         /// <summary>
@@ -328,17 +328,17 @@ namespace BracePLUS.Models
         /// Adapter begins to scan for nearby devices. Any discovered devices generates a DeviceDiscovered event (see Model Instanciation region).
         /// If Brace+ not found after a timeout, stop scanning.
         /// </summary>
-        public async Task StartScan()
+        public async Task<bool> StartScan()
         {
             // Check if device BLE is turned on.
             if (!ble.IsOn)
             {
                 await Application.Current.MainPage.DisplayAlert("Bluetooth turned off", "Please turn on bluetooth to scan for devices.", "OK");
-                return;
+                return false;
             }
 
             // If already scanning, don't request second scan (will confuse BLE adapter)
-            if (adapter.IsScanning) return;
+            if (adapter.IsScanning) return true;
 
             // Send UI update event for starting a scan.
             UIUpdatedEventArgs args = new UIUpdatedEventArgs
@@ -349,15 +349,25 @@ namespace BracePLUS.Models
             EVENT(args);
 
             // Start scan for devices.
-            await adapter.StartScanningForDevicesAsync();
+            try
+            {
+                await adapter.StartScanningForDevicesAsync();
+            }
+            catch (Exception ex)
+            {
+                Write("Start scan failed: " + ex.Message);
+                return false;
+            }
+            
 
             // If no devices found after timeout, stop scan.
             await Task.Delay(BLE_SCAN_TIMEOUT_MS);
-            if (!App.isConnected)
+            if (!App.IsConnected)
             {
                 await Application.Current.MainPage.DisplayAlert(DEV_NAME + " not found.", "Unable to find " + DEV_NAME, "OK");
                 await StopScan();
             }
+            return true;
         }
 
         /// <summary>
@@ -786,7 +796,7 @@ namespace BracePLUS.Models
             buffer =  new byte[bytes.Length];
         }
 
-        private void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
+        public void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
         {
             FileManager.WriteFile(data, name, header, footer);
 

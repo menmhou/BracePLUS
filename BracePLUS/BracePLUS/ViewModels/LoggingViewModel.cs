@@ -134,7 +134,7 @@ namespace BracePLUS.ViewModels
         }
         private async void ExecuteLogCommand()
         {
-            if (App.isConnected)
+            if (App.IsConnected)
             {
                 if (App.Client.STATUS != LOGGING_START)
                 {
@@ -155,6 +155,10 @@ namespace BracePLUS.ViewModels
 
         public void RefreshObjects()
         {
+            var msg = "LOGGING: Refreshing files...";
+            Debug.WriteLine(msg);
+            MessagingCenter.Send(App.Client, "StatusMessage", msg);
+
             LoadLocalFiles();
 
             int downloaded = 0;
@@ -184,7 +188,6 @@ namespace BracePLUS.ViewModels
         {
             var msg = "LOGGING: Loading local files...";
             Debug.WriteLine(msg);
-            MessagingCenter.Send(App.Client, "StatusMessage", msg);
 
             // Create groups for data recordings from different times
             var todayObjects = new DataObjectGroup()

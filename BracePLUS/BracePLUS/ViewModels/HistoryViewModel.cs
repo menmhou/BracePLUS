@@ -73,6 +73,7 @@ namespace BracePLUS.ViewModels
                 {
                     case DOWNLOAD_FINISH:
                         UpdateObject(e.Filename);
+                        RefreshObjects();
                         break;
 
                     case FILE_WRITTEN:
@@ -86,6 +87,8 @@ namespace BracePLUS.ViewModels
                 DataObjects.Remove(arg);
                 LoadLocalFiles();
             });
+
+            RefreshObjects();
         }
 
         #region Command Methods
@@ -97,7 +100,7 @@ namespace BracePLUS.ViewModels
         }
         private async Task ExecuteGetFilenamesCommand()
         {
-            if (App.isConnected)
+            if (App.IsConnected)
             {
                 await App.Client.GetMobileFiles();
             }
@@ -111,7 +114,7 @@ namespace BracePLUS.ViewModels
 
         public void RefreshObjects()
         {
-            var msg = "HISTORY: Refreshing objects...";
+            var msg = "HISTORY: Refreshing files...";
             Debug.WriteLine(msg);
             MessagingCenter.Send(App.Client, "StatusMessage", msg);
 
@@ -137,10 +140,6 @@ namespace BracePLUS.ViewModels
 
         private void LoadLocalFiles()
         {
-            var msg = "HISTORY: Loading local files...";
-            Debug.WriteLine(msg);
-            MessagingCenter.Send(App.Client, "StatusMessage", msg);
-
             ObservableCollection<DataObject> tempData = new ObservableCollection<DataObject>();
 
             var files = Directory.EnumerateFiles(App.FolderPath, "*.txt");
@@ -175,10 +174,6 @@ namespace BracePLUS.ViewModels
 
         private void ReorderDataObjects()
         {
-            var msg = "HISTORY: Reordering files...";
-            Debug.WriteLine(msg);
-            MessagingCenter.Send(App.Client, "StatusMessage", msg);
-
             var data = DataObjects;
 
             try

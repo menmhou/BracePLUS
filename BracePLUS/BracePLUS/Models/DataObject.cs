@@ -147,7 +147,7 @@ namespace BracePLUS.Models
                 }
                 else if (Location == "Mobile")
                 {
-                    if (App.isConnected)
+                    if (App.IsConnected)
                     {
                         ProgressBarEnabled = true;
                         await App.Client.DownloadFile(Filename);
@@ -209,6 +209,8 @@ namespace BracePLUS.Models
             {
                 RawData = File.ReadAllBytes(path);
                 if (Location == "Local") IsDownloaded = true;
+
+                ChartEnabled = "True";
             }
             catch (Exception ex)
             {

@@ -110,7 +110,7 @@ namespace BracePLUS.ViewModels
         #region Commands
         private async Task ExecuteButtonCommand()
         {
-            if (App.isConnected)
+            if (App.IsConnected)
             {
                 // Disconnect from device
                 await App.Client.Disconnect();
@@ -157,7 +157,7 @@ namespace BracePLUS.ViewModels
                     break;
 
                 case SCAN_FINISH:
-                    if (!App.isConnected)
+                    if (!App.IsConnected)
                     {
                         SetNullValues();
                     }

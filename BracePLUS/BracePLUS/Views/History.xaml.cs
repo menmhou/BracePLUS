@@ -9,6 +9,7 @@ using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.ViewModels;
 using Syncfusion.SfChart.XForms;
+using Xamarin.Essentials;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -25,12 +26,15 @@ namespace BracePLUS.Views
             InitializeComponent();
             handler = new MessageHandler();
             BindingContext = viewModel = new HistoryViewModel();
+
+            // Known Xamarin.iOS bug - stack layout not taking up whole page.
+            listView.HeightRequest = DeviceDisplay.MainDisplayInfo.Height;
         }
 
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            viewModel.RefreshObjects();
+            // viewModel.RefreshObjects();
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)

@@ -5,7 +5,7 @@
              x:Class="BracePLUS.Views.History">
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem IconImageSource="SyncIconWhite.png"
+        <ToolbarItem Text="Sync"
                      Command="{Binding GetFilenamesCommand}"/>
     </ContentPage.ToolbarItems>
 
