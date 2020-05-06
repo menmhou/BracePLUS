@@ -139,13 +139,16 @@ namespace BracePLUS.ViewModels
 
             BarChartMaximum = 1.2;
             BarChartMinimum = 0.8;
-
+            
             Maximum = 0.0;
 
             ButtonColour = START_COLOUR;
 
             App.Client.PressureUpdated += Client_OnPressureUpdated;
             App.Client.UIUpdated += Client_OnUIUpdated;
+
+            // Add max value to pressure
+            BarChartData.Add(new ChartDataModel("Pressure", 0.924));
 
             #region Simulation
 #if SIMULATION
@@ -228,7 +231,7 @@ namespace BracePLUS.ViewModels
                     if (val > pressure) pressure = val;
 
                 // Add max value to pressure
-                BarChartData.Add(new ChartDataModel("Pressure", pressure));
+                BarChartData.Add(new ChartDataModel("Pressure", 0.786));
 
                 // Update average & maximum display labels
                 Average = handler.GetAverage(e.Values);

@@ -47,6 +47,7 @@ namespace BracePLUS.Models
         // UI Assistant
         private readonly MessageHandler handler;
         public bool isStreaming;
+        public bool isScanning;
         public bool isSaving;
 
         // Data Handling
