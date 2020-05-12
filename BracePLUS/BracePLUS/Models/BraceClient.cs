@@ -41,8 +41,8 @@ namespace BracePLUS.Models
         public IDevice Brace { get; set; }
         // List of array of bytes to hold each data packet as it is received.
         public static List<byte[]> DATA_IN { get; set; }
-        // List of messages used to update the Debug view and generate the event log.
-        public List<string> Messages { get; set; }
+        // List of filenames to hold names received after syncing.
+        public List<string> MobileFileList { get; set; }
 
         // UI Assistant
         private readonly MessageHandler handler;
@@ -57,12 +57,10 @@ namespace BracePLUS.Models
 
         public int STATUS = IDLE;
 
-        public List<string> messages;
-        public List<string> MobileFileList;
-
         string downloadFilename = "";
         #endregion
 
+        #region Events
         public delegate void FileSyncCompleteDelegate(object sender, MobileSyncFinishedEventArgs args);
         public event FileSyncCompleteDelegate FileSyncComplete;
 
@@ -74,6 +72,7 @@ namespace BracePLUS.Models
 
         public delegate void DownloadProgressionDelegate(object sender, DownloadProgressEventArgs args);
         public event DownloadProgressionDelegate DownloadProgression;
+        #endregion
 
         #region Model Instanciation
         /// <summary>
@@ -87,7 +86,6 @@ namespace BracePLUS.Models
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
 
-            Messages = new List<string>();
             MobileFileList = new List<string>();
             DATA_IN = new List<byte[]>();
 
@@ -789,6 +787,7 @@ namespace BracePLUS.Models
             {
                 Debug.WriteLine($"Failed to write {BitConverter.ToString(bytes)} to app with exception: {ex.Message}");
             }
+
             // Return empty array of same size
             buffer =  new byte[bytes.Length];
         }

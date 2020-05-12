@@ -8,11 +8,13 @@
              x:Class="BracePLUS.Views.Logging">
     <ContentPage.Content>
         <StackLayout BackgroundColor="Navy">
+            
             <chart:SfChart HeightRequest="270"
                            VerticalOptions="FillAndExpand"
                            HorizontalOptions="FillAndExpand"
                            BackgroundColor="Transparent"
                            Margin="30">
+                
                 <chart:SfChart.ChartAnnotations>
                     <chart:LineAnnotation X1="-1" Y1="{Binding AnnotationLineHeight}" 
                                           X2="7" Y2="{Binding AnnotationLineHeight}" 
@@ -59,6 +61,8 @@
                     </chart:NumericalAxis>
                 </chart:SfChart.SecondaryAxis>
             </chart:SfChart>
+            
+            
             <Grid VerticalOptions = "FillAndExpand">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="3*" />

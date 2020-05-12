@@ -15,7 +15,8 @@
 
             <Button Text="{Binding StreamText}"
                     Command="{Binding StreamCommand}"
-                    VerticalOptions="Start"/>
+                    VerticalOptions="Start"
+                    BackgroundColor="{Binding ButtonColour}"/>
 
             <Grid Padding="4">
                 <Grid.RowDefinitions>

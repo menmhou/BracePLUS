@@ -40,7 +40,7 @@ namespace BracePLUS.Models
         }
         public string DataString
         { 
-            get => GetPreviewDataString();
+            get => handler.GetPreviewDataString(RawData);
             set { }
         }
         public string Name 
@@ -228,30 +228,19 @@ namespace BracePLUS.Models
                 FilenameCSV = Filename.Remove(8).Insert(8, "_CALIB.csv");
                 DirectoryCSV = Path.Combine(App.FolderPath, FilenameCSV);
 
-                try
-                {
+                // Check if calibration already retrieved
+                if (CalibratedData.Count < 1) 
                     CalibratedData = RetrieveCalibration(RawData, FilenameCSV);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Unable to retrieve calibration. " + ex.Message);
-                }
 
                 // Extract list of normals
-                var normals = handler.ExtractMaximumNormals(CalibratedData);
-                var averages = handler.ExtractAverageNormals(CalibratedData);
-
-                // Add to list of normals for data chart
-                for (int i = 0; i < averages.Count; i++)
-                    NormalData.Add(new ChartDataModel(i.ToString(), averages[i]));
+                var normals = AnalysisAssitant.ExtractMaximumNormals(CalibratedData);
+                var averages = AnalysisAssitant.ExtractPacketNormalDistaceAverages(CalibratedData);
 
                 try
                 {
-                    Duration = GetDuration();
-                    AveragePressure = handler.GetAverage(averages);
-                    MaxPressure = handler.GetMaximum(normals);
-
-                    Debug.WriteLine($"Av: {AveragePressure}, max: {MaxPressure}");
+                    Duration = AnalysisAssitant.GetPacketDuration(RawData);
+                    AveragePressure = AnalysisAssitant.GetAverage(averages);
+                    MaxPressure = AnalysisAssitant.GetMaximum(normals);
 
                     if (AveragePressure > BENCHMARK_PRESSURE)
                         UpDownImage = "UpArrow.png";
@@ -261,150 +250,68 @@ namespace BracePLUS.Models
                 catch (Exception ex)
                 {
                     Debug.WriteLine("RawData analysis failed with exception: " + ex.Message);
-                }               
-
-                try
-                {
-                    if (PreviewNormalData.Count < 1)
-                    {
-                        for (int i = 0; i < (averages.Count > 50 ? 50 : averages.Count); i++)
-                        {
-                            PreviewNormalData.Add(new ChartDataModel(i.ToString(), averages[i]));
-                        }
-                    }
-                    ChartEnabled = "True";
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Unable to add chart preview data: " + ex.Message);
-                }   
+
+                InitPreviewChartData(averages);
+                InitNormalDataChart(averages);
             }
             else
             {
-                //Debug.WriteLine("Unable to analyze. Data less than 6 bytes.");
                 ChartEnabled = "False";
+            }
+        }
+
+        private void InitNormalDataChart(List<double> averages)
+        {
+            // Add to list of normals for data chart
+            for (int i = 0; i < averages.Count; i++)
+                NormalData.Add(new ChartDataModel(i.ToString(), averages[i]));
+        }
+
+            private void InitPreviewChartData(List<double> averages)
+        {
+            try
+            {
+                if (PreviewNormalData.Count < 1)
+                {
+                    for (int i = 0; i < (averages.Count > 50 ? 50 : averages.Count); i++)
+                        PreviewNormalData.Add(new ChartDataModel(i.ToString(), averages[i]));
+                    
+                }
+                ChartEnabled = "True";
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Unable to add chart preview data: " + ex.Message);
             }
         }
 
         private List<double[,]> RetrieveCalibration(byte[] bytes, string name)
         {
-            // Check if data already retrieved
             try
             {
-                if (CalibratedData.Count > 1)
+                // Check if calibration file exists
+                if (File.Exists(Path.Combine(App.FolderPath, name)))
                 {
-                    return CalibratedData;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Unable to count calibration data. " + ex.Message);
-            }
-           
-            // Check if calibration file exists
-            if (File.Exists(Path.Combine(App.FolderPath, name)))
-            {
-                // Read data
-                return FileManager.ReadCSV(Path.Combine(App.FolderPath, name));
-            }
-            else
-            {
-                // Perform calibration
-                var calibData = Calibrate(bytes);
-                // Export data to CSV file
-                FileManager.WriteCSV(calibData, name);
-                // Return data
-                return calibData;
-            }
-        }
-
-        public List<double[,]> Calibrate(byte[] bytes)
-        {
-            var _calibData = new List<double[,]>();
-
-            try
-            {
-                // Calculate number of packets within data object
-                int packets = (bytes.Length - 6) / 128;
-
-                // For each packet of 128 bytes within raw data,
-                // calibrate each packet and send result to calibration data list.
-                for (int i = 0; i < packets; i++)
-                {
-                    // Prepare data
-                    byte[] buf = new byte[128];
-                    for (int j = 0; j < 128; j++)
-                        buf[j] = bytes[3 + j + i * 128];
-
-                    // Perform calibration on one 128byte buffer
-                    var calibLine = NeuralNetCalib.CalibratePacket(buf);
-
-                    _calibData.Add(calibLine);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Calibration failed: " + ex.Message);
-                return null;
-            }
-
-            return _calibData;
-        }
-
-        public double GetDuration()
-        {
-            if (IsDownloaded)
-            {
-                // Extract first and last time packets from file.
-                // File format: [ 0x0A | 0x0B | 0x0C | T0 | T1 | T2 | T3 | X1MSB.....| Zn | 0x0A | 0x0B | 0x0C ]
-                byte t3 = RawData[6];
-                byte t2 = RawData[5];
-                byte t1 = RawData[4];
-                byte t0 = RawData[3];
-                var t_start = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
-                //Debug.WriteLine("T start: " + t_start);
-
-                int length = RawData.Length;
-
-                // Packet length is 128, then accomodate for file footer.
-                // Last time packet is bytes 0:3 of last packet
-                t3 = RawData[length - 128];
-                t2 = RawData[length - 129];
-                t1 = RawData[length - 130];
-                t0 = RawData[length - 131];
-
-                var t_finish = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
-               // Debug.WriteLine("T finish: " + t_start);
-
-                return (t_finish - t_start) / 1000.0;
-            }
-            else
-            {
-                Debug.WriteLine("Unable to extract duration: data not downloaded.");
-                return 0.0;
-            }
-        }
-
-        private string GetPreviewDataString()
-        {
-            if (IsDownloaded)
-            {
-                if (RawData.Length < 100)
-                {
-                    return BitConverter.ToString(RawData);
+                    // Read data
+                    return FileManager.ReadCSV(Path.Combine(App.FolderPath, name));
                 }
                 else
                 {
-                    // Create 100 char string of data and append "..." 
-                    return BitConverter.ToString(RawData).Substring(0, 100).Insert(100, "...");
+                    // Perform calibration
+                    var calibData = AnalysisAssitant.Calibrate(bytes);
+                    // Export data to CSV file
+                    FileManager.WriteCSV(calibData, name);
+                    // Return data
+                    return calibData;
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Debug.WriteLine("Unable to get data string: data not downloaded.");
-                return "RawData string null";
+                Debug.WriteLine("Calibration retrieval failed: " + ex.Message);
+                return null;
             }
-        }
+        }       
     }
 
     public class DataObjectGroup : List<DataObject>

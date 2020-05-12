@@ -205,7 +205,7 @@ namespace BracePLUS.Views
         public Command ShowGraphCommand { get; set; }
         #endregion
 
-        private readonly MessageHandler handler;
+        private MessageHandler handler;
 
         public InspectViewModel()
         {
@@ -216,12 +216,15 @@ namespace BracePLUS.Views
             ShowGraphCommand = new Command(() => ExecuteShowGraphCommand());
             CloudUploadCommand = new Command(async () => await ExecuteCloudUploadCommand());
 
-            handler = new MessageHandler();
             DataObj = new DataObject();
+            handler = new MessageHandler();
+
             ChartData = new ObservableCollection<ChartDataModel>();
             AllNodesData = new ObservableCollection<ChartDataModel>();
+
             RawNormals = new List<double>();
             OffsetNormals = new List<double>();
+
             TareData = false;
             NodeOffsets = new double[16];
 
@@ -242,41 +245,20 @@ namespace BracePLUS.Views
         #region Command Methods
         private async Task ExecuteShareCommand()
         {
-            string file, title;
             Debug.WriteLine("Sharing file: ");
             DataObj.DebugObject();
 
             MessagingCenter.Send(App.Client, "StatusMessage", $"Sharing file: {DataObj.Filename}");
-            
-            if (TareData)
-            {
-                try
-                {
-                    file = Path.Combine(App.FolderPath, DataObj.DirectoryCSV);
-                    title = DataObj.FilenameCSV;
-                    CrossToastPopUp.Current.ShowToastMessage("Unable to share CSV file");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
 
-                    // If CSV unavailable, default to raw data
-                    file = Path.Combine(App.FolderPath, DataObj.Directory);
-                    title = DataObj.Filename;
-                }
-            }
-            else
-            {
-                file = Path.Combine(App.FolderPath, DataObj.Directory);
-                title = DataObj.Filename;
-            }
+            var details = handler.RetrieveShareFileDetails(DataObj, TareData);
             
             await Share.RequestAsync(new ShareFileRequest
             {
-                Title = title,
-                File = new ShareFile(file)
+                Title = details[0],
+                File = new ShareFile(details[1])
             });
         }
+
         private async Task ExecuteDeleteCommand()
         {
             if (await Application.Current.MainPage.DisplayAlert("Delete File?", "Delete file from local storage?", "Yes", "No"))
@@ -325,7 +307,7 @@ namespace BracePLUS.Views
             Packets = (DataObj.RawData.Length - 6) / 128;
 
             // Take calibrated data
-            RawNormals = handler.ExtractMaximumNormals(DataObj.CalibratedData);
+            RawNormals = AnalysisAssitant.ExtractMaximumNormals(DataObj.CalibratedData);
 
             // Create offset from initial value (0th index is sometimes wrong- needs fixing.)
             var offset = RawNormals[1];
@@ -352,7 +334,7 @@ namespace BracePLUS.Views
 
             try
             {
-                var nodes = handler.ExtractNodes(DataObj.CalibratedData, 0);
+                var nodes = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, 0);
 
                 for (int i = 0; i < 16; i++)
                 {
@@ -410,7 +392,7 @@ namespace BracePLUS.Views
             }
 
             AllNodesData.Clear();
-            var nodes = handler.ExtractNodes(DataObj.CalibratedData, (int)SliderValue - 1);
+            var nodes = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, (int)SliderValue - 1);
             for (int i = 0; i < 16; i++)
             {
                 if (TareData)
@@ -428,7 +410,7 @@ namespace BracePLUS.Views
             try
             {
                 AllNodesData.Clear();
-                var nodes = handler.ExtractNodes(DataObj.CalibratedData, val-1);
+                var nodes = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, val-1);
                 for (int i = 0; i < 16; i++)
                 {
                     if (TareData)

@@ -6,6 +6,8 @@ using System.IO;
 using System.Diagnostics;
 using System.Globalization;
 using Microsoft.AppCenter.Crashes;
+using BracePLUS.Models;
+using Plugin.Toast;
 
 namespace BracePLUS.Extensions
 {
@@ -282,164 +284,6 @@ namespace BracePLUS.Extensions
             return filename;
         }
 
-        public List<double> ExtractNormals(byte[] data, int maxIndex = 100, int startIndex = 8)
-        {
-            List<double> normals = new List<double>();
-
-            long Zmsb, Zlsb;
-            double z, z_max;
-
-            z_max = 0.0;
-
-            // Extract normals
-            for (int packet = 0; packet < maxIndex; packet++)
-            {
-                for (int _byte = startIndex; _byte < 100; _byte += 6)
-                {
-                    // Find current Z value
-                    Zmsb = data[packet * 128 + _byte] << 8;
-                    Zlsb = data[packet * 128 + _byte + 1];
-                    z = (Zmsb + Zlsb) * 0.02636;
-
-                    bool skip = (Zmsb == 0xFF00) && (Zlsb == 0xFF);
-
-                    // If greater than previous Z, previous Z becomes new Z
-                    if ((z > z_max) && !skip) z_max = z;
-                }
-
-                // Add maximum Z to chart
-                normals.Add(z_max);
-                z_max = 0.0;
-            }
-
-            return normals;
-        }
-
-        public List<double> ExtractMaximumNormals(List<double[,]> calibData)
-        {
-            var normals = new List<double>();
-
-            try
-            {
-                for (int j = 0; j < calibData.Count; j++)
-                {                
-                    double z, z_max = 0;
-
-                    for (int i = 0; i < 16; i++)
-                    {
-                        z = calibData[j][i, 2];
-                        if (z > z_max) z_max = z;
-                    }
-
-                    normals.Add(z_max);
-                }
-            }
-            catch (Exception ex)
-            {
-                Crashes.TrackError(ex);
-                Debug.WriteLine("Calibrated maximum normals extraction failed: " + ex.Message);
-            }
-
-            return normals;
-        }
-
-        public List<double> ExtractAverageNormals(List<double[,]> calibData)
-        {
-            var normals = new List<double>();
-
-            try
-            {
-                for (int j = 0; j < calibData.Count; j++)
-                {
-                    double sum = 0;
-                    int n = 0;
-
-                    for (int i = 0; i < 16; i++)
-                    {
-                        var val = calibData[j][i, 2];
-                        if (val != 0)
-                        {
-                            sum += val;
-                            n++;
-                        }
-                    }
-
-                    normals.Add(sum / n);
-                }
-            }
-            catch (Exception ex)
-            {
-                Crashes.TrackError(ex);
-                Debug.WriteLine("Calibrated maximum normals extraction failed: " + ex.Message);
-            }
-
-            return normals;
-        }
-
-        public double[] ExtractNodes(byte[] data, int index)
-        {
-            double[] values = new double[16];
-
-            // First normal data byte is 11th
-            for (int i = 0; i < 16; i++)
-            {
-                var Zmsb = data[11 + (index * 128) + (i * 6)] << 8;
-                var Zlsb = data[12 + (index * 128) + (i * 6)];
-                values[i] = (Zmsb + Zlsb) * 0.02636;
-                //Debug.WriteLine(values[i]);
-            }
-
-            return values;
-        }
-
-        public double[] ExtractNodes(List<double[,]> data, int index)
-        {
-            double[] values = new double[16];
-
-            try
-            {
-                for (int i = 0; i < 16; i++)
-                    values[i] = data[index][i, 2];
-               
-            }
-            catch (Exception ex)
-            {
-                Crashes.TrackError(ex);
-                Debug.WriteLine(ex);
-            }
-            
-            return values;
-        }
-
-        public List<DateTime> ExtractTimes(DateTime start, byte[] data, int packets)
-        {
-            List<DateTime> times = new List<DateTime>
-            {
-                start
-            };
-
-            DateTime t_old = start;
-
-            for (int i = 1; i < packets-1; i++)
-            {
-                // Get time between adjacent packets
-                byte t3 = data[i * 128 + 6];
-                byte t2 = data[i * 128 + 5];
-                byte t1 = data[i * 128 + 4];
-                byte t0 = data[i * 128 + 3];
-                int millis = t0 + (t1 << 8) + (t2 << 16) + (t3 << 24);
-
-                // Create new datetime with added difference in milliseconds
-                DateTime t_new = t_old.AddMilliseconds(millis);
-                times.Add(t_new);
-                
-                // old time reference for nex
-                t_old = t_new;
-            }
-
-            return times;
-        }
-
         public string FormattedFileSize(long len)
         {
             string filesize;
@@ -457,6 +301,27 @@ namespace BracePLUS.Extensions
             }
 
             return filesize;
+        }
+
+        public string GetPreviewDataString(byte[] rawRata)
+        {
+            if (rawRata.Length > 6)
+            {
+                if (rawRata.Length < 100)
+                {
+                    return BitConverter.ToString(rawRata);
+                }
+                else
+                {
+                    // Create 100 char string of data and append "..." 
+                    return BitConverter.ToString(rawRata).Substring(0, 100).Insert(100, "...");
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Unable to get data string: data not downloaded.");
+                return "RawData string null";
+            }
         }
 
         public string FormattedPercentageDifference(double value, double global)
@@ -509,6 +374,36 @@ namespace BracePLUS.Extensions
             }
         }
 
+        public string[] RetrieveShareFileDetails(DataObject dataObj, bool tare)
+        {
+            string[] details = new string[2];
+
+            if (tare)
+            {
+                try
+                {
+                    details[0] = Path.Combine(App.FolderPath, dataObj.DirectoryCSV);
+                    details[1] = dataObj.FilenameCSV;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    CrossToastPopUp.Current.ShowToastMessage("Unable to share CSV file");
+
+                    // If CSV unavailable, default to raw data
+                    details[0] = Path.Combine(App.FolderPath, dataObj.Directory);
+                    details[1] = dataObj.Filename;
+                }
+            }
+            else
+            {
+                details[0] = Path.Combine(App.FolderPath, dataObj.Directory);
+                details[1] = dataObj.Filename;
+            }
+
+            return details;
+        }
+
         public static string RandomString(int length)
         {
             // Taken from :
@@ -522,61 +417,6 @@ namespace BracePLUS.Extensions
         public string GetSafeFilename(string filename)
         {
             return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));
-        }
-
-        public int GetAverage(int[] values)
-        {
-            int sum = 0;
-            int n = values.Length;
-
-            foreach (var val in values)
-                if (val != 0) sum += val;
-
-            return sum / n;
-        }
-
-        public double GetAverage(double[] values)
-        {
-            double sum = 0;
-            int n = 0;
-
-            foreach (var val in values)
-            {
-                if (val != 0)
-                {
-                    sum += val;
-                    n++;
-                }
-            }
-
-            return sum / n;
-        }
-
-        public double GetAverage(List<double> values)
-        {
-            double sum = 0;
-            int n = 0;
-
-            foreach (var val in values)
-            {
-                if (val != 0)
-                {
-                    sum += val;
-                    n++;
-                }
-            }
-
-            return sum / n;
-        }
-
-        public double GetMaximum(List<double> values)
-        {
-            double max = 0.0;
-
-            foreach (double val in values)
-                if (val > max) max = val;
-            
-            return max;
         }
     }
 }

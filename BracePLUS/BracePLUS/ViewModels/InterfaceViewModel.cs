@@ -104,6 +104,7 @@ namespace BracePLUS.ViewModels
         }
         #endregion
         public ObservableCollection<ChartDataModel> BarChartData { get; set; }
+        public INavigation Nav { get; set; }
 
         // Commands
         public Command StreamCommand { get; set; }
@@ -113,17 +114,12 @@ namespace BracePLUS.ViewModels
 
 
         // Private Properties
-        private readonly MessageHandler handler;
         private double[] offsets;
-        private int tapCounter = 0;
-
-        public INavigation Nav { get; set; }
-
         private double[] normals;
+        private int tapCounter = 0;
 
         public InterfaceViewModel()
         {
-            handler = new MessageHandler();
             offsets = new double[16];
 
             BarChartData = new ObservableCollection<ChartDataModel>();
@@ -142,13 +138,10 @@ namespace BracePLUS.ViewModels
             
             Maximum = 0.0;
 
-            ButtonColour = START_COLOUR;
+            ButtonColour = Color.LightGray;
 
             App.Client.PressureUpdated += Client_OnPressureUpdated;
             App.Client.SystemEvent += Client_OnSystemEvent;
-
-            // Add max value to pressure
-            BarChartData.Add(new ChartDataModel("Pressure", 0.924));
 
             #region Simulation
 #if SIMULATION
@@ -183,11 +176,11 @@ namespace BracePLUS.ViewModels
             switch (e.Status)
             {
                 case CONNECTED:
-                    ButtonColour = STOP_COLOUR;
+                    ButtonColour = START_COLOUR;
                     break;
 
                 case DISCONNECTED:
-                    ButtonColour = START_COLOUR;
+                    ButtonColour = Color.LightGray;
                     try
                     {
                         BarChartData.Clear();
@@ -205,10 +198,12 @@ namespace BracePLUS.ViewModels
 
                 case SYS_STREAM_START:
                     StreamText = "Stop stream";
+                    ButtonColour = STOP_COLOUR;
                     break;
 
                 case SYS_STREAM_FINISH:
                     StreamText = "Stream";
+                    ButtonColour = START_COLOUR;
                     break;
             }
         }
@@ -233,7 +228,7 @@ namespace BracePLUS.ViewModels
                 BarChartData.Add(new ChartDataModel("Pressure", 0.786));
 
                 // Update average & maximum display labels
-                Average = handler.GetAverage(e.Values);
+                Average = AnalysisAssitant.GetAverage(e.Values);
                 if (pressure > Maximum) Maximum = pressure;
 
                 #region Simulation

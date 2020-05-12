@@ -11,20 +11,13 @@ namespace BracePLUS.Views
     {
         HistoryViewModel viewModel;
 
-        readonly MessageHandler handler;
         public History()
         {
             InitializeComponent();
-            handler = new MessageHandler();
             BindingContext = viewModel = new HistoryViewModel();
 
             // Known Xamarin.iOS bug - stack layout not taking up whole page.
             //listView.HeightRequest = DeviceDisplay.MainDisplayInfo.Height;
-        }
-
-        protected override void OnAppearing()
-        {
-            base.OnAppearing();
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)

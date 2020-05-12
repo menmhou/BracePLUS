@@ -194,6 +194,10 @@ namespace BracePLUS.ViewModels
             {
                 Heading = "Today"
             };
+            var yesterdayObjects = new DataObjectGroup()
+            {
+                Heading = "Yesterday"
+            };
             var weekObjects = new DataObjectGroup()
             {
                 Heading = "This Week"
@@ -241,6 +245,11 @@ namespace BracePLUS.ViewModels
                         todayObjects.Add(dataObject);
                     }
                     else if (dataObject.Date.Month == DateTime.Now.Month &&
+                        dataObject.Date == DateTime.Now.AddDays(-1))
+                    {
+                        yesterdayObjects.Add(dataObject);
+                    }
+                    else if (dataObject.Date.Month == DateTime.Now.Month &&
                         dataObject.Date > DateTime.Now.AddDays(-7))
                     {
                         weekObjects.Add(dataObject);
@@ -259,6 +268,7 @@ namespace BracePLUS.ViewModels
             var group = new ObservableCollection<DataObjectGroup>()
             {
                 todayObjects,
+                yesterdayObjects,
                 weekObjects,
                 monthObjects,
                 olderObjects
@@ -353,28 +363,40 @@ namespace BracePLUS.ViewModels
                 return;
             }
 
-            double[] temps = new double[7];
-            double[] normals = new double[7];
+            double[] temps = new double[5];
+            double[] normals = new double[5];
 
             foreach (var group in dataObjectGroup)
             {
-                var dataObjects = group.DataObjects;
-
                 // Get normals from last 7 days to display (reference to today's date then 1 less each time)
-                for (int i = 0; i < 7; i++)
-                    temps[i] = GetNormalAverageFromDate(DateTime.Today.AddDays(i * (-1)), dataObjects);
-
-                for (int i = 0; i < 7; i++)
-                    if (temps[i] > 0) normals[i] = temps[i];
+                // Get normals from today
+                if (group.Heading == "Today")
+                {
+                    temps[0] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                }
+                else if (group.Heading == "Yesterday")
+                {
+                    temps[1] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                }
+                else if (group.Heading == "This Week")
+                {
+                    temps[2] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                }
+                else if (group.Heading == "This Month")
+                {
+                    temps[3] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                }
+                else if (group.Heading == "Older")
+                {
+                    temps[4] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                }
             }
 
             try
             {
-                LoggedColumnSeries.Add(new ChartDataModel("6 days", normals[6]));
-                LoggedColumnSeries.Add(new ChartDataModel("5 days", normals[5]));
-                LoggedColumnSeries.Add(new ChartDataModel("4 days", normals[4]));
-                LoggedColumnSeries.Add(new ChartDataModel("3 days", normals[3]));
-                LoggedColumnSeries.Add(new ChartDataModel("2 days", normals[2]));
+                LoggedColumnSeries.Add(new ChartDataModel("Older", normals[4]));
+                LoggedColumnSeries.Add(new ChartDataModel("This month", normals[3]));
+                LoggedColumnSeries.Add(new ChartDataModel("This week", normals[2]));
                 LoggedColumnSeries.Add(new ChartDataModel("Yesterday", normals[1]));
                 LoggedColumnSeries.Add(new ChartDataModel("Today", normals[0]));
             }
@@ -385,22 +407,7 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        private double GetNormalAverageFromDate(DateTime date, List<DataObject> dataObjects)
-        {
-            List<double> normals = new List<double>();
-
-            // scan through objects
-            foreach (var obj in dataObjects)
-            {
-                // if date matches the desired one, add to temp list of objects
-                if ((obj.Date.Day == date.Day) && (obj.Date.Month == date.Month) && obj.IsDownloaded)
-                {
-                    normals.Add(obj.AveragePressure);
-                }
-            }
-
-            return handler.GetAverage(normals);
-        }
+        
         #endregion
     }
 }
