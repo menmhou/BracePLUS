@@ -20,7 +20,7 @@ namespace BracePLUS.Views
     {
         HistoryViewModel viewModel;
 
-        MessageHandler handler;
+        readonly MessageHandler handler;
         public History()
         {
             InitializeComponent();
@@ -34,12 +34,14 @@ namespace BracePLUS.Views
         protected override void OnAppearing()
         {
             base.OnAppearing();
-            // viewModel.RefreshObjects();
         }
 
         async void OnListViewItemSelected(object sender, SelectedItemChangedEventArgs e)
         {
+            // Cast selected item as a DataObject instanciation.
             DataObject item = e.SelectedItem as DataObject;
+
+            // Check for null and proceed.
             if (item == null)
                 return;
 

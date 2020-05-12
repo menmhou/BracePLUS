@@ -52,16 +52,6 @@ namespace BracePLUS.Models
                     var L2Out = CalculateLayer2(L1Out);
                     var dOutput = CalculateOutput(L2Out);
 
-                    /*
-                    Debug.WriteLine("NN Inputs:");
-                    foreach (var val in raw)
-                        Debug.WriteLine(val);
-                    
-                    Debug.WriteLine("NN Outputs:");
-                    foreach (var val in dOutput)
-                        Debug.WriteLine(val);
-                    */
-
                     // Re-pack back into output buffer with correct index
                     for (int j = 0; j < 3; j++)
                         Outputs[(i - 4) / 6, j] = dOutput[j];
@@ -145,7 +135,7 @@ namespace BracePLUS.Models
         private const int xoffset = 0;
         private const int xgain = 1;
 
-        private static double[,] InputLayer = new double[2, 3] 
+        private static readonly double[,] InputLayer = new double[2, 3] 
         { 
             { -69.29477, -72.85451, 11.3982 }, 
             { 0.0119954769854479, 0.0118703625831927, 0.0113804224868044} 

@@ -104,7 +104,7 @@ namespace BracePLUS.ViewModels
             ButtonCommand = new Command(async () => await ExecuteButtonCommand());
             ImageOpacity = 1.0;
             // Assign event method
-            App.Client.UIUpdated += async (s, e) => await UpdateUI(e);
+            App.Client.SystemEvent += async (s, e) => await UpdateUI(e);
         }
 
         #region Commands
@@ -131,7 +131,7 @@ namespace BracePLUS.ViewModels
         #endregion
 
         #region Private Methods
-        private async Task UpdateUI(UIUpdatedEventArgs e)
+        private async Task UpdateUI(SystemUpdatedEventArgs e)
         {
             switch (e.Status)
             {

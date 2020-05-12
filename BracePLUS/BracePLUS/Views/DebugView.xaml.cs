@@ -14,26 +14,7 @@ namespace BracePLUS.Views
             InitializeComponent();
             BindingContext = App.DebugViewModel;
 
-            MessagingCenter.Subscribe<BraceClient, string>(this, "StatusMessage", (sender, arg) =>
-            {
-                var msg = DateTime.Now.ToString() + " " + arg;
-
-                Device.BeginInvokeOnMainThread(() =>
-                {
-                    MessageStack.Children.Insert(0, new Label
-                    {
-                        Text = msg,
-                        TextColor = Color.Blue,
-                        Margin = 3,
-                        FontSize = 12
-                    });
-
-                    if (MessageStack.Children.Count > 200)
-                    {
-                        MessageStack.Children.RemoveAt(200);
-                    }
-                });
-            });
+            App.DebugViewModel.RegisterStack(MessageStack);
         }
     }
 }

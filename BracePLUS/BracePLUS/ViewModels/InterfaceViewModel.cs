@@ -145,7 +145,7 @@ namespace BracePLUS.ViewModels
             ButtonColour = START_COLOUR;
 
             App.Client.PressureUpdated += Client_OnPressureUpdated;
-            App.Client.UIUpdated += Client_OnUIUpdated;
+            App.Client.SystemEvent += Client_OnSystemEvent;
 
             // Add max value to pressure
             BarChartData.Add(new ChartDataModel("Pressure", 0.924));
@@ -175,7 +175,7 @@ namespace BracePLUS.ViewModels
         }
 
         #region Events
-        void Client_OnUIUpdated(object sender, UIUpdatedEventArgs e)
+        void Client_OnSystemEvent(object sender, SystemUpdatedEventArgs e)
         {
             if (!string.IsNullOrEmpty(e.Message))
                 Status = e.Message;
@@ -223,7 +223,6 @@ namespace BracePLUS.ViewModels
                 {
                     normals[i] = e.Values[i] - offsets[i];
                 }
-                    
 
                 // Find maximum value from array of values
                 double pressure = 0.0;
@@ -243,6 +242,7 @@ namespace BracePLUS.ViewModels
 #else
 #endif
                 #endregion
+
                 if (pressure > MAX_PRESSURE)
                 {
                     //App.Vibrate(1);

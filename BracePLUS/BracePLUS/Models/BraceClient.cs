@@ -62,6 +62,19 @@ namespace BracePLUS.Models
 
         string downloadFilename = "";
         #endregion
+
+        public delegate void FileSyncCompleteDelegate(object sender, MobileSyncFinishedEventArgs args);
+        public event FileSyncCompleteDelegate FileSyncComplete;
+
+        public delegate void SystemEventDelegate(object sender, SystemUpdatedEventArgs args);
+        public event SystemEventDelegate SystemEvent;
+
+        public delegate void PressureUpdatedDelegate(object sender, PressureUpdatedEventArgs args);
+        public event PressureUpdatedDelegate PressureUpdated;
+
+        public delegate void DownloadProgressionDelegate(object sender, DownloadProgressEventArgs args);
+        public event DownloadProgressionDelegate DownloadProgression;
+
         #region Model Instanciation
         /// <summary>
         /// Model Instanciation.
@@ -95,7 +108,7 @@ namespace BracePLUS.Models
 
                 else
                 {
-                    UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                    SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                     {
                         Status = DEVICE_FOUND,
                         Message = $"Discovered device: {name}"
@@ -112,7 +125,7 @@ namespace BracePLUS.Models
             // BLE Device connection lost event
             adapter.DeviceConnectionLost += (s, e) =>
             {
-                UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                 {
                     Status = DISCONNECTED,
                     Message = $"Disconnected from {e.Device.Name}"
@@ -139,7 +152,7 @@ namespace BracePLUS.Models
             // BLE Device disconnection event
             adapter.DeviceDisconnected += (s, e) =>
             {
-                UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                 {
                     Status = DISCONNECTED,
                     Message = "Disconnected"
@@ -166,30 +179,6 @@ namespace BracePLUS.Models
                 }
             };
         }
-        #endregion
-
-        #region Events
-        protected virtual void OnFileSyncFinished(MobileSyncFinishedEventArgs e)
-        {
-            FileSyncFinished?.Invoke(this, e);
-        }
-        public event EventHandler<MobileSyncFinishedEventArgs> FileSyncFinished;
-        protected virtual void OnPressureUpdated(PressureUpdatedEventArgs e)
-        {
-            PressureUpdated?.Invoke(this, e);
-        }
-        public event EventHandler<PressureUpdatedEventArgs> PressureUpdated;
-        protected virtual void OnDownloadProgress(DownloadProgressEventArgs e)
-        {
-            DownloadProgress?.Invoke(this, e);
-        }
-        public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
-        protected virtual void OnUIUpdated(UIUpdatedEventArgs e)
-        {
-            UIUpdated?.Invoke(this, e);
-        }
-        public event EventHandler<UIUpdatedEventArgs> UIUpdated;
-
         #endregion
 
         #region Model Client Logic Methods
@@ -225,7 +214,7 @@ namespace BracePLUS.Models
                 catch (DeviceConnectionException e)
                 {
                     Debug.WriteLine("Connection failed with exception: " + e.Message);
-                    UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                    SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                     {
                         Status = DISCONNECTED,
                         Message = "Failed to connect."
@@ -268,7 +257,7 @@ namespace BracePLUS.Models
                         var t = Task.Run(() => COMMS_MENU(uartTx));
 
                         // Prepare and send UI updates event
-                        UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                        SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                         {
                             Status = CONNECTED,
                             Message = $"Connected to: {Brace.Name}",
@@ -295,7 +284,7 @@ namespace BracePLUS.Models
             }
             catch (Exception e)
             {
-                UIUpdatedEventArgs args = new UIUpdatedEventArgs
+                SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                 {
                     Status = DISCONNECTED,
                     Message = $"Failed to connect: {e.Message}"
@@ -342,7 +331,7 @@ namespace BracePLUS.Models
             if (adapter.IsScanning) return true;
 
             // Send UI update event for starting a scan.
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = SCAN_START,
                 Message = "Starting scan..."
@@ -377,7 +366,7 @@ namespace BracePLUS.Models
         public async Task StopScan()
         {
             // Send UI update event for stopping scan.
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = SCAN_FINISH,
                 Message = "Stopping scan."
@@ -403,7 +392,7 @@ namespace BracePLUS.Models
             // Flush out data
             DATA_IN.Clear();
 
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = SYS_STREAM_START,
                 Message = "Starting data stream..."
@@ -426,7 +415,7 @@ namespace BracePLUS.Models
             await Task.Delay(2500);
 
             // Send init event and BLE command
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = SYS_INIT,
                 Message = "Initalising device..."
@@ -445,7 +434,7 @@ namespace BracePLUS.Models
             // Stop stream from menu (any character apart from "S")
             await RUN_BLE_WRITE(uartRx, ".");
 
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = SYS_STREAM_FINISH,
                 Message = "Stream finished."
@@ -467,7 +456,7 @@ namespace BracePLUS.Models
             string msg = $"Logging to file: {filename}.dat...";
 
             // Request long-term logging function from brace
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = LOGGING_START,
                 Message = msg
@@ -486,7 +475,7 @@ namespace BracePLUS.Models
         public async Task GetMobileFiles()
         {
             // Request list of files from brace
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = SYNC_START,
                 Message = "Beginning file sync"
@@ -519,7 +508,7 @@ namespace BracePLUS.Models
             // Send UI update event and BLE command.
             downloadProgress = 0;
 
-            UIUpdatedEventArgs args = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
                 Status = DOWNLOAD_START,
                 Message = $"Downloading file: {downloadFilename}"
@@ -583,7 +572,7 @@ namespace BracePLUS.Models
 
             if (input == "^")
             {
-                UIUpdatedEventArgs e = new UIUpdatedEventArgs
+                SystemUpdatedEventArgs e = new SystemUpdatedEventArgs
                 {
                     Status = IDLE,
                     Message = msg,
@@ -602,7 +591,7 @@ namespace BracePLUS.Models
             {
                 await RUN_BLE_WRITE(uartRx, downloadFilename);
 
-                UIUpdatedEventArgs e = new UIUpdatedEventArgs
+                SystemUpdatedEventArgs e = new SystemUpdatedEventArgs
                 {
                     Status = LOGGING_START,
                     Message = $"Logging to file: {downloadFilename}.dat"
@@ -613,7 +602,7 @@ namespace BracePLUS.Models
             {
                 var msg = handler.Translate(input, LOGGING_FINISH);
 
-                UIUpdatedEventArgs ui = new UIUpdatedEventArgs
+                SystemUpdatedEventArgs ui = new SystemUpdatedEventArgs
                 {
                     Status = LOGGING_FINISH,
                     Filename = downloadFilename,
@@ -625,20 +614,24 @@ namespace BracePLUS.Models
 
         private void HANDLE_SYNC(byte[] bytes)
         {
+            // Translate the filename from the raw data.
             var file = Encoding.ASCII.GetString(bytes);   
             if (string.IsNullOrWhiteSpace(file) || string.IsNullOrEmpty(file))
             {
                 return;
             }
-            else if (file == "^")
+
+            if (file == "^")
             {
+                // All files have been sent across successfully.
                 MobileSyncFinishedEventArgs args = new MobileSyncFinishedEventArgs
                 {
                     Files = MobileFileList
                 };
-                OnFileSyncFinished(args);
+                FileSyncComplete(this, args);
+
+                // Clear list ready for next file sync.
                 MobileFileList.Clear();
-                return;
             }
             else
             {
@@ -649,17 +642,20 @@ namespace BracePLUS.Models
 
         private async Task HANDLE_DOWNLOAD(byte[] bytes)
         {
+            // Translate raw input to readable string.
             var input = Encoding.ASCII.GetString(bytes);
-            int len = bytes.Length;
-            // Check message (min stream data len = 8)
+
+            // If input is E, brace is requesting filename to download.
             if (input == "E")
             {
                 var filename = downloadFilename;
                 await RUN_BLE_WRITE(uartRx, filename);
                 return;
             }
+            // All of the file has been sent to create system update and write all data received to file.
             else if (input == "^")
             {
+                // Translate message to display on UI
                 var msg = handler.Translate(input, DOWNLOAD_FINISH);
 
                 // Write header for mobile file
@@ -669,7 +665,7 @@ namespace BracePLUS.Models
                 downloadFilename += ".txt";
                 WRITE_FILE(DATA_IN, name: downloadFilename, header: b, footer: b);
 
-                UIUpdatedEventArgs e = new UIUpdatedEventArgs
+                SystemUpdatedEventArgs e = new SystemUpdatedEventArgs
                 {
                     Status = DOWNLOAD_FINISH,
                     Filename = downloadFilename,
@@ -683,14 +679,14 @@ namespace BracePLUS.Models
             {
                 // Add buffer to local array
                 bytes.CopyTo(buffer, packetIndex); // Destination array is sometimes not long enough. Check packet index + stream length
-                packetIndex += len;
+                packetIndex += bytes.Length;
             }
             catch (Exception e)
             {
                 Debug.WriteLine("*************** DOWNLOAD EXCEPTION ***************");
                 Debug.WriteLine($"Received {bytes.Length} bytes: {BitConverter.ToString(bytes)}");
                 Debug.WriteLine("Copy stream to buffer failed with exception: " + e.Message);
-                Debug.WriteLine($"Stream length: {len}, packet index: {packetIndex}");
+                Debug.WriteLine($"Stream length: {bytes.Length}, packet index: {packetIndex}");
             }
 
             // Check packet
@@ -700,7 +696,7 @@ namespace BracePLUS.Models
                 {
                     Value = downloadProgress / 31
                 };
-                OnDownloadProgress(args);
+                DownloadProgression(this, args);
                 downloadProgress += 1;
                 // Request next packet if header present.
                 await RUN_BLE_WRITE(uartRx, "g");
@@ -748,7 +744,7 @@ namespace BracePLUS.Models
                     var input = Encoding.ASCII.GetString(stream);
                     var msg = handler.Translate(input, SYS_STREAM_FINISH);
 
-                    UIUpdatedEventArgs ui = new UIUpdatedEventArgs
+                    SystemUpdatedEventArgs ui = new SystemUpdatedEventArgs
                     {
                         Status = SYS_STREAM_FINISH,
                         Message = msg
@@ -783,7 +779,7 @@ namespace BracePLUS.Models
                     {
                         Values = z
                     };
-                    OnPressureUpdated(args);
+                    PressureUpdated(this, args);
                 }
 
                 // Save to array of input data
@@ -801,7 +797,7 @@ namespace BracePLUS.Models
         {
             FileManager.WriteFile(data, name, header, footer);
 
-            UIUpdatedEventArgs e = new UIUpdatedEventArgs
+            SystemUpdatedEventArgs e = new SystemUpdatedEventArgs
             {
                 Status = FILE_WRITTEN,
                 Filename = name,
@@ -812,12 +808,12 @@ namespace BracePLUS.Models
             DATA_IN.Clear();
         }
 
-        public void EVENT(UIUpdatedEventArgs args)
+        public void EVENT(SystemUpdatedEventArgs args)
         {
             try
             {
                 STATUS = args.Status;
-                OnUIUpdated(args);
+                SystemEvent(this, args);
                 Write(args.Message);
             }
             catch (Exception ex)

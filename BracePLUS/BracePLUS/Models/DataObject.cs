@@ -91,7 +91,7 @@ namespace BracePLUS.Models
 
             CalibratedData = new List<double[,]>();
 
-            App.Client.DownloadProgress += Client_OnDownloadProgress;
+            App.Client.DownloadProgression += Client_OnDownloadProgress;
         }
 
         #region Events
@@ -107,6 +107,7 @@ namespace BracePLUS.Models
             }
         }
         #endregion
+
         #region Command Methods
         private async Task ExecuteShareCommand()
         {

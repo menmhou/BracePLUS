@@ -103,7 +103,7 @@ namespace BracePLUS.ViewModels
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
             LogCommand = new Command(() => ExecuteLogCommand());
 
-            App.Client.UIUpdated += async (s, e) =>
+            App.Client.SystemEvent += async (s, e) =>
             {
                 switch (e.Status)
                 {

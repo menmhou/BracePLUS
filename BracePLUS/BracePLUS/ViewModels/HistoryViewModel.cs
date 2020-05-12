@@ -1,4 +1,4 @@
-﻿using System;
+﻿ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
@@ -62,12 +62,12 @@ namespace BracePLUS.ViewModels
             GetFilenamesCommand = new Command(async () => await ExecuteGetFilenamesCommand());
 
             // Events
-            App.Client.FileSyncFinished += (s, e) =>
+            App.Client.FileSyncComplete += (s, e) =>
             {
                 AddMobileFilenames(e.Files);
                 RefreshObjects();
             };
-            App.Client.UIUpdated += (s, e) =>
+            App.Client.SystemEvent += (s, e) =>
             {
                 switch (e.Status)
                 {
@@ -90,6 +90,7 @@ namespace BracePLUS.ViewModels
 
             RefreshObjects();
         }
+
 
         #region Command Methods
         private void ExecuteRefreshCommand()

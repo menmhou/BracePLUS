@@ -6,7 +6,7 @@ using System.Text;
 
 namespace BracePLUS.Events
 {
-    public class UIUpdatedEventArgs : EventArgs
+    public class SystemUpdatedEventArgs : EventArgs
     {
         public int Status { get; set; }
         public string Filename { get; set; }

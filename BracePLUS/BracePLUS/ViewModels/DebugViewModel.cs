@@ -81,8 +81,9 @@ namespace BracePLUS.ViewModels
         public Command ClearFiles { get; set; }
 
         // Private members
-        Random random;
-        MessageHandler handler;
+        readonly Random random;
+        readonly MessageHandler handler;
+        StackLayout stack;
 
         public DebugViewModel()
         {
@@ -93,46 +94,84 @@ namespace BracePLUS.ViewModels
             SimulateData = new Command(() => ExecuteSimulateData());
             ClearFiles = new Command(() => ExecuteClearFiles());
 
-            // Events
-            App.Client.UIUpdated += (s, e) =>
+            // Events from Brace Client
+            App.Client.SystemEvent += Client_SystemEvent;
+
+            // Status messages from all app systems.
+            MessagingCenter.Subscribe<BraceClient, string>(this, "StatusMessage", (sender, arg) => AddMessage(arg));
+        }
+
+        public void RegisterStack(StackLayout stack)
+        {
+            this.stack = stack;
+        }
+
+        private void Client_SystemEvent(object sender, SystemUpdatedEventArgs e)
+        {
+            switch (e.Status)
             {
-                switch (e.Status)
+                case CONNECTED:
+                    try
+                    {
+                        ConnectedDevice = e.Device.Name;
+                        RSSI = e.Device.Rssi.ToString();
+                        ServiceID = e.ServiceId;
+                        CharTxID = e.UartTxId;
+                        CharRxID = e.UartRxId;
+                    }
+                    catch (Exception ex)
+                    {
+                        Crashes.TrackError(ex);
+                        SetNullValues();
+                    }
+                    break;
+
+                case DISCONNECTED:
+                    SetNullValues();
+                    break;
+
+                case SCAN_START:
+                    SetNullValues();
+                    break;
+
+                case SCAN_FINISH:
+                    if (!App.IsConnected)
+                    {
+                        SetNullValues();
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        private void AddMessage(string msg)
+        {
+            msg = DateTime.Now.ToString() + " " + msg;
+
+            try
+            {
+                Device.BeginInvokeOnMainThread(() =>
                 {
-                    case CONNECTED:
-                        try
-                        {
-                            ConnectedDevice = e.Device.Name;
-                            RSSI = e.Device.Rssi.ToString();
-                            ServiceID = e.ServiceId;
-                            CharTxID = e.UartTxId;
-                            CharRxID = e.UartRxId;
-                        }
-                        catch (Exception ex)
-                        {
-                            Crashes.TrackError(ex);
-                            SetNullValues();
-                        }
-                        break;
+                    stack.Children.Insert(0, new Label
+                    {
+                        Text = msg,
+                        TextColor = Color.Blue,
+                        Margin = 3,
+                        FontSize = 12
+                    });
 
-                    case DISCONNECTED:
-                        SetNullValues();
-                        break;
-
-                    case SCAN_START:
-                        SetNullValues();
-                        break;
-
-                    case SCAN_FINISH:
-                        if (!App.IsConnected)
-                        {
-                            SetNullValues();
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-            };
+                    if (stack.Children.Count > 200)
+                    {
+                        stack.Children.RemoveAt(200);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         private async void ExecuteClearFiles()

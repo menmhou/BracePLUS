@@ -179,15 +179,6 @@ namespace BracePLUS.Models
                 var _path = Path.Combine(App.FolderPath, name);
                 File.Delete(_path);
             }
-
         }
-    }
-
-    class SensorReading
-    {
-        public int Id { get; set; }
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Z { get; set; }
     }
 }
