@@ -16,6 +16,7 @@
                       ItemSelected="OnListViewItemSelected"
                       ItemsSource="{Binding DataObjects}"
                       HasUnevenRows="True"
+                      HeightRequest="{Binding ListViewHeight}"
                       SeparatorVisibility="None"
                       IsPullToRefreshEnabled="True"
                       IsRefreshing="{Binding IsRefreshing}"

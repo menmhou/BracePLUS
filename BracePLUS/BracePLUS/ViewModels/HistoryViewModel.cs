@@ -14,6 +14,7 @@ using BracePLUS.Events;
 using System.Threading.Tasks;
 using BracePLUS.Views;
 using Microsoft.AppCenter.Crashes;
+using Xamarin.Essentials;
 
 namespace BracePLUS.ViewModels
 {
@@ -45,6 +46,18 @@ namespace BracePLUS.ViewModels
             }
         }
         #endregion
+        #region View Properties
+        private double _listViewHeight;
+        public double ListViewHeight
+        {
+            get => _listViewHeight;
+            set
+            {
+                _listViewHeight = value;
+                RaisePropertyChanged(() => ListViewHeight);
+            }
+        }
+        #endregion
 
         // Public Commands
         public Command GetFilenamesCommand { get; set; }
@@ -56,6 +69,8 @@ namespace BracePLUS.ViewModels
         {
             handler = new MessageHandler();
             DataObjects = new ObservableCollection<DataObject>();
+
+            ListViewHeight = DeviceDisplay.MainDisplayInfo.Height;
 
             // Commands
             RefreshCommand = new Command(() => ExecuteRefreshCommand());

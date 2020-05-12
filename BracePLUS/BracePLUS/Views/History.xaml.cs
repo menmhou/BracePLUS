@@ -1,18 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.ViewModels;
-using Syncfusion.SfChart.XForms;
-using Xamarin.Essentials;
 using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
-
 
 namespace BracePLUS.Views
 {
@@ -28,7 +19,7 @@ namespace BracePLUS.Views
             BindingContext = viewModel = new HistoryViewModel();
 
             // Known Xamarin.iOS bug - stack layout not taking up whole page.
-            listView.HeightRequest = DeviceDisplay.MainDisplayInfo.Height;
+            //listView.HeightRequest = DeviceDisplay.MainDisplayInfo.Height;
         }
 
         protected override void OnAppearing()
