@@ -47,7 +47,8 @@
                 <chart:SfChart.PrimaryAxis>
                     <chart:CategoryAxis ShowMajorGridLines="False">
                         <chart:CategoryAxis.LabelStyle>
-                            <chart:ChartAxisLabelStyle TextColor="White"/>
+                            <chart:ChartAxisLabelStyle TextColor="White"
+                                                       FontSize="9"/>
                         </chart:CategoryAxis.LabelStyle>
                     </chart:CategoryAxis>
                 </chart:SfChart.PrimaryAxis>
@@ -130,9 +131,9 @@
                 <Button Text = "+"
                         Command="{Binding LogCommand}"
                         FontSize="Medium"
-                        HeightRequest="60"
-                        WidthRequest="60"
-                        CornerRadius="30"
+                        HeightRequest="50"
+                        WidthRequest="50"
+                        CornerRadius="25"
                         VerticalOptions="CenterAndExpand"
                         HorizontalOptions="CenterAndExpand"
                         Opacity="0.5" 

@@ -6,13 +6,11 @@ using System.Threading.Tasks;
 using BracePLUS.Extensions;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
-using Plugin.BLE.Abstractions.Exceptions;
 using Xamarin.Forms;
 using BracePLUS.Events;
 using static BracePLUS.Extensions.Constants;
 using Plugin.BLE.Abstractions;
-using Plugin.Toast;
-using System.Threading;
+using Plugin.Toast; 
 
 namespace BracePLUS.Models
 {
