@@ -10,7 +10,8 @@ using Xamarin.Forms;
 using BracePLUS.Events;
 using static BracePLUS.Extensions.Constants;
 using Plugin.BLE.Abstractions;
-using Plugin.Toast; 
+using Plugin.Toast;
+using Plugin.BLE.Abstractions.Exceptions;
 
 namespace BracePLUS.Models
 {
@@ -54,7 +55,6 @@ namespace BracePLUS.Models
         int packetIndex;
         string downloadFilename = "";
         #endregion
-
         #region Events & Delegates
         public delegate void FileSyncCompleteDelegate(object sender, MobileSyncFinishedEventArgs args);
         public event FileSyncCompleteDelegate FileSyncComplete;
@@ -68,7 +68,6 @@ namespace BracePLUS.Models
         public delegate void DownloadProgressionDelegate(object sender, DownloadProgressEventArgs args);
         public event DownloadProgressionDelegate DownloadProgression;
         #endregion
-
         #region Model Instanciation
         /// <summary>
         /// Model Instanciation.
@@ -123,6 +122,8 @@ namespace BracePLUS.Models
             {
                 App.IsConnected = true;
 
+                Debug.WriteLine("Device connected: " + e.Device.Name);
+                /*
                 // Prepare and send UI updates event
                 SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                 {
@@ -134,6 +135,7 @@ namespace BracePLUS.Models
                     UartTxId = uartTxCharUUID
                 };
                 EVENT(args);
+                */
             };
             // BLE Device connection lost event
             adapter.DeviceConnectionLost += (s, e) => HANDLE_DISCONNECTION(e.Device);
@@ -146,13 +148,12 @@ namespace BracePLUS.Models
                 {
                     await Application.Current.MainPage.DisplayAlert(DEV_NAME + " not found.", "Unable to find " + DEV_NAME, "OK");
                     Write("Scan timeout elapsed.");
-                    Write("Stopping scan.");
-                    await StopScan();
+                    //Write("Stopping scan.");
+                    //await StopScan();
                 }
             };
         }
         #endregion
-
         #region Model Client Logic Methods
         /// <summary>
         /// Receives connection request from user-interface.
@@ -160,12 +161,12 @@ namespace BracePLUS.Models
         /// If successful, begin main communication menu algorithm.
         /// </summary>
         /// <param name="brace">Virtual BLE device containing data about remote physical device.</param>
-        public async Task Connect(IDevice brace)
+        public async Task Connect(IDevice device)
         {
-            Brace = brace;
+            Brace = device;
 
             // Check system bluetooth is turned on.
-            if (!ble.IsOn && brace != null)
+            if (!ble.IsOn && Brace != null)
             {
                 // Show alert
                 await Application.Current.MainPage.DisplayAlert("Bluetooth off.", "Please turn on bluetooth to connect to devices.", "OK");
@@ -175,27 +176,47 @@ namespace BracePLUS.Models
 
             try
             {
-                // Attempt connection to device
-                await adapter.ConnectToDeviceAsync(brace, connectParameters: new ConnectParameters(autoConnect: true));
+                Write("Connecting...");
 
                 // If connection successful, stop scanning for devices.
                 await adapter.StopScanningForDevicesAsync();
 
+                // Attempt connection to device
+                //await adapter.ConnectToDeviceAsync(brace, connectParameters: new ConnectParameters(autoConnect: true));
+                Device.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        await adapter.ConnectToDeviceAsync(Brace, connectParameters: new ConnectParameters(autoConnect: true, forceBleTransport: true));
+
+                        var services = await Brace.GetServicesAsync();
+                        Debug.WriteLine($"Fetched {services.Count} services: ");
+                        foreach (var s in services)
+                            Debug.WriteLine(s.Id);
+                    }
+                    catch (DeviceConnectionException ex)
+                    {
+                        Write("Connection failed: " + ex.Message);
+                        return;
+                    }
+                });
+
                 // Register service with virtual device using known service GUID.
-                service = await brace.GetServiceAsync(uartServiceGUID);
+                service = await Brace.GetServiceAsync(uartServiceGUID);
 
-                REGISTER_CHARACTERISTICS(service);
+                if (await REGISTER_CHARACTERISTICS(service))
+                {
+                    // Begin communication system
+                    var t = Task.Run(() => COMMS_MENU(uartTx));
 
-                // Begin communication system
-                var t = Task.Run(() => COMMS_MENU(uartTx));
-
-                // Begin system initialisation
-                await InitBrace();
+                    // Begin system initialisation
+                    await InitBrace();
+                }
             }
             catch (Exception e)
             {
                 // Update UI and display error message
-                HANDLE_DISCONNECTION(brace);
+                // HANDLE_DISCONNECTION(brace);
 
                 Device.BeginInvokeOnMainThread(async () =>
                 {
@@ -413,7 +434,6 @@ namespace BracePLUS.Models
             await RUN_BLE_WRITE(uartRx, "G");
         }
         #endregion
-
         #region Comms Menu Functions
         private async Task COMMS_MENU(ICharacteristic c)
         {
@@ -678,7 +698,7 @@ namespace BracePLUS.Models
         }
         #endregion
         #region Helper Methods
-        private async void REGISTER_CHARACTERISTICS(IService _service)
+        private async Task<bool> REGISTER_CHARACTERISTICS(IService _service)
         {
             try
             {
@@ -692,10 +712,13 @@ namespace BracePLUS.Models
                 // Increase speed of data transfer using this characteristic write type
                 uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
                 // uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
+
+                return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Failed to register {ex.Message}");
+                Debug.WriteLine($"Failed to register characteristics: {ex.Message}");
+                return false;
             }
         }
 
