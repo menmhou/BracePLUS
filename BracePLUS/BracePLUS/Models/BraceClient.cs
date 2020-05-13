@@ -43,24 +43,21 @@ namespace BracePLUS.Models
         public static List<byte[]> DATA_IN { get; set; }
         // List of filenames to hold names received after syncing.
         public List<string> MobileFileList { get; set; }
+        public int STATUS { get; private set; }
 
         // UI Assistant
         private readonly MessageHandler handler;
         public bool isStreaming;
         public bool isScanning;
-        public bool isSaving;
+        public float downloadProgress;
 
         // Data Handling
         byte[] buffer = new byte[128];
         int packetIndex;
-        float downloadProgress;
-
-        public int STATUS = IDLE;
-
         string downloadFilename = "";
         #endregion
 
-        #region Events
+        #region Events & Delegates
         public delegate void FileSyncCompleteDelegate(object sender, MobileSyncFinishedEventArgs args);
         public event FileSyncCompleteDelegate FileSyncComplete;
 
@@ -85,9 +82,12 @@ namespace BracePLUS.Models
 
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
+            adapter.ScanTimeout = BLE_SCAN_TIMEOUT_MS;
 
             MobileFileList = new List<string>();
             DATA_IN = new List<byte[]>();
+
+            STATUS = IDLE;
 
             // BLE State changed
             ble.StateChanged += (s, e) =>
@@ -120,60 +120,36 @@ namespace BracePLUS.Models
                     }
                 }
             };
-            // BLE Device connection lost event
-            adapter.DeviceConnectionLost += (s, e) =>
+            // BLE Device connected
+            adapter.DeviceConnected += (s, e) =>
             {
+                App.IsConnected = true;
+
+                // Prepare and send UI updates event
                 SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                 {
-                    Status = DISCONNECTED,
-                    Message = $"Disconnected from {e.Device.Name}"
+                    Status = CONNECTED,
+                    Message = $"Connected to: {e.Device.Name}",
+                    Device = e.Device,
+                    ServiceId = uartServiceUUID,
+                    UartRxId = uartRxCharUUID,
+                    UartTxId = uartTxCharUUID
                 };
                 EVENT(args);
-                App.IsConnected = false;
-                RELEASE_DATA(buffer, false);
-
-                if (DATA_IN.Count > 0)
-                {
-                    Device.BeginInvokeOnMainThread(async () =>
-                    {
-                        bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
-                            "Store data locally?", "Yes", "No");
-
-                        if (save)
-                        {
-                            byte[] header = new byte[] { 0x0A, 0x0B, 0x0C };
-                            WRITE_FILE(DATA_IN, handler.GetFileName(DateTime.Now), header);
-                        }
-                    });
-                }
             };
+            // BLE Device connection lost event
+            adapter.DeviceConnectionLost += (s, e) => HANDLE_DISCONNECTION(e.Device);
             // BLE Device disconnection event
-            adapter.DeviceDisconnected += (s, e) =>
+            adapter.DeviceDisconnected += (s, e) => HANDLE_DISCONNECTION(e.Device);
+            // Scan timeout
+            adapter.ScanTimeoutElapsed += async (s, e) =>
             {
-                SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
+                if (!App.IsConnected)
                 {
-                    Status = DISCONNECTED,
-                    Message = "Disconnected"
-                };
-
-                EVENT(args);
-
-                App.IsConnected = false;
-                RELEASE_DATA(buffer, false);
-
-                if (DATA_IN.Count > 0)
-                {
-                    Device.BeginInvokeOnMainThread(async () =>
-                    {
-                        bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
-                            "Store data locally?", "Yes", "No");
-
-                        if (save)
-                        {
-                            byte[] header = new byte[] { 0x0A, 0x0B, 0x0C };
-                            WRITE_FILE(DATA_IN, handler.GetFileName(DateTime.Now), header);
-                        }
-                    });
+                    await Application.Current.MainPage.DisplayAlert(DEV_NAME + " not found.", "Unable to find " + DEV_NAME, "OK");
+                    Write("Scan timeout elapsed.");
+                    Write("Stopping scan.");
+                    await StopScan();
                 }
             };
         }
@@ -202,93 +178,31 @@ namespace BracePLUS.Models
             try
             {
                 // Attempt connection to device
+                await adapter.ConnectToDeviceAsync(brace, connectParameters: new ConnectParameters(autoConnect: true));
 
-                var param = new ConnectParameters(autoConnect: true);
-
-                try
-                {
-                    await adapter.ConnectToDeviceAsync(brace, connectParameters: param);
-                }
-                catch (DeviceConnectionException e)
-                {
-                    Debug.WriteLine("Connection failed with exception: " + e.Message);
-                    SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
-                    {
-                        Status = DISCONNECTED,
-                        Message = "Failed to connect."
-                    };
-                    EVENT(args);
-
-                    App.IsConnected = false;
-
-                    Device.BeginInvokeOnMainThread(async () =>
-                    {
-                        await Application.Current.MainPage.DisplayAlert("Connection failure.",
-                            $"Failed to connect to Brace+", "OK");
-                    });
-
-                    return;
-                }
-              
                 // If connection successful, stop scanning for devices.
                 await adapter.StopScanningForDevicesAsync();
 
                 // Register service with virtual device using known service GUID.
                 service = await brace.GetServiceAsync(uartServiceGUID);
 
-                if (service != null)
-                {
-                    try
-                    {
-                        // Retrieve characteristics from device service
-                        var characteristics = await service.GetCharacteristicsAsync();                       
+                REGISTER_CHARACTERISTICS(service);
 
-                        // Register characteristics
-                        uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
-                        uartRx = await service.GetCharacteristicAsync(uartRxCharGUID);
+                // Begin communication system
+                var t = Task.Run(() => COMMS_MENU(uartTx));
 
-                        // Increase speed of data transfer using this characteristic write type
-                        uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
-                        // uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
-
-                        // Begin communication system
-                        var t = Task.Run(() => COMMS_MENU(uartTx));
-
-                        // Prepare and send UI updates event
-                        SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
-                        {
-                            Status = CONNECTED,
-                            Message = $"Connected to: {Brace.Name}",
-                            Device = Brace,
-                            ServiceId = uartServiceUUID,
-                            UartRxId = uartRxCharUUID,
-                            UartTxId = uartTxCharUUID
-                        };
-                        EVENT(args);
-
-                        // Set app connection status to true
-                        App.IsConnected = true;
-
-                        // Begin system initialisation
-                        await InitBrace();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine("Unable to register characteristics: " + ex.Message);
-                        return;
-                    }
-
-                }
+                // Begin system initialisation
+                await InitBrace();
             }
             catch (Exception e)
             {
-                SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
+                // Update UI and display error message
+                HANDLE_DISCONNECTION(brace);
+
+                Device.BeginInvokeOnMainThread(async () =>
                 {
-                    Status = DISCONNECTED,
-                    Message = $"Failed to connect: {e.Message}"
-                };
-                EVENT(args);
-                App.IsConnected = false;
+                    await Application.Current.MainPage.DisplayAlert("Connection failure.", e.Message, "OK");
+                });
                 return;
             }
         }
@@ -347,14 +261,6 @@ namespace BracePLUS.Models
                 return false;
             }
             
-
-            // If no devices found after timeout, stop scan.
-            await Task.Delay(BLE_SCAN_TIMEOUT_MS);
-            if (!App.IsConnected)
-            {
-                await Application.Current.MainPage.DisplayAlert(DEV_NAME + " not found.", "Unable to find " + DEV_NAME, "OK");
-                await StopScan();
-            }
             return true;
         }
 
@@ -380,13 +286,6 @@ namespace BracePLUS.Models
         /// </summary>
         public async Task Stream()
         {
-            // Stream data wirelessly
-            if (uartTx == null)
-            {
-                Debug.WriteLine("UART RX characteristic null, quitting.");
-                return;
-            }
-
             // Flush out data
             DATA_IN.Clear();
 
@@ -515,10 +414,9 @@ namespace BracePLUS.Models
 
             await RUN_BLE_WRITE(uartRx, "G");
         }
-
         #endregion
 
-        #region Backend Functions
+        #region Comms Menu Functions
         private async Task COMMS_MENU(ICharacteristic c)
         {
             c.ValueUpdated += async (o, args) =>
@@ -751,6 +649,55 @@ namespace BracePLUS.Models
 
                     STATUS = IDLE;
                     break;
+            }
+        }
+
+        private void HANDLE_DISCONNECTION(IDevice device)
+        {
+            SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
+            {
+                Status = DISCONNECTED,
+                Message = $"Disconnected from {device.Name}"
+            };
+            EVENT(args);
+            App.IsConnected = false;
+            RELEASE_DATA(buffer, false);
+
+            if (DATA_IN.Count > 0)
+            {
+                Device.BeginInvokeOnMainThread(async () =>
+                {
+                    bool save = await Application.Current.MainPage.DisplayAlert("Disconnected",
+                        "Store data locally?", "Yes", "No");
+
+                    if (save)
+                    {
+                        byte[] header = new byte[] { 0x0A, 0x0B, 0x0C };
+                        WRITE_FILE(DATA_IN, handler.GetFileName(DateTime.Now), header);
+                    }
+                });
+            }
+        }
+        #endregion
+        #region Helper Methods
+        private async void REGISTER_CHARACTERISTICS(IService _service)
+        {
+            try
+            {
+                // Retrieve characteristics from device service
+                var characteristics = await _service.GetCharacteristicsAsync();
+
+                // Register characteristics
+                uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
+                uartRx = await service.GetCharacteristicAsync(uartRxCharGUID);
+
+                // Increase speed of data transfer using this characteristic write type
+                uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
+                // uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to register {ex.Message}");
             }
         }
 

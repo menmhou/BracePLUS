@@ -121,15 +121,16 @@ namespace BracePLUS.ViewModels
         public InterfaceViewModel()
         {
             offsets = new double[16];
+            normals = new double[16];
 
             BarChartData = new ObservableCollection<ChartDataModel>();
-            normals = new double[16];
 
             StreamCommand = new Command(async () => await ExecuteStreamCommand());
             SetupBLECommand = new Command(() => ExecuteSetupBLECommand());
             TareCommand = new Command(() => ExecuteTareCommand());
             ShowDebugCommand = new Command(() => ExecuteShowDebugCommand());
 
+            // Set initial values
             StreamText = "Stream";
             Status = "Unconnected";
 
@@ -181,19 +182,7 @@ namespace BracePLUS.ViewModels
 
                 case DISCONNECTED:
                     ButtonColour = Color.LightGray;
-                    try
-                    {
-                        BarChartData.Clear();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine("Unable to clear bar chart data: " + ex.Message);
-                    }
-                    
-                    break;
-
-                case SYS_INIT:
-                    Status = "Initialising sytem...";
+                    BarChartData.Clear();
                     break;
 
                 case SYS_STREAM_START:
@@ -298,6 +287,11 @@ namespace BracePLUS.ViewModels
                 }
             }   
         }
+
+        /// <summary>
+        /// Show the debug page, detailing the current state of the system.
+        /// Wait until 7 taps have occured before pushing the debug page.
+        /// </summary>
         private async void ExecuteShowDebugCommand()
         {
             tapCounter++;

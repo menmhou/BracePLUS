@@ -117,7 +117,7 @@ namespace BracePLUS.ViewModels
             }
             else
             {
-                if (App.Client.STATUS == SCAN_START)
+                if (App.Client.adapter.IsScanning)
                 {
                     // Start scan
                     await App.Client.StopScan();
@@ -175,6 +175,15 @@ namespace BracePLUS.ViewModels
             DeviceName = "-";
             ConnectionStrength = "-";
         }
+
+        /// <summary>
+        /// Simple animation to fade from one image to another over 1 second.
+        /// Set the UI Image as the first image, slowly (500ms) blur by 50%, then assign the UI Image
+        /// the second image with a starting blur of 50% and slowly reveal to 100%. 
+        /// </summary>
+        /// <param name="startImage">The image to be changed.</param>
+        /// <param name="finalImage">The resulting image from the animation.</param>
+        /// <returns></returns>
         private async Task FadeImages(string startImage, string finalImage)
         {
             // Initial step is set a clear image

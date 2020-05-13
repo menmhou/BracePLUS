@@ -43,8 +43,6 @@ namespace BracePLUS.Extensions
         public const int LOGGING_FINISH = 7;
         public const int SYS_STREAM_START = 8;
         public const int SYS_STREAM_FINISH = 9;
-
-        // STATUS MESSAGES
         public const int DEVICE_FOUND = 10;
         public const int DOWNLOAD_START = 11;
         public const int DOWNLOAD_FINISH = 12;
@@ -52,6 +50,7 @@ namespace BracePLUS.Extensions
         public const int SYNC_START = 14;
         public const int SYNC_FINISH = 15;
         public const int FILE_WRITTEN = 16;
+        public const int SCAN_TIMEOUT = 17;
 
         public const int FILE_FORMAT_MMDDHHmm = 0;
         public const int FILE_FORMAT_UTC = 1;

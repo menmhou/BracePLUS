@@ -205,7 +205,7 @@ namespace BracePLUS.Views
         public Command ShowGraphCommand { get; set; }
         #endregion
 
-        private MessageHandler handler;
+        private readonly MessageHandler handler;
 
         public InspectViewModel()
         {
