@@ -28,7 +28,7 @@ namespace BracePLUS.Models
         // Bluetooth Properties
         public IAdapter adapter;
         public IBluetoothLE ble;
-        public IService service;
+        public IService uartService;
         public ICharacteristic uartTx;
         public ICharacteristic uartRx;
         public Guid uartServiceGUID = Guid.Parse(uartServiceUUID);
@@ -118,12 +118,12 @@ namespace BracePLUS.Models
                 }
             };
             // BLE Device connected
-            adapter.DeviceConnected += (s, e) =>
+            adapter.DeviceConnected += async (s, e) =>
             {
                 App.IsConnected = true;
 
                 Debug.WriteLine("Device connected: " + e.Device.Name);
-                /*
+                
                 // Prepare and send UI updates event
                 SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
                 {
@@ -135,7 +135,17 @@ namespace BracePLUS.Models
                     UartTxId = uartTxCharUUID
                 };
                 EVENT(args);
-                */
+
+                var AOK = await REGISTER_GATT_PROFILE(e.Device);
+
+                if (AOK)
+                {
+                    Debug.WriteLine("Successfully registered GATT profile.");
+                    var t = Task.Run(() => COMMS_MENU(uartTx));
+
+                    // Begin system initialisation
+                    await InitBrace();
+                }
             };
             // BLE Device connection lost event
             adapter.DeviceConnectionLost += (s, e) => HANDLE_DISCONNECTION(e.Device);
@@ -148,8 +158,7 @@ namespace BracePLUS.Models
                 {
                     await Application.Current.MainPage.DisplayAlert(DEV_NAME + " not found.", "Unable to find " + DEV_NAME, "OK");
                     Write("Scan timeout elapsed.");
-                    //Write("Stopping scan.");
-                    //await StopScan();
+                    await StopScan();
                 }
             };
         }
@@ -165,15 +174,6 @@ namespace BracePLUS.Models
         {
             Brace = device;
 
-            // Check system bluetooth is turned on.
-            if (!ble.IsOn && Brace != null)
-            {
-                // Show alert
-                await Application.Current.MainPage.DisplayAlert("Bluetooth off.", "Please turn on bluetooth to connect to devices.", "OK");
-                App.IsConnected = false;
-                return;
-            }
-
             try
             {
                 Write("Connecting...");
@@ -182,42 +182,13 @@ namespace BracePLUS.Models
                 await adapter.StopScanningForDevicesAsync();
 
                 // Attempt connection to device
-                //await adapter.ConnectToDeviceAsync(brace, connectParameters: new ConnectParameters(autoConnect: true));
                 Device.BeginInvokeOnMainThread(async () =>
                 {
-                    try
-                    {
-                        await adapter.ConnectToDeviceAsync(Brace, connectParameters: new ConnectParameters(autoConnect: true, forceBleTransport: true));
-
-                        var services = await Brace.GetServicesAsync();
-                        Debug.WriteLine($"Fetched {services.Count} services: ");
-                        foreach (var s in services)
-                            Debug.WriteLine(s.Id);
-                    }
-                    catch (DeviceConnectionException ex)
-                    {
-                        Write("Connection failed: " + ex.Message);
-                        return;
-                    }
+                    await adapter.ConnectToDeviceAsync(device); 
                 });
-
-                // Register service with virtual device using known service GUID.
-                service = await Brace.GetServiceAsync(uartServiceGUID);
-
-                if (await REGISTER_CHARACTERISTICS(service))
-                {
-                    // Begin communication system
-                    var t = Task.Run(() => COMMS_MENU(uartTx));
-
-                    // Begin system initialisation
-                    await InitBrace();
-                }
             }
             catch (Exception e)
             {
-                // Update UI and display error message
-                // HANDLE_DISCONNECTION(brace);
-
                 Device.BeginInvokeOnMainThread(async () =>
                 {
                     await Application.Current.MainPage.DisplayAlert("Connection failure.", e.Message, "OK");
@@ -288,6 +259,8 @@ namespace BracePLUS.Models
         /// </summary>
         public async Task StopScan()
         {
+            await adapter.StopScanningForDevicesAsync();
+
             // Send UI update event for stopping scan.
             SystemUpdatedEventArgs args = new SystemUpdatedEventArgs
             {
@@ -295,8 +268,6 @@ namespace BracePLUS.Models
                 Message = "Stopping scan."
             };
             EVENT(args);
-
-            await adapter.StopScanningForDevicesAsync();
         }
 
         /// <summary>
@@ -435,7 +406,7 @@ namespace BracePLUS.Models
         }
         #endregion
         #region Comms Menu Functions
-        private async Task COMMS_MENU(ICharacteristic c)
+        private async void COMMS_MENU(ICharacteristic c)
         {
             c.ValueUpdated += async (o, args) =>
             {
@@ -698,22 +669,49 @@ namespace BracePLUS.Models
         }
         #endregion
         #region Helper Methods
-        private async Task<bool> REGISTER_CHARACTERISTICS(IService _service)
+        private async Task<bool> REGISTER_GATT_PROFILE(IDevice _device)
         {
             try
             {
-                // Retrieve characteristics from device service
-                var characteristics = await _service.GetCharacteristicsAsync();
+                if (_device != null)
+                {
+                    var services = await _device.GetServicesAsync();
+                    Debug.WriteLine($"Discovered {services.Count} services: ");
+                    foreach (var s in services)
+                    {
+                        Debug.WriteLine($"{s.Id}");
 
-                // Register characteristics
-                uartTx = await service.GetCharacteristicAsync(uartTxCharGUID);
-                uartRx = await service.GetCharacteristicAsync(uartRxCharGUID);
+                        if (s.Id == uartServiceGUID)
+                        {
+                            // Assign discovered service to class member service
+                            uartService = s;
 
-                // Increase speed of data transfer using this characteristic write type
-                uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
-                // uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
+                            // Retrieve characteristics from device service
+                            var characteristics = await uartService.GetCharacteristicsAsync();
 
-                return true;
+                            Debug.WriteLine($"Discovered {characteristics.Count} characteristics:");
+                            foreach (var c in characteristics)
+                                Debug.WriteLine($"{c.Id}");
+
+                            // Register characteristics
+                            uartTx = await uartService.GetCharacteristicAsync(uartTxCharGUID);
+                            uartRx = await uartService.GetCharacteristicAsync(uartRxCharGUID);
+
+                            // Increase speed of data transfer using this characteristic write type
+                            uartRx.WriteType = CharacteristicWriteType.WithoutResponse;
+                            uartTx.WriteType = CharacteristicWriteType.WithoutResponse;
+
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("IDevice null, quitting.");
+                    return false;
+                }
+
+                return false;
             }
             catch (Exception ex)
             {

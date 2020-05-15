@@ -1,13 +1,11 @@
-﻿using System;
-
-using Xamarin.Forms;
-
-using System.Threading.Tasks;
-
+﻿using Xamarin.Forms;
 using BracePLUS.ViewModels;
+using Xamarin.Forms.Xaml;
 
 namespace BracePLUS.Views
 {
+    [XamlCompilation(XamlCompilationOptions.Compile)]
+
     public partial class Interface : ContentPage
     {
         InterfaceViewModel viewModel;

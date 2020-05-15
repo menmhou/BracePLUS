@@ -52,8 +52,7 @@
                            HorizontalTextAlignment="Start"
                            TextColor="DimGray"/>
                     
-                    <Switch IsToggled="false" 
-                            Toggled="Switch_Toggled"
+                    <Switch IsToggled="{Binding SwitchToggled}"
                             Grid.Column="1"/>
                 </Grid>
                 
@@ -193,7 +192,7 @@
 
                     <chart:SfChart.SecondaryAxis>
                         <chart:NumericalAxis Minimum="0.6"
-                                            Maximum="1.2"/>
+                                             Maximum="1.2"/>
                     </chart:SfChart.SecondaryAxis>
 
                 </chart:SfChart>

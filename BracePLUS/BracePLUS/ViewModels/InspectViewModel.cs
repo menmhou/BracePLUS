@@ -1,5 +1,4 @@
-﻿using BracePLUS.Events;
-using BracePLUS.Extensions;
+﻿using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.Services;
 using Microsoft.AppCenter.Crashes;
@@ -19,8 +18,21 @@ namespace BracePLUS.Views
     public class InspectViewModel : MvxViewModel
     {
         // Public Interface Members
-        public DataObject DataObj { get; set; }
-        public INavigation Nav { get; set; }
+        private DataObject _dataObj;
+        public DataObject DataObj 
+        {
+            get => _dataObj;
+            set
+            {
+                _dataObj = value;
+                if (DataObj != null && !dataRetrieved)
+                {
+                    RetrieveDataFromObject(value);
+                    dataRetrieved = true;
+                }
+            }
+        }
+        public INavigation Navigation { get; set; }
 
         #region File Info Section
         public string Date
@@ -38,6 +50,20 @@ namespace BracePLUS.Views
             get => DataObj.Duration; 
             set { }
         }
+
+        private bool _switchToggled;
+        public bool SwitchToggled
+        {
+            get => _switchToggled;
+            set
+            {
+                _switchToggled = value;
+                RaisePropertyChanged(() => SwitchToggled);
+
+                ToggleTarredData(value);
+            }
+        }
+
         public string FormattedSize
         {
             get => DataObj.FormattedSize;
@@ -132,16 +158,6 @@ namespace BracePLUS.Views
                 SliderValueUpdated(value);
             }
         }
-        private int _packets = 30;
-        public int Packets
-        {
-            get => _packets;
-            set
-            {
-                _packets = value;
-                RaisePropertyChanged(() => Packets);
-            }
-        }
         private double _chartMinimum;
         public double LineChartMinimum
         {
@@ -184,6 +200,16 @@ namespace BracePLUS.Views
         }
         #endregion
         #region Debug Section
+        private int _packets;
+        public int Packets
+        {
+            get => _packets;
+            set
+            {
+                _packets = value;
+                RaisePropertyChanged(() => Packets);
+            }
+        }
         public string DataString
         {
             get => DataObj.DataString;
@@ -206,6 +232,7 @@ namespace BracePLUS.Views
         #endregion
 
         private readonly MessageHandler handler;
+        private bool dataRetrieved = false;
 
         public InspectViewModel()
         {
@@ -225,6 +252,8 @@ namespace BracePLUS.Views
             RawNormals = new List<double>();
             OffsetNormals = new List<double>();
 
+            Packets = 30;
+
             TareData = false;
             NodeOffsets = new double[16];
 
@@ -232,7 +261,7 @@ namespace BracePLUS.Views
             LineChartMaximum = 1.2;
 
             BarChartMinimum = 0.6;
-            BarChartMaximum = 1.2;
+            BarChartMaximum = 1.2;            
         }
 
         #region Events
@@ -258,7 +287,6 @@ namespace BracePLUS.Views
                 File = new ShareFile(details[1])
             });
         }
-
         private async Task ExecuteDeleteCommand()
         {
             if (await Application.Current.MainPage.DisplayAlert("Delete File?", "Delete file from local storage?", "Yes", "No"))
@@ -275,12 +303,12 @@ namespace BracePLUS.Views
                 }
                 OnLocalFileListUpdated(EventArgs.Empty);
 
-                await Nav.PopAsync();
+                await Navigation.PopAsync();
             }
         }
         private async void ExecuteShowGraphCommand()
         {
-            await Nav.PushAsync(new GraphView
+            await Navigation.PushAsync(new GraphView
             {
                 BindingContext = DataObj
             });
@@ -293,17 +321,22 @@ namespace BracePLUS.Views
         }
         private async void ExecuteShowDataCommand()
         {
-            await Nav.PushAsync(new RawDataView
+            await Navigation.PushAsync(new RawDataView
             {
                 BindingContext = DataObj
             });
         }
         #endregion
 
-        public void InitDataObject()
+        public void RetrieveDataFromObject(DataObject dataObject)
         {
+            if (dataObject == null)
+                return;
+
             // If data not downloaded, do not proceed with initialisation
-            if (!DataObj.IsDownloaded) return;
+            if (!dataObject.IsDownloaded) return;
+
+            DataObj = dataObject;
             Packets = (DataObj.RawData.Length - 6) / 128;
 
             // Take calibrated data
@@ -320,11 +353,8 @@ namespace BracePLUS.Views
             try
             {
                 // If less than 200 data points avaible, use total number of points
-                var axis_max = RawNormals.Count > 200 ? 200 : RawNormals.Count;
-                for (int i = 0; i < axis_max; i++)
-                {
+                for (int i = 0; i < (RawNormals.Count > 200 ? 200 : RawNormals.Count); i++)
                     ChartData.Add(new ChartDataModel(i.ToString(), RawNormals[i]));
-                }
             }
             catch (Exception ex)
             {
@@ -334,27 +364,25 @@ namespace BracePLUS.Views
 
             try
             {
-                var nodes = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, 0);
+                // Retrieve array of 16 doubles containing sensor Z axis values for a specific data packet (first/0th packet in this case)
+                NodeOffsets = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, 0);
 
+                // Add new bar chart for each sensor Z value in packet
                 for (int i = 0; i < 16; i++)
-                {
-                    NodeOffsets[i] = nodes[i];
-                    AllNodesData.Add(new ChartDataModel((i+1).ToString(), nodes[i]));
-                }
+                    AllNodesData.Add(new ChartDataModel((i+1).ToString(), NodeOffsets[i]));   
             }
             catch (Exception ex)
             {
-                Crashes.TrackError(ex);
                 Debug.WriteLine("All nodes chart initialisation failed with exception: " + ex.Message);
             }
         }
 
-        public void ToggleTarredData(ToggledEventArgs e)
+        private void ToggleTarredData(bool tare)
         {
+            Debug.WriteLine("Toggling tare...");
             ChartData.Clear();
-            TareData = e.Value;
 
-            if (!e.Value)
+            if (tare)
             {
                 // UNTARRED DATA
 

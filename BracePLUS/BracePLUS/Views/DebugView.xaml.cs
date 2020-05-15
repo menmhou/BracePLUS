@@ -9,12 +9,14 @@ namespace BracePLUS.Views
 {
     public partial class DebugView : ContentPage
     {
+        DebugViewModel viewModel;
+
         public DebugView()
         {
             InitializeComponent();
-            BindingContext = App.DebugViewModel;
+            BindingContext = viewModel = new DebugViewModel();
 
-            App.DebugViewModel.RegisterStack(MessageStack);
+            viewModel.RegisterStack(MessageStack);
         }
     }
 }

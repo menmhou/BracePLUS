@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
+using BracePLUS.Views;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
 using Xamarin.Forms;
@@ -24,6 +25,21 @@ namespace BracePLUS.ViewModels
             {
                 _dataObjectGroups = value;
                 RaisePropertyChanged(() => DataObjectGroups);
+            }
+        }
+        private DataObject _selectedObject;
+        public DataObject SelectedObject
+        {
+            get => _selectedObject;
+            set
+            {
+                _selectedObject = value;
+                RaisePropertyChanged(() => SelectedObject);
+
+                if (_selectedObject != null)
+                {
+                    HandleSelection(_selectedObject);
+                }
             }
         }
         #endregion
@@ -84,7 +100,7 @@ namespace BracePLUS.ViewModels
         #endregion
 
         public Command LogCommand { get; set; }
-        public INavigation Nav { get; set; }
+        public INavigation Navigation { get; set; }
 
         // Private Properties
         private readonly MessageHandler handler;
@@ -184,6 +200,28 @@ namespace BracePLUS.ViewModels
         }
 
         #region Private Methods
+        private async void HandleSelection(DataObject item)
+        {
+            // Inspect file...
+            try
+            {
+                if (item.IsDownloaded)
+                {
+                    await Navigation.PushAsync(new Inspect(item));
+                }
+                else
+                {
+                    await App.Client.DownloadFile(item.Filename);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Async nav push to new file inspect page failed: {ex.Message}");
+            }
+
+            SelectedObject = null;
+        }
+
         private void LoadLocalFiles()
         {
             var msg = "LOGGING: Loading local files...";

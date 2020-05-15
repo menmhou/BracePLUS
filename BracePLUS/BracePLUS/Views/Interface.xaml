@@ -70,15 +70,15 @@
                     <chart:NumericalAxis Maximum="{Binding BarChartMaximum}"
                                          Minimum="{Binding BarChartMinimum}">
                         <chart:NumericalAxis.StripLines>
-                            <chart:NumericalStripLine Start="0.7" 
-                                                      Width ="0.15" 
+                            <chart:NumericalStripLine Start="0.4" 
+                                                      Width ="0.1" 
                                                       Text="Low Pressure" 
                                                       FillColor="#CAD6FE"/>
-                            <chart:NumericalStripLine Start="0.85" 
+                            <chart:NumericalStripLine Start="0.5" 
                                                       Width ="0.2" 
                                                       Text="Correct Pressure" 
                                                       FillColor="#ACC0FE"/>
-                            <chart:NumericalStripLine Start="1.05" 
+                            <chart:NumericalStripLine Start="0.7" 
                                                       Width ="0.15" 
                                                       Text="High Pressure" 
                                                       FillColor="#7F9DFD"/>

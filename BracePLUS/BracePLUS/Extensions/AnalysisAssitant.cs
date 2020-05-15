@@ -217,15 +217,22 @@ namespace BracePLUS.Extensions
             return values;
         }
 
+        /// <summary>
+        /// Extract a the normal values from a specific packet within the data array.
+        /// </summary>
+        /// <param name="data">The data containing the sensor values (List of data arrays, each array is 3x16; XYZ values * 16 sensors)</param>
+        /// <param name="index">The index of the desired sensor packet within the list of data</param>
+        /// <returns></returns>
         static public double[] ExtractPacketNormals(List<double[,]> data, int index)
         {
             double[] values = new double[16];
+
+            // App.DebugMsg($"Analysis: extracting packet normals.\nPacket index: {index}, size: {data[index].Length}");
 
             try
             {
                 for (int i = 0; i < 16; i++)
                     values[i] = data[index][i, 2];
-
             }
             catch (Exception ex)
             {
@@ -257,7 +264,6 @@ namespace BracePLUS.Extensions
             }
             catch (Exception ex)
             {
-                Crashes.TrackError(ex);
                 Debug.WriteLine("Calibrated maximum normals extraction failed: " + ex.Message);
             }
 

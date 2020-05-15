@@ -150,9 +150,9 @@ namespace BracePLUS.ViewModels
         {
             msg = DateTime.Now.ToString() + " " + msg;
 
-            try
+            Device.BeginInvokeOnMainThread(() =>
             {
-                Device.BeginInvokeOnMainThread(() =>
+                try
                 {
                     stack.Children.Insert(0, new Label
                     {
@@ -166,12 +166,12 @@ namespace BracePLUS.ViewModels
                     {
                         stack.Children.RemoveAt(200);
                     }
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-            }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
+            });
         }
 
         private async void ExecuteClearFiles()
@@ -194,7 +194,7 @@ namespace BracePLUS.ViewModels
 
             var sim_data = new List<byte[]>();
 
-            for (int i = 0; i < random.Next(20, 50); i++)
+            for (int i = 0; i < random.Next(20, 200); i++)
             {
                 byte[] temp = new byte[128];
                 for (int j = 4; j < 128; j++)

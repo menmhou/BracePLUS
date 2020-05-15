@@ -77,9 +77,10 @@
 
                 <ListView x:Name="listView"
                           ItemsSource="{Binding DataObjectGroups}"
-                          ItemSelected="listView_ItemSelected"
+                          SelectedItem="{Binding SelectedObject}"
                           RefreshCommand="{Binding RefreshCommand}"
                           IsRefreshing="{Binding IsRefreshing}"
+                          SeparatorColor="LightGray"
                           IsGroupingEnabled="True"
                           BackgroundColor="White"
                           HasUnevenRows="True"

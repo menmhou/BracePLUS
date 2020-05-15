@@ -9,25 +9,19 @@ namespace BracePLUS.Views
     [XamlCompilation(XamlCompilationOptions.Compile)]
     public partial class Inspect : ContentPage
     {
-        readonly DataObject dataObject;
         InspectViewModel viewModel;
 
-        public Inspect(DataObject obj)
+        public Inspect(DataObject data)
         {
             InitializeComponent();
-            dataObject = obj;
 
             BindingContext = viewModel = new InspectViewModel
             {
-                Nav = Navigation,
-                DataObj = dataObject
+                Navigation = Navigation,
+                DataObj = data
             };
-            viewModel.InitDataObject();
-        }
 
-        private void Switch_Toggled(object sender, ToggledEventArgs e)
-        {
-            viewModel.ToggleTarredData(e);
+            //viewModel.RetrieveDataFromObject(data);
         }
     }
 }

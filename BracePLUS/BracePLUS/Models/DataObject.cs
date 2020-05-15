@@ -268,7 +268,7 @@ namespace BracePLUS.Models
                 NormalData.Add(new ChartDataModel(i.ToString(), averages[i]));
         }
 
-            private void InitPreviewChartData(List<double> averages)
+        private void InitPreviewChartData(List<double> averages)
         {
             try
             {

@@ -19,7 +19,7 @@ namespace BracePLUS.Extensions
         public const int MAGBOARD =     388;	// 6bytes * 64nodes + 4 time bytes
 
         public const double MAX_PRESSURE = 1.1;
-
+        
         public const string uartServiceUUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
         public const string uartTxCharUUID = "49535343-1e4d-4bd9-ba61-23c647249616";
         public const string uartRxCharUUID = "49535343-8841-43f4-a8d4-ecbe34729bb3";

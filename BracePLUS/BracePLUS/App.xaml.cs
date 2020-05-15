@@ -5,13 +5,8 @@ using System.Diagnostics;
 using BracePLUS.Models;
 using static BracePLUS.Extensions.Constants;
 using System.IO;
-using System.Collections.Generic;
 using BracePLUS.Extensions;
 using Xamarin.Essentials;
-
-using Microsoft.AppCenter;
-using Microsoft.AppCenter.Analytics;
-using Microsoft.AppCenter.Crashes;
 using BracePLUS.ViewModels;
 using System.Threading.Tasks;
 
@@ -24,7 +19,6 @@ namespace BracePLUS
         public static MessageHandler handler;
 
         // Global Members
-        public static Random generator;
         public static string FolderPath { get; private set; }
 
         // User Info
@@ -32,14 +26,8 @@ namespace BracePLUS
         public static double GlobalAverage { get; set; }
 
         // Global variables
-        public static bool IsConnected = false;
+        public static bool IsConnected { get; set; }
 
-        // Global ViewModel so data bindings aren't reset everytime a new AsyncNavPush page is created.
-        public static BluetoothSetupViewModel BLEViewModel { get; set; }
-        public static DebugViewModel DebugViewModel { get; set; }
-        public static DebugView DebugView { get; set; }
-
-        // Private variables
 
         public App()
         {
@@ -49,26 +37,24 @@ namespace BracePLUS
 
             InitializeComponent();
 
-            generator = new Random();
             handler = new MessageHandler();
+            Client = new BraceClient();
 
-            //ClearFiles();
             RemovePersistentAnnoyingMarchFiles();
 
-            Client = new BraceClient();
-            BLEViewModel = new BluetoothSetupViewModel();
-            DebugViewModel = new DebugViewModel();
-            DebugView = new DebugView();
             MainPage = new MainPage();
         }
 
-        public static void Watch(int c)
+        public static void DebugMsg(string debugMsg)
         {
-            Debug.WriteLine(c);
+            Debug.WriteLine(debugMsg);
+            MessagingCenter.Send(Client, "StatusMessage", debugMsg);
         }
 
         protected override async void OnStart()
         {
+            IsConnected = false;
+
             await Task.Delay(1000);
             await Client.StartScan();
         }
