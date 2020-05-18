@@ -161,6 +161,9 @@ namespace BracePLUS.ViewModels
                 obj.DownloadLocalData(obj.Directory);
                 obj.Analyze();
 
+                Debug.WriteLine("Refreshing object:");
+                obj.DebugObject();
+
                 if (obj.IsDownloaded)
                 {
                     avgs_sum += obj.AveragePressure;
@@ -171,6 +174,7 @@ namespace BracePLUS.ViewModels
 
             App.GlobalAverage = avgs_sum / downloaded;
         }
+
 
         private async void HandleSelection(DataObject item)
         {
