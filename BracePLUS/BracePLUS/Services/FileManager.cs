@@ -6,8 +6,9 @@ using System.Globalization;
 using System.IO;
 using static BracePLUS.Extensions.Constants;
 using System.Text;
+using BracePLUS.Extensions;
 
-namespace BracePLUS.Models
+namespace BracePLUS.Services
 {
     public static class FileManager
     {
@@ -19,18 +20,8 @@ namespace BracePLUS.Models
             using (BinaryWriter writer = new BinaryWriter(new FileStream(filename, FileMode.OpenOrCreate, FileAccess.Write)))
             {
                 // Header may be null so write in try/catch
-                try
-                {
+                if (header != null)
                     writer.Write(header, 0, header.Length);
-                }
-                catch (NullReferenceException ex)
-                {
-                    Debug.WriteLine("Header write failed: " + ex.Message);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Header write failed: " + ex.Message);
-                }
 
                 try
                 {
@@ -55,8 +46,43 @@ namespace BracePLUS.Models
                     Debug.WriteLine("Footer write failed: " + ex.Message);
                 }
                 writer.Close();
+
+                App.DebugMsg($"File written: {name}");
             }
             
+        }
+
+        public static void WriteFile(byte[] data, string name, byte[] header = null, byte[] footer = null)
+        {
+            // Create file instance
+            var filename = Path.Combine(App.FolderPath, name);
+
+            using (BinaryWriter writer = new BinaryWriter(new FileStream(filename, FileMode.OpenOrCreate, FileAccess.Write)))
+            {
+                // Header may be empty to so check if bytes available
+                if (header != null)
+                    writer.Write(header, 0, header.Length);
+
+                try
+                {
+                    // Write file data
+                    writer.Write(data);
+                    
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Data write failed: " + ex.ToString());
+                }
+
+                // Footer may be empty to so check if bytes available
+                if (footer != null)
+                    writer.Write(footer, 0, footer.Length);
+
+                writer.Close();
+
+                App.DebugMsg($"File written: {name}");
+            }
+
         }
 
         public static void WriteFile(List<byte[,]> data, string name, byte[] header = null, byte[] footer = null)
@@ -138,32 +164,42 @@ namespace BracePLUS.Models
         {
             var data = new List<double[,]>();
 
-            StreamReader file = new StreamReader(path);
-            string line;
-            int node = 0;
-            int counter = 0;
-            var packet = new double[16, 3];
-
-            while((line = file.ReadLine()) != null)
+            using (StreamReader reader = new StreamReader(path))
             {
-                // Line format:
-                // id, x, y, z
-                string[] chars = line.Split(',');
+                int node = 0;
+                int packet_counter = 0;
+                var packet = new double[16, 3];
 
-                if (chars[0] != "ID")
+                Debug.WriteLine($"Reading CSV: {path}...");
+                while (!reader.EndOfStream)
                 {
-                    packet[node, X_AXIS] = double.Parse(chars[1]);
-                    packet[node, Y_AXIS] = double.Parse(chars[2]);
-                    packet[node, Z_AXIS] = double.Parse(chars[3]);
+                    var line = reader.ReadLine();
+                    //Debug.WriteLine(line);
 
-                    node++;
-                    if (node > 15)
+                    // Line format:
+                    // id, x, y, z
+                    string[] chars = line.Split(',');
+
+                    if (chars[0] != "ID")
                     {
-                        data.Add(packet);
-                        counter++;
-                        node = 0;
+                        packet[node, X_AXIS] = double.Parse(chars[1]);
+                        packet[node, Y_AXIS] = double.Parse(chars[2]);
+                        packet[node, Z_AXIS] = double.Parse(chars[3]);
+
+                        // Increment node every time
+                        node++;
+
+                        if (node > 15)
+                        {
+                            // Increment packet counter every 16 times
+                            data.Add(packet);
+                            // Clear out packet and reset values
+                            packet = new double[16, 3];
+                            packet_counter++;
+                            node = 0;
+                        }              
                     }
-                } 
+                }
             }
 
             return data;
@@ -179,6 +215,15 @@ namespace BracePLUS.Models
                 var _path = Path.Combine(App.FolderPath, name);
                 File.Delete(_path);
             }
+        }
+
+        public static void RewriteFile(byte[] data, string name)
+        {
+            // Delete file
+            DeleteFile(name: name);
+
+            // Write data to the same name
+            WriteFile(data, name);
         }
     }
 }

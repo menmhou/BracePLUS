@@ -3,6 +3,7 @@ using Microsoft.AppCenter.Crashes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 
 namespace BracePLUS.Extensions
@@ -218,7 +219,7 @@ namespace BracePLUS.Extensions
         }
 
         /// <summary>
-        /// Extract a the normal values from a specific packet within the data array.
+        /// Extract a the highest normal values from a specific packet within the data array.
         /// </summary>
         /// <param name="data">The data containing the sensor values (List of data arrays, each array is 3x16; XYZ values * 16 sensors)</param>
         /// <param name="index">The index of the desired sensor packet within the list of data</param>
@@ -243,6 +244,11 @@ namespace BracePLUS.Extensions
             return values;
         }
 
+        /// <summary>
+        /// Extract the highest normal values from each packet within the array of calibrated values
+        /// </summary>
+        /// <param name="calibData">The calibrated data containing sensor measurements.</param>
+        /// <returns>List of maximums</returns>
         static public List<double> ExtractMaximumNormals(List<double[,]> calibData)
         {
             var normals = new List<double>();
@@ -265,6 +271,32 @@ namespace BracePLUS.Extensions
             catch (Exception ex)
             {
                 Debug.WriteLine("Calibrated maximum normals extraction failed: " + ex.Message);
+            }
+
+            return normals;
+        }
+
+        /// <summary>
+        /// Extract the average normal values from each packet within the array of calibrated values
+        /// </summary>
+        /// <param name="calibData">The calibrated data containing sensor measurements.</param>
+        /// <returns>List of averages.</returns>
+        static public List<double> ExtractAverageNormals(List<double[,]> calibData)
+        {
+            // PrintCalibData(calibData);
+
+            var normals = new List<double>();
+
+            for (int packet = 0; packet < calibData.Count; packet++)
+            {
+                double packet_sum = 0;
+
+                for (int sensor = 0; sensor < 16; sensor++)
+                    packet_sum += calibData[packet][sensor, 2];
+                
+                var average = packet_sum / 16;
+
+                normals.Add(average);
             }
 
             return normals;
@@ -327,6 +359,18 @@ namespace BracePLUS.Extensions
             }
 
             return times;
+        }
+
+        static public void PrintCalibData(List<double[,]> calibData)
+        {
+            Debug.WriteLine("Debugging calib data:");
+            for (int i = 0; i < calibData.Count; i++)
+            {
+                Debug.WriteLine($"Packet {i}:");
+
+                for (int j = 0; j < 16; j++)
+                    Debug.WriteLine($"X:{calibData[i][j, 0]}  Y:{calibData[i][j, 1]}  Z:{calibData[i][j, 2]}");
+            }
         }
     }
 }

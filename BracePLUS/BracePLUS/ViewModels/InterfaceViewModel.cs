@@ -215,7 +215,6 @@ namespace BracePLUS.ViewModels
                 for (int i = 0; i < 16; i++)
                     normals[i] = e.Values[i] - offsets[i];
                 
-
                 // Find maximum value from array of values
                 double pressure = 0.0;
                 foreach (var val in normals)
@@ -257,6 +256,8 @@ namespace BracePLUS.ViewModels
             tapCounter++;
             if (tapCounter == 7)
             {
+                App.EnableAdmin();
+
                 await Nav.PushAsync(DebugView);
                 tapCounter = 0;
             }

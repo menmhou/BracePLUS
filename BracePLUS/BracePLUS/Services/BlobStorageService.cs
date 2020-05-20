@@ -1,26 +1,23 @@
-﻿using Microsoft.WindowsAzure.Storage;
+﻿using BracePLUS.Models;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+using static BracePLUS.Extensions.Constants;
 
 namespace BracePLUS.Services
 {
     class BlobStorageService
     {
-        readonly static CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=braceplusstorageaccount;AccountKey=h4BGm0+zUl/MlK7EMEH9rScJCXQcsP8sKS7cqH+qc6KXPCx7/sbQr/JiocbjJbkel+T42BSgbfpzuNoQ95XLoQ==;EndpointSuffix=core.windows.net");
+        readonly static CloudStorageAccount cloudStorageAccount = CloudStorageAccount.Parse(STORAGE_ACCOUNT_KEY1);
         readonly static CloudBlobClient cloudBlobClient = cloudStorageAccount.CreateCloudBlobClient();
 
-        public List<string> names;
-
-        public BlobStorageService()
-        {
-            names = new List<string>();
-        }
-
-        public async Task<List<T>> GetBlobs<T>(string containerName, string prefix = "", int? maxresultsPerQuery = null, BlobListingDetails blobListingDetails = BlobListingDetails.None) where T : ICloudBlob
+        static public async Task<List<T>> GetBlobs<T>(string containerName, string prefix = "", int? maxresultsPerQuery = null, BlobListingDetails blobListingDetails = BlobListingDetails.None) where T : ICloudBlob
         {
             // Retrieve reference to container
             var blobContainer = cloudBlobClient.GetContainerReference(containerName);
@@ -40,8 +37,6 @@ namespace BracePLUS.Services
                     foreach (var blob in response?.Results?.OfType<T>())
                     {
                         blobList.Add(blob);
-                        names.Add(blob.Name);
-                        Debug.WriteLine("Downloading blob: {0}", blob.Name);
                     }
 
                 } while (continuationToken != null);
@@ -49,20 +44,86 @@ namespace BracePLUS.Services
             catch (Exception ex)
             {
                 // Handle exception
-                Debug.WriteLine("Blow download failed with exception: " + ex.Message);
+                Debug.WriteLine("Blob download failed with exception: " + ex.Message);
             }
 
             return blobList;
         }
 
-        public static async Task<CloudBlockBlob> SaveBlockBlob(string containerName, byte[] blob, string blobTitle)
+        public static async Task<byte[]> SaveBlockBlob(string containerName, byte[] blob, string blobTitle)
         {
-            var blobContainer = cloudBlobClient.GetContainerReference(containerName);
+            try
+            {
+                var blobContainer = cloudBlobClient.GetContainerReference(containerName);
+                var blockBlob = blobContainer.GetBlockBlobReference(blobTitle);
 
-            var blockBlob = blobContainer.GetBlockBlobReference(blobTitle);
-            await blockBlob.UploadFromByteArrayAsync(blob, 0, blob.Length);
+                // Mask first byte to indicate cloud storage.
+                blob[0] |= 0x10;
 
-            return blockBlob;
+                await blockBlob.UploadFromByteArrayAsync(blob, 0, blob.Length);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Unable to save {blobTitle} to cloud storage: {ex.Message}");
+            }
+
+            App.DebugMsg($"Saved {blobTitle} to cloud storage.");
+
+            return blob;
         }
+
+        public static async Task<bool> DeleteBlob(string blobName, string containerName)
+        {
+            bool result;
+
+            try
+            {
+                var blobContainer = cloudBlobClient.GetContainerReference(containerName);
+
+                var blob = blobContainer.GetBlockBlobReference(blobName);
+                result = await blob.DeleteIfExistsAsync();
+
+                if (result) App.DebugMsg($"Deleted {blobName} from cloud storage.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Couldn't delete {blobName}: {ex.Message}");
+                result = false;
+            }
+
+            return result;
+        }
+
+        public static async Task DownloadBlobData(CloudBlockBlob blob)
+        {
+            var info = blob.Properties;
+            var packets = (info.Length - 6) / 128;
+
+            var bytes = new byte[128];
+            var data = new List<byte[]>();
+
+            for (int packet = 0; packet < packets; packet++)
+            {
+                try
+                {
+                    await blob.DownloadRangeToByteArrayAsync(bytes, 0, packet * 128, 128);
+                    data.Add(bytes);
+                    bytes = new byte[128];
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Download failed: " + ex.Message);
+                    return;
+                }
+            }
+
+            App.DebugMsg($"Downloaded data successfully for {blob.Name}");
+
+            // Mask first byte to indicate cloud storage.
+            data[0][0] |= 0x1F;
+
+            FileManager.WriteFile(data, blob.Name);
+        }
+
     }
 }

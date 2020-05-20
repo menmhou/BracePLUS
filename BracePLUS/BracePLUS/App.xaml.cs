@@ -7,8 +7,8 @@ using static BracePLUS.Extensions.Constants;
 using System.IO;
 using BracePLUS.Extensions;
 using Xamarin.Essentials;
-using BracePLUS.ViewModels;
 using System.Threading.Tasks;
+using BracePLUS.Services;
 
 namespace BracePLUS
 {
@@ -27,6 +27,7 @@ namespace BracePLUS
 
         // Global variables
         public static bool IsConnected { get; set; }
+        public static bool IsAdmin { get; private set; }
 
 
         public App()
@@ -51,12 +52,22 @@ namespace BracePLUS
             MessagingCenter.Send(Client, "StatusMessage", debugMsg);
         }
 
+        public static void EnableAdmin()
+        {
+            if (!IsAdmin)
+            {
+                IsAdmin = true;
+                DebugMsg("Debug mode enabled.");
+            }
+        }
+
         protected override async void OnStart()
         {
             IsConnected = false;
+            IsAdmin = false;
 
             await Task.Delay(1000);
-            await Client.StartScan();
+           // await Client.StartScan();
         }
 
         protected override void OnSleep()

@@ -147,19 +147,19 @@
                     </chart:SfChart.ChartBehaviors>
 
                     <chart:SfChart.Series>
-                        <chart:SplineSeries ItemsSource="{Binding ChartData}"
-                                        Color="Red"
-                                        XBindingPath="Name"
-                                        YBindingPath="Value" />
+                        <chart:SplineSeries ItemsSource="{Binding LineChartData}"
+                                            Color="Red"
+                                            XBindingPath="Name"
+                                            YBindingPath="Value" />
                     </chart:SfChart.Series>
 
                     <chart:SfChart.PrimaryAxis>
-                        <chart:CategoryAxis />
+                        <chart:CategoryAxis IsVisible="True"/>
                     </chart:SfChart.PrimaryAxis>
 
                     <chart:SfChart.SecondaryAxis>
                         <chart:NumericalAxis Minimum="{Binding LineChartMinimum}"
-                                            Maximum="{Binding LineChartMaximum}"/>
+                                             Maximum="{Binding LineChartMaximum}"/>
                     </chart:SfChart.SecondaryAxis>
                 </chart:SfChart>
                 
@@ -180,7 +180,7 @@
                                HeightRequest="300">
 
                     <chart:SfChart.Series>
-                        <chart:ColumnSeries ItemsSource="{Binding AllNodesData}"
+                        <chart:ColumnSeries ItemsSource="{Binding BarChartData}"
                                             XBindingPath="Name"
                                             YBindingPath="Value" 
                                             ListenPropertyChange="True"/>
@@ -191,8 +191,8 @@
                     </chart:SfChart.PrimaryAxis>
 
                     <chart:SfChart.SecondaryAxis>
-                        <chart:NumericalAxis Minimum="0.6"
-                                             Maximum="1.2"/>
+                        <chart:NumericalAxis Minimum="{Binding BarChartMinimum}"
+                                             Maximum="{Binding BarChartMaximum}"/>
                     </chart:SfChart.SecondaryAxis>
 
                 </chart:SfChart>

@@ -172,8 +172,7 @@ namespace BracePLUS.ViewModels
         public void RefreshObjects()
         {
             var msg = "LOGGING: Refreshing files...";
-            Debug.WriteLine(msg);
-            MessagingCenter.Send(App.Client, "StatusMessage", msg);
+            App.DebugMsg(msg);
 
             LoadLocalFiles();
 
@@ -195,8 +194,6 @@ namespace BracePLUS.ViewModels
 
                 App.GlobalAverage = avgs_sum / downloaded;
             }
-
-            UpdateGraph(DataObjectGroups);
         }
 
         #region Private Methods
@@ -267,7 +264,9 @@ namespace BracePLUS.ViewModels
                     Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm),
                     Filename = fi.Name,
                     Directory = filename,
-                    Location = handler.DecodeLocation(header),
+                    Location = handler.DecodeLocation(header)[0],
+                    Tag = handler.DecodeLocation(header)[1],
+                    TagColour = ((header[0] & 0x10) == 0x10) ? CLOUD_INDICATOR : Color.Gray,
                     RawData = data,
                     IsDownloaded = (data.Length > 6) ? true : false
                 };
@@ -313,6 +312,7 @@ namespace BracePLUS.ViewModels
             };
             DataObjectGroups = group;
 
+            UpdateGraph(DataObjectGroups);
             ReorderDataObjects();
         }
 
@@ -401,7 +401,6 @@ namespace BracePLUS.ViewModels
                 return;
             }
 
-            double[] temps = new double[5];
             double[] normals = new double[5];
 
             foreach (var group in dataObjectGroup)
@@ -410,23 +409,23 @@ namespace BracePLUS.ViewModels
                 // Get normals from today
                 if (group.Heading == "Today")
                 {
-                    temps[0] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                    normals[0] = AnalysisAssitant.GetNormalAverageFromGroup(group);
                 }
                 else if (group.Heading == "Yesterday")
                 {
-                    temps[1] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                    normals[1] = AnalysisAssitant.GetNormalAverageFromGroup(group);
                 }
                 else if (group.Heading == "This Week")
                 {
-                    temps[2] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                    normals[2] = AnalysisAssitant.GetNormalAverageFromGroup(group);
                 }
                 else if (group.Heading == "This Month")
                 {
-                    temps[3] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                    normals[3] = AnalysisAssitant.GetNormalAverageFromGroup(group);
                 }
                 else if (group.Heading == "Older")
                 {
-                    temps[4] = AnalysisAssitant.GetNormalAverageFromGroup(group);
+                    normals[4] = AnalysisAssitant.GetNormalAverageFromGroup(group);
                 }
             }
 

@@ -105,6 +105,10 @@ namespace BracePLUS.ViewModels
             ImageOpacity = 1.0;
             // Assign event method
             App.Client.SystemEvent += async (s, e) => await UpdateUI(e);
+
+            SetNullValues();
+            ButtonText = "Scan for Brace+";
+            ConnectionImage = "BraceRenderGreyscale.jpg";
         }
 
         #region Commands

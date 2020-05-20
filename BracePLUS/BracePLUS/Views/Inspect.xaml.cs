@@ -11,17 +11,26 @@ namespace BracePLUS.Views
     {
         InspectViewModel viewModel;
 
+        DataObject data;
+
         public Inspect(DataObject data)
         {
             InitializeComponent();
+
+            this.data = data;
 
             BindingContext = viewModel = new InspectViewModel
             {
                 Navigation = Navigation,
                 DataObj = data
             };
+        }
 
-            //viewModel.RetrieveDataFromObject(data);
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+               
+            viewModel.RetrieveDataFromObject(data);
         }
     }
 }

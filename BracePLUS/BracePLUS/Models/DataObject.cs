@@ -9,6 +9,7 @@ using System.IO;
 using Xamarin.Essentials;
 using BracePLUS.Events;
 using static BracePLUS.Extensions.Constants;
+using BracePLUS.Services;
 
 namespace BracePLUS.Models
 {
@@ -70,7 +71,8 @@ namespace BracePLUS.Models
         public double MaxPressure { get; set; }
         public byte[] RawData { get; set; }
         public List<double[,]> CalibratedData { get; set; }
-        public DateTime StartTime { get; set; }
+        public string Tag { get; set; }
+        public Color TagColour { get; set; }
         #endregion
 
         // Commands
@@ -92,6 +94,9 @@ namespace BracePLUS.Models
             CalibratedData = new List<double[,]>();
 
             App.Client.DownloadProgression += Client_OnDownloadProgress;
+
+            //Tag = "Logging";
+            //TagColour = Color.MediumPurple;
         }
 
         #region Events
@@ -194,7 +199,6 @@ namespace BracePLUS.Models
             {
                 if (RawData.Length > 6)
                 {
-                    //Debug.WriteLine("Data already downloaded, returning.");
                     ChartEnabled = "True";
                     IsDownloaded = true;
                     return;
@@ -234,23 +238,16 @@ namespace BracePLUS.Models
 
                 // Extract list of normals
                 var normals = AnalysisAssitant.ExtractMaximumNormals(CalibratedData);
-                var averages = AnalysisAssitant.ExtractPacketNormalDistaceAverages(CalibratedData);
+                var averages = AnalysisAssitant.ExtractAverageNormals(CalibratedData);
 
-                try
-                {
-                    Duration = AnalysisAssitant.GetPacketDuration(RawData);
-                    AveragePressure = AnalysisAssitant.GetAverage(averages);
-                    MaxPressure = AnalysisAssitant.GetMaximum(normals);
+                Duration = AnalysisAssitant.GetPacketDuration(RawData);
+                AveragePressure = AnalysisAssitant.GetAverage(averages);
+                MaxPressure = AnalysisAssitant.GetMaximum(normals);
 
-                    if (AveragePressure > BENCHMARK_PRESSURE)
-                        UpDownImage = "UpArrow.png";
-                    else
-                        UpDownImage = "DownArrow.png";                    
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("RawData analysis failed with exception: " + ex.Message);
-                }
+                if (AveragePressure > BENCHMARK_PRESSURE)
+                    UpDownImage = "UpArrow.png";
+                else
+                    UpDownImage = "DownArrow.png";                    
 
                 InitPreviewChartData(averages);
                 InitNormalDataChart(averages);
@@ -291,10 +288,11 @@ namespace BracePLUS.Models
             try
             {
                 // Check if calibration file exists
-                if (File.Exists(Path.Combine(App.FolderPath, name)))
+                if (File.Exists(DirectoryCSV))
                 {
                     // Read data
-                    return FileManager.ReadCSV(Path.Combine(App.FolderPath, name));
+                    var calibData = FileManager.ReadCSV(DirectoryCSV);
+                    return calibData;
                 }
                 else
                 {
@@ -318,5 +316,18 @@ namespace BracePLUS.Models
     {
         public string Heading { get; set; }
         public List<DataObject> DataObjects => this;
+
+        public double GetGroupMaximum()
+        {
+            List<double> max_normals = new List<double>();
+
+            foreach (var obj in this)
+            {
+                if (obj.IsDownloaded)
+                    max_normals.Add(obj.MaxPressure);
+            }
+
+            return AnalysisAssitant.GetMaximum(max_normals);
+        }
     }
 }

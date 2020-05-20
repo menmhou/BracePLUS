@@ -12,6 +12,7 @@ using static BracePLUS.Extensions.Constants;
 using Plugin.BLE.Abstractions;
 using Plugin.Toast;
 using Plugin.BLE.Abstractions.Exceptions;
+using BracePLUS.Services;
 
 namespace BracePLUS.Models
 {
@@ -328,8 +329,7 @@ namespace BracePLUS.Models
             };
             EVENT(args);
 
-            byte[] b = new byte[] { 0x0A, 0x0B, 0x0C };
-            WRITE_FILE(DATA_IN, name: handler.GetFileName(DateTime.Now), header: b, footer: b);
+            WRITE_FILE(DATA_IN, name: handler.GetFileName(DateTime.Now), header: HEADER_LOCAL, footer: HEADER_LOCAL);
             STATUS = SYS_STREAM_FINISH;
         }
 
@@ -548,7 +548,7 @@ namespace BracePLUS.Models
 
                 downloadProgress = 0;
                 downloadFilename += ".txt";
-                WRITE_FILE(DATA_IN, name: downloadFilename, header: b, footer: b);
+                WRITE_FILE(DATA_IN, name: downloadFilename, header: HEADER_MOBILE, footer: HEADER_MOBILE);
 
                 SystemUpdatedEventArgs e = new SystemUpdatedEventArgs
                 {
@@ -660,10 +660,8 @@ namespace BracePLUS.Models
                         "Store data locally?", "Yes", "No");
 
                     if (save)
-                    {
-                        byte[] header = new byte[] { 0x0A, 0x0B, 0x0C };
-                        WRITE_FILE(DATA_IN, handler.GetFileName(DateTime.Now), header);
-                    }
+                        WRITE_FILE(DATA_IN, handler.GetFileName(DateTime.Now), HEADER_LOCAL);
+                    
                 });
             }
         }
@@ -685,13 +683,6 @@ namespace BracePLUS.Models
                         {
                             // Assign discovered service to class member service
                             uartService = s;
-
-                            // Retrieve characteristics from device service
-                            var characteristics = await uartService.GetCharacteristicsAsync();
-
-                            Debug.WriteLine($"Discovered {characteristics.Count} characteristics:");
-                            foreach (var c in characteristics)
-                                Debug.WriteLine($"{c.Id}");
 
                             // Register characteristics
                             uartTx = await uartService.GetCharacteristicAsync(uartTxCharGUID);
@@ -766,7 +757,6 @@ namespace BracePLUS.Models
             {
                 Status = FILE_WRITTEN,
                 Filename = name,
-                Message = $"File written: {name}."
             };
             EVENT(e);
 
@@ -779,7 +769,9 @@ namespace BracePLUS.Models
             {
                 STATUS = args.Status;
                 SystemEvent(this, args);
-                Write(args.Message);
+
+                if (!string.IsNullOrEmpty(args.Message))
+                    Write(args.Message);
             }
             catch (Exception ex)
             {

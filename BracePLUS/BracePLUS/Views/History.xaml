@@ -5,8 +5,10 @@
              x:Class="BracePLUS.Views.History">
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Sync"
-                     Command="{Binding GetFilenamesCommand}"/>
+        <ToolbarItem Text="Cloud"
+                     Command="{Binding CloudSyncCommand}"/>
+        <ToolbarItem Text="Phone"
+                     Command="{Binding PhoneSyncCommand}"/>
     </ContentPage.ToolbarItems>
 
     <ContentPage.Content>
@@ -41,15 +43,23 @@
                                                HorizontalOptions="StartAndExpand"
                                                TextColor="Black"
                                                Grid.Column="0"/>
-                                        <Label Text="{Binding Location}"
+                                        <Label Text="{Binding Detail}"
                                                FontSize="Medium"
+                                               TextColor="DimGray"
+                                               Grid.Row="1"/>
+                                        <Label Text="{Binding Location}"
+                                               FontSize="Large"
                                                HorizontalTextAlignment="End"
                                                TextColor="DimGray"
                                                Grid.Column="1"/>
+                                        <Label Text="{Binding Tag}"
+                                               TextColor="{Binding TagColour}"
+                                               HorizontalTextAlignment="End"
+                                               FontSize="Medium"
+                                               Grid.Column="1"
+                                               Grid.Row="1"/>
                                     </Grid>
-                                    <Label Text="{Binding Detail}"
-                                           FontSize="Medium"
-                                           TextColor="DimGray"/>
+                                   
                                     <Label Text="{Binding AveragePressure, StringFormat='Average Pressure: {0:0.00}'}"
                                            FontSize="Medium"
                                            TextColor="DimGray"
@@ -81,8 +91,8 @@
                                         </chart:SfChart.PrimaryAxis>
 
                                         <chart:SfChart.SecondaryAxis>
-                                            <chart:NumericalAxis Maximum="1.5"
-                                                                 Minimum="0"/>
+                                            <chart:NumericalAxis Maximum="0.75"
+                                                                 Minimum="0.25"/>
                                         </chart:SfChart.SecondaryAxis>
                                     </chart:SfChart>
                                     

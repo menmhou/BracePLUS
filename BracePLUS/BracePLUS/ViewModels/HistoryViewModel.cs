@@ -15,6 +15,9 @@ using System.Threading.Tasks;
 using BracePLUS.Views;
 using Microsoft.AppCenter.Crashes;
 using Xamarin.Essentials;
+using BracePLUS.Services;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Plugin.Toast;
 
 namespace BracePLUS.ViewModels
 {
@@ -70,6 +73,7 @@ namespace BracePLUS.ViewModels
                 if (_selectedObject != null)
                 {
                     HandleSelection(_selectedObject);
+                    _selectedObject = null;
                 }
             }
         }
@@ -78,7 +82,8 @@ namespace BracePLUS.ViewModels
         public INavigation Navigation { get; set; }
 
         // Public Commands
-        public Command GetFilenamesCommand { get; set; }
+        public Command CloudSyncCommand { get; set; }
+        public Command PhoneSyncCommand { get; set; }
 
         // Private Properties
         private readonly MessageHandler handler;
@@ -93,7 +98,8 @@ namespace BracePLUS.ViewModels
 
             // Commands
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
-            GetFilenamesCommand = new Command(async () => await ExecuteGetFilenamesCommand());
+            CloudSyncCommand = new Command(async () => await ExecuteCloudSyncCommand());
+            PhoneSyncCommand = new Command(async () => await ExecutePhoneSyncCommand());
 
             // Events
             App.Client.FileSyncComplete += (s, e) =>
@@ -132,7 +138,8 @@ namespace BracePLUS.ViewModels
             RefreshObjects();
             IsRefreshing = false;
         }
-        private async Task ExecuteGetFilenamesCommand()
+
+        private async Task ExecutePhoneSyncCommand()
         {
             if (App.IsConnected)
             {
@@ -143,6 +150,41 @@ namespace BracePLUS.ViewModels
                 await Application.Current.MainPage.DisplayAlert
                     ("Not Connected", "Please connect to Brace+ to sync files.", "OK");
             }
+        }
+        private async Task ExecuteCloudSyncCommand()
+        {
+            CrossToastPopUp.Current.ShowToastMessage("Syncing files with cloud...");
+            // First get all filenames from cloud
+            var blobs = await BlobStorageService.GetBlobs<CloudBlockBlob>("patient0");
+
+            // Now go through all local files and any not pushed in cloud; push.
+            foreach (var obj in DataObjects)
+            {
+                if (obj.IsDownloaded)
+                {                       
+                    var bytes = await BlobStorageService.SaveBlockBlob("patient0", obj.RawData, obj.Filename);
+
+                    // Rewrite file data
+                    FileManager.RewriteFile(bytes, obj.Filename);
+                }   
+            }
+
+            // Now go through all cloud files and any not pulled to local; pull.
+            foreach (var blob in blobs)
+            {
+                // Check if file already exists...
+                bool skip = false;
+
+                foreach (var obj in DataObjects)
+                    if (obj.Filename == blob.Name) skip = true;
+                
+
+                if (!skip) await BlobStorageService.DownloadBlobData(blob);
+            }
+
+            RefreshObjects();
+
+            CrossToastPopUp.Current.ShowToastMessage("Cloud sync finished.");
         }
         #endregion
 
@@ -213,7 +255,9 @@ namespace BracePLUS.ViewModels
                     Date = handler.DecodeFilename(fi.Name, file_format: FILE_FORMAT_MMDDHHmm),
                     Filename = fi.Name,
                     Directory = filename,
-                    Location = handler.DecodeLocation(header),
+                    Location = handler.DecodeLocation(header)[0],
+                    Tag = handler.DecodeLocation(header)[1],
+                    TagColour = ((header[0] & 0x10) == 0x10) ? CLOUD_INDICATOR : Color.Gray,
                     RawData = data,
                     IsDownloaded = (data.Length > 6) ? true : false
                 };
@@ -238,8 +282,8 @@ namespace BracePLUS.ViewModels
                         try
                         {
                             // Get date of current and next object
-                            int date1 = Int32.Parse(data[i].Filename.Remove(8));
-                            int date2 = Int32.Parse(data[i + 1].Filename.Remove(8));
+                            int date1 = int.Parse(data[i].Filename.Remove(8));
+                            int date2 = int.Parse(data[i + 1].Filename.Remove(8));
 
                             // If date2 > date1, respective dataobjects swap
                             if (date2 > date1)

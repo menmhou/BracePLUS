@@ -197,9 +197,9 @@ namespace BracePLUS.ViewModels
             for (int i = 0; i < random.Next(20, 200); i++)
             {
                 byte[] temp = new byte[128];
-                for (int j = 4; j < 128; j++)
+                for (int j = 4; j < 100; j++)
                 {
-                    long t = j + i*128;
+                    long t = j + i * 128;
 
                     temp[3] = (byte)((t >> 24) & 0xFF);
                     temp[2] = (byte)((t >> 16) & 0xFF);
@@ -212,9 +212,7 @@ namespace BracePLUS.ViewModels
                 sim_data.Add(temp);
             }
 
-            var b = new byte[3] { 0x0B, 0x0D, 0x0F };
-
-            App.Client.WRITE_FILE(sim_data, filename, header: b, footer: b);
+            App.Client.WRITE_FILE(sim_data, filename, header: HEADER_SIM, footer: HEADER_SIM);
         }
 
         private void SetNullValues()

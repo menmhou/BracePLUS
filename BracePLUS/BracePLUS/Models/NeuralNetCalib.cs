@@ -52,9 +52,19 @@ namespace BracePLUS.Models
                     var L2Out = CalculateLayer2(L1Out);
                     var dOutput = CalculateOutput(L2Out);
 
+                    /*
+                    Debug.WriteLine("NN Calib Inputs:");
+                    foreach (var input in InOut)
+                        Debug.WriteLine(input);
+
+                    Debug.WriteLine("NN Calib Outputs:");
+                    foreach (var output in dOutput)
+                        Debug.WriteLine(output);
+                    */
+
                     // Re-pack back into output buffer with correct index
                     for (int j = 0; j < 3; j++)
-                        Outputs[(i - 4) / 6, j] = dOutput[j];
+                    Outputs[(i - 4) / 6, j] = dOutput[j];
                 }
                 skip = false;
             }

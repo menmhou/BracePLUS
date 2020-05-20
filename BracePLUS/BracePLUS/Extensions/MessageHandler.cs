@@ -117,27 +117,44 @@ namespace BracePLUS.Extensions
             return msg;
         }
 
-        public string DecodeLocation(byte[] header)
+        public string[] DecodeLocation(byte[] header)
         {
             string location = "";
-            long _header = ((long)header[0] << 16) | ((long)header[1] << 8) | (header[2]);
+            string tag = "";
+
+            /* 
+             * Header definitions:
+             * 
+             * HEADER_LOCAL =   { 0x01, 0x0B, 0x0C };
+             * HEADER_SIM =     { 0x02, 0x0B, 0x0C };
+             * HEADER_MOBILE =  { 0x04, 0x0B, 0x0C };
+             */
+
+            // mask first byte of header
+            byte _header = (byte)(header[0] & 0x0F);
 
             switch (_header)
             {
-                case MOBILE:
-                    location = "Mobile";
-                    break;
-
-                case LOCAL:
+                case 0x01:
                     location = "Local";
                     break;
 
-                case SIM:
+                case 0x02:
                     location = "Simulation";
+                    break;
+
+                case 0x04:
+                    location = "Mobile";
                     break;
             }
 
-            return location;
+            // Check for 4th bit of header for cloud
+            if ((header[0] & 0x10) == 0x10)
+            {
+                tag = "Stored in Cloud";
+                Debug.WriteLine("!!! CLOUD FILE FOUND !!!");
+            }
+            return new string[] { location, tag } ;
         }
 
         public DateTime DecodeFilename(string file, int file_format = FILE_FORMAT_MMDDHHmm)
@@ -382,8 +399,8 @@ namespace BracePLUS.Extensions
             {
                 try
                 {
-                    details[0] = Path.Combine(App.FolderPath, dataObj.DirectoryCSV);
-                    details[1] = dataObj.FilenameCSV;
+                    details[1] = Path.Combine(App.FolderPath, dataObj.DirectoryCSV);
+                    details[0] = dataObj.FilenameCSV;
                 }
                 catch (Exception ex)
                 {
@@ -391,14 +408,14 @@ namespace BracePLUS.Extensions
                     CrossToastPopUp.Current.ShowToastMessage("Unable to share CSV file");
 
                     // If CSV unavailable, default to raw data
-                    details[0] = Path.Combine(App.FolderPath, dataObj.Directory);
-                    details[1] = dataObj.Filename;
+                    details[1] = Path.Combine(App.FolderPath, dataObj.Directory);
+                    details[0] = dataObj.Filename;
                 }
             }
             else
             {
-                details[0] = Path.Combine(App.FolderPath, dataObj.Directory);
-                details[1] = dataObj.Filename;
+                details[1] = Path.Combine(App.FolderPath, dataObj.Directory);
+                details[0] = dataObj.Filename;
             }
 
             return details;
