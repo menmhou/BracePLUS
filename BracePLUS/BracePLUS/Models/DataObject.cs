@@ -10,6 +10,8 @@ using Xamarin.Essentials;
 using BracePLUS.Events;
 using static BracePLUS.Extensions.Constants;
 using BracePLUS.Services;
+using Plugin.Toast;
+using BracePLUS.Analysis;
 
 namespace BracePLUS.Models
 {
@@ -94,9 +96,6 @@ namespace BracePLUS.Models
             CalibratedData = new List<double[,]>();
 
             App.Client.DownloadProgression += Client_OnDownloadProgress;
-
-            //Tag = "Logging";
-            //TagColour = Color.MediumPurple;
         }
 
         #region Events
@@ -132,7 +131,8 @@ namespace BracePLUS.Models
             {
                 if (RawData.Length > 6)
                 {
-                    //Debug.WriteLine("Data already downloaded, returning.");
+                    CrossToastPopUp.Current.ShowToastMessage("File already downloaded.");
+
                     ChartEnabled = "True";
                     ProgressBarEnabled = false;
                     IsDownloaded = true;

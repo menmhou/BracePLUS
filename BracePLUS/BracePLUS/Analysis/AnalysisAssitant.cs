@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
-namespace BracePLUS.Extensions
+namespace BracePLUS.Analysis
 {
     class AnalysisAssitant
     {

@@ -150,10 +150,8 @@ namespace BracePLUS.Extensions
 
             // Check for 4th bit of header for cloud
             if ((header[0] & 0x10) == 0x10)
-            {
                 tag = "Stored in Cloud";
-                Debug.WriteLine("!!! CLOUD FILE FOUND !!!");
-            }
+            
             return new string[] { location, tag } ;
         }
 

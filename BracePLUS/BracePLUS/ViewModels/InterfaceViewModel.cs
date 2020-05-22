@@ -15,6 +15,7 @@ using System;
 using BracePLUS.Views;
 using System.Collections.Generic;
 using Plugin.Toast;
+using BracePLUS.Analysis;
 
 namespace BracePLUS.ViewModels
 {
