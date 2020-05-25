@@ -47,6 +47,7 @@ namespace BracePLUS.Models
 
         // UI Assistant
         private readonly MessageHandler handler;
+        private readonly IDialogService dialogService;
         public bool isStreaming;
         public bool isScanning;
         public float downloadProgress;
@@ -77,6 +78,7 @@ namespace BracePLUS.Models
         public BraceClient()
         {
             handler = new MessageHandler();
+            dialogService = new DialogService();
 
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
@@ -157,7 +159,7 @@ namespace BracePLUS.Models
             {
                 if (!App.IsConnected)
                 {
-                    await Application.Current.MainPage.DisplayAlert(DEV_NAME + " not found.", "Unable to find " + DEV_NAME, "OK");
+                    await dialogService.ShowAlertAsync($"{DEV_NAME} not found.", $"Unable to find {DEV_NAME}", "OK");
                     Write("Scan timeout elapsed.");
                     await StopScan();
                 }
@@ -752,13 +754,6 @@ namespace BracePLUS.Models
         public void WRITE_FILE(List<byte[]> data, string name, byte[] header = null, byte[] footer = null)
         {
             FileManager.WriteFile(data, name, header, footer);
-
-            SystemUpdatedEventArgs e = new SystemUpdatedEventArgs
-            {
-                Status = FILE_WRITTEN,
-                Filename = name,
-            };
-            EVENT(e);
 
             DATA_IN.Clear();
         }

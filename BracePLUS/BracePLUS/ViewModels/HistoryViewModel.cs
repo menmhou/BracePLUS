@@ -18,6 +18,7 @@ using Xamarin.Essentials;
 using BracePLUS.Services;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Plugin.Toast;
+using Acr.UserDialogs;
 
 namespace BracePLUS.ViewModels
 {
@@ -87,10 +88,13 @@ namespace BracePLUS.ViewModels
 
         // Private Properties
         private readonly MessageHandler handler;
+        private readonly IDialogService dialogService;
 
         public HistoryViewModel()
         {
             handler = new MessageHandler();
+            dialogService = new DialogService();
+
             DataObjects = new ObservableCollection<DataObject>();
 
             ListViewHeight = DeviceDisplay.MainDisplayInfo.Height;
@@ -125,7 +129,7 @@ namespace BracePLUS.ViewModels
             MessagingCenter.Subscribe<InspectViewModel, DataObject>(this, "Remove", (sender, arg) =>
             {
                 DataObjects.Remove(arg);
-                LoadLocalFiles();
+                RefreshObjects();
             });
 
             RefreshObjects();
@@ -147,44 +151,65 @@ namespace BracePLUS.ViewModels
             }
             else
             {
-                await Application.Current.MainPage.DisplayAlert
-                    ("Not Connected", "Please connect to Brace+ to sync files.", "OK");
+                await dialogService.ShowAlertAsync("Not Connected", "Please connect to Brace+ to sync files.", "OK");
             }
         }
         private async Task ExecuteCloudSyncCommand()
         {
-            CrossToastPopUp.Current.ShowToastMessage("Syncing files with cloud...");
             // First get all filenames from cloud
             var blobs = await BlobStorageService.GetBlobs<CloudBlockBlob>("patient0");
 
-            // Now go through all local files and any not pushed in cloud; push.
-            foreach (var obj in DataObjects)
-            {
-                if (obj.IsDownloaded)
-                {                       
-                    var bytes = await BlobStorageService.SaveBlockBlob("patient0", obj.RawData, obj.Filename);
+            var num_objects = DataObjects.Count + blobs.Count;
 
-                    // Rewrite file data
-                    FileManager.RewriteFile(bytes, obj.Filename);
-                }   
+            if (num_objects == 0)
+            {
+                await dialogService.ShowAlertAsync("No Files.", "No files found in device memory or cloud storage.", "OK");
+                return;
             }
-
-            // Now go through all cloud files and any not pulled to local; pull.
-            foreach (var blob in blobs)
-            {
-                // Check if file already exists...
-                bool skip = false;
-
-                foreach (var obj in DataObjects)
-                    if (obj.Filename == blob.Name) skip = true;
                 
 
-                if (!skip) await BlobStorageService.DownloadBlobData(blob);
+            var cancelled = false;
+            var progress_interval = 100 / num_objects;
+
+            Debug.WriteLine($"no. of data objects: {DataObjects.Count}, blobs: {blobs.Count}, prog int: {progress_interval}");
+
+            using (var dlg = UserDialogs.Instance.Progress("Syncing Files", () => cancelled = true))
+            {
+                while (!cancelled && dlg.PercentComplete < 100)
+                {
+                    // Now go through all local files and any not pushed in cloud; push.
+                    foreach (var obj in DataObjects)
+                    {
+                        if (obj.IsDownloaded)
+                        {
+                            var bytes = await BlobStorageService.SaveBlockBlob("patient0", obj.RawData, obj.Filename);
+                            await Task.Delay(100);
+
+                            // Rewrite file data
+                            FileManager.RewriteFile(bytes, obj.Filename);
+                        }
+
+                        dlg.PercentComplete += progress_interval;
+                    }
+
+                    // Now go through all cloud files and any not pulled to local; pull.
+                    foreach (var blob in blobs)
+                    {
+                        // Check if file already exists...
+                        bool skip = false;
+
+                        foreach (var obj in DataObjects)
+                            if (obj.Filename == blob.Name) skip = true;
+
+                        if (!skip) await BlobStorageService.DownloadBlobData(blob);
+
+                        await Task.Delay(100);
+                        dlg.PercentComplete += progress_interval;
+                    }
+
+                    RefreshObjects();
+                }
             }
-
-            RefreshObjects();
-
-            CrossToastPopUp.Current.ShowToastMessage("Cloud sync finished.");
         }
         #endregion
 
@@ -202,9 +227,6 @@ namespace BracePLUS.ViewModels
             {
                 obj.DownloadLocalData(obj.Directory);
                 obj.Analyze();
-
-                Debug.WriteLine("Refreshing object:");
-                obj.DebugObject();
 
                 if (obj.IsDownloaded)
                 {

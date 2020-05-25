@@ -67,7 +67,7 @@ namespace BracePLUS
             IsAdmin = false;
 
             await Task.Delay(1000);
-           // await Client.StartScan();
+            await Client.StartScan();
         }
 
         protected override void OnSleep()

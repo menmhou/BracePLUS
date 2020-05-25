@@ -19,7 +19,7 @@ namespace BracePLUS.Services
 
             using (BinaryWriter writer = new BinaryWriter(new FileStream(filename, FileMode.OpenOrCreate, FileAccess.Write)))
             {
-                // Header may be null so write in try/catch
+                // Header may be null
                 if (header != null)
                     writer.Write(header, 0, header.Length);
 
@@ -36,20 +36,14 @@ namespace BracePLUS.Services
                     Debug.WriteLine("Data write failed: " + ex.ToString());
                 }
 
-                // Footer may be null so write in try/catch
-                try
-                {
+                // Footer may be null
+                if (footer != null)
                     writer.Write(footer, 0, footer.Length);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Footer write failed: " + ex.Message);
-                }
+
                 writer.Close();
 
                 App.DebugMsg($"File written: {name}");
             }
-            
         }
 
         public static void WriteFile(byte[] data, string name, byte[] header = null, byte[] footer = null)

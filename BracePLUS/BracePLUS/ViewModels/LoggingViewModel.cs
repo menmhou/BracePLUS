@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using BracePLUS.Analysis;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.Views;

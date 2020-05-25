@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
+using BracePLUS.Services;
 using Microsoft.AppCenter.Crashes;
 using MvvmCross.ViewModels;
+using Plugin.Toast;
 using Xamarin.Forms;
 using static BracePLUS.Extensions.Constants;
 
@@ -83,12 +85,14 @@ namespace BracePLUS.ViewModels
         // Private members
         readonly Random random;
         readonly MessageHandler handler;
+        private readonly IDialogService dialogService;
         StackLayout stack;
 
         public DebugViewModel()
         {
             random = new Random();
             handler = new MessageHandler();
+            dialogService = new DialogService();
 
             // Commands
             SimulateData = new Command(() => ExecuteSimulateData());
@@ -178,11 +182,12 @@ namespace BracePLUS.ViewModels
         {
             var clear = await Application.Current.MainPage.DisplayAlert("Clear files", "Do you wish to clear all files? This cannot be undone.", "Yes", "No");
 
-            var msg = "Clearing app files.";
-            MessagingCenter.Send(App.Client, "StatusMessage", msg);
-
             if (clear)
+            {
+                var msg = "Clearing app files.";
+                App.DebugMsg(msg);
                 App.ClearFiles();
+            }
         }
  
         private void ExecuteSimulateData()
@@ -212,7 +217,11 @@ namespace BracePLUS.ViewModels
                 sim_data.Add(temp);
             }
 
-            App.Client.WRITE_FILE(sim_data, filename, header: HEADER_SIM, footer: HEADER_SIM);
+            var msg = $"Creating simulation file: {(sim_data.Count * 128) / 1000} KB";
+            App.DebugMsg("");
+
+            CrossToastPopUp.Current.ShowToastMessage($"Written file: {filename}");
+            FileManager.WriteFile(sim_data, filename, header: HEADER_SIM, footer: HEADER_SIM);
         }
 
         private void SetNullValues()
