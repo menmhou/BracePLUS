@@ -129,7 +129,7 @@ namespace BracePLUS.ViewModels
             MessagingCenter.Subscribe<InspectViewModel, DataObject>(this, "Remove", (sender, arg) =>
             {
                 DataObjects.Remove(arg);
-                LoadLocalFiles();
+                RefreshObjects();
             });
 
             RefreshObjects();
@@ -159,8 +159,17 @@ namespace BracePLUS.ViewModels
             // First get all filenames from cloud
             var blobs = await BlobStorageService.GetBlobs<CloudBlockBlob>("patient0");
 
+            var num_objects = DataObjects.Count + blobs.Count;
+
+            if (num_objects == 0)
+            {
+                await dialogService.ShowAlertAsync("No Files.", "No files found in device memory or cloud storage.", "OK");
+                return;
+            }
+                
+
             var cancelled = false;
-            var progress_interval = 100 / (DataObjects.Count + blobs.Count);
+            var progress_interval = 100 / num_objects;
 
             Debug.WriteLine($"no. of data objects: {DataObjects.Count}, blobs: {blobs.Count}, prog int: {progress_interval}");
 

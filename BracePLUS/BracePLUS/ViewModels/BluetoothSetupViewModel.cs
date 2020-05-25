@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using BracePLUS.Events;
+﻿using BracePLUS.Events;
 using MvvmCross.ViewModels;
 using static BracePLUS.Extensions.Constants;
 using Xamarin.Forms;
 using System.Threading.Tasks;
-using System.Diagnostics;
-using BracePLUS.Models;
 
 namespace BracePLUS.ViewModels
 {
@@ -103,6 +98,7 @@ namespace BracePLUS.ViewModels
         {
             ButtonCommand = new Command(async () => await ExecuteButtonCommand());
             ImageOpacity = 1.0;
+
             // Assign event method
             App.Client.SystemEvent += async (s, e) => await UpdateUI(e);
 

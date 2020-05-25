@@ -62,9 +62,11 @@ namespace BracePLUS.Models
                         Debug.WriteLine(output);
                     */
 
+                    dOutput[2] *= -1.00;
+
                     // Re-pack back into output buffer with correct index
                     for (int j = 0; j < 3; j++)
-                    Outputs[(i - 4) / 6, j] = dOutput[j];
+                        Outputs[(i - 4) / 6, j] = dOutput[j];
                 }
                 skip = false;
             }

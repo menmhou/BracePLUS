@@ -1,4 +1,5 @@
 ﻿using BracePLUS.Analysis;
+using BracePLUS.Events;
 using BracePLUS.Extensions;
 using BracePLUS.Models;
 using BracePLUS.Services;
@@ -14,6 +15,8 @@ using System.IO;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Xamarin.Forms;
+
+using static BracePLUS.Extensions.Constants;
 
 namespace BracePLUS.Views
 {

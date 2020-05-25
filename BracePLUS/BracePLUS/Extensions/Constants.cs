@@ -53,6 +53,7 @@ namespace BracePLUS.Extensions
         public const int SYNC_FINISH = 15;
         public const int FILE_WRITTEN = 16;
         public const int SCAN_TIMEOUT = 17;
+        public const int FILE_DELETED = 18;
 
         public const int FILE_FORMAT_MMDDHHmm = 0;
         public const int FILE_FORMAT_UTC = 1;

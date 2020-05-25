@@ -755,13 +755,6 @@ namespace BracePLUS.Models
         {
             FileManager.WriteFile(data, name, header, footer);
 
-            SystemUpdatedEventArgs e = new SystemUpdatedEventArgs
-            {
-                Status = FILE_WRITTEN,
-                Filename = name,
-            };
-            EVENT(e);
-
             DATA_IN.Clear();
         }
 
