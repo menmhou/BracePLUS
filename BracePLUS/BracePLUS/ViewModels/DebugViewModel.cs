@@ -85,15 +85,12 @@ namespace BracePLUS.ViewModels
         // Private members
         readonly Random random;
         readonly MessageHandler handler;
-        private readonly IDialogService dialogService;
         StackLayout stack;
 
         public DebugViewModel()
         {
             random = new Random();
             handler = new MessageHandler();
-            dialogService = new DialogService();
-
             // Commands
             SimulateData = new Command(() => ExecuteSimulateData());
             ClearFiles = new Command(() => ExecuteClearFiles());
@@ -218,7 +215,7 @@ namespace BracePLUS.ViewModels
             }
 
             var msg = $"Creating simulation file: {(sim_data.Count * 128) / 1000} KB";
-            App.DebugMsg("");
+            App.DebugMsg(msg);
 
             CrossToastPopUp.Current.ShowToastMessage($"Written file: {filename}");
             FileManager.WriteFile(sim_data, filename, header: HEADER_SIM, footer: HEADER_SIM);

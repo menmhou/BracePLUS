@@ -237,8 +237,8 @@ namespace BracePLUS.Models
                     CalibratedData = RetrieveCalibration(RawData, FilenameCSV);
 
                 // Extract list of normals
-                var normals = AnalysisAssitant.ExtractMaximumNormals(CalibratedData);
-                var averages = AnalysisAssitant.ExtractAverageNormals(CalibratedData);
+                var normals = AnalysisAssitant.ExtractAbsoluteMaximumNormals(CalibratedData);
+                var averages = AnalysisAssitant.ExtractAbsoluteAverageNormals(CalibratedData);
 
                 Duration = AnalysisAssitant.GetPacketDuration(RawData);
                 AveragePressure = AnalysisAssitant.GetAverage(averages);

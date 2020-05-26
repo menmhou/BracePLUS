@@ -402,7 +402,7 @@ namespace BracePLUS.Views
                 BarChartMinimum = 0.6;
                 BarChartMaximum = 1.4;
 
-                AllNodeNormals = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, (int)SliderValue - 1);
+                AllNodeNormals = AnalysisAssitant.ExtractAbsolutePacketNormals(DataObj.CalibratedData, (int)SliderValue - 1);
 
                 for (int i = 0; i < 16; i++)
                     BarChartData.Add(new ChartDataModel(i.ToString(), AllNodeOffsets[i] + AllNodeNormals[i]));
@@ -423,7 +423,7 @@ namespace BracePLUS.Views
                 BarChartMinimum = 0.2;
                 BarChartMaximum = 1.0;
 
-                AllNodeNormals = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, (int)SliderValue - 1);
+                AllNodeNormals = AnalysisAssitant.ExtractAbsolutePacketNormals(DataObj.CalibratedData, (int)SliderValue - 1);
 
                 for (int i = 0; i < 16; i++)
                     BarChartData.Add(new ChartDataModel(i.ToString(), AllNodeNormals[i]));
@@ -441,7 +441,7 @@ namespace BracePLUS.Views
 
                 Debug.WriteLine(TareData);
 
-                AllNodeNormals = AnalysisAssitant.ExtractPacketNormals(DataObj.CalibratedData, val - 1);
+                AllNodeNormals = AnalysisAssitant.ExtractAbsolutePacketNormals(DataObj.CalibratedData, val - 1);
 
                 if (TareData)
                 {
@@ -469,7 +469,7 @@ namespace BracePLUS.Views
             try
             {
                 // Retrieve array of 16 doubles containing sensor Z axis values for a specific data packet (first/0th packet in this case)
-                AllNodeNormals = AnalysisAssitant.ExtractPacketNormals(calibData, 1);
+                AllNodeNormals = AnalysisAssitant.ExtractAbsolutePacketNormals(calibData, 1);
 
                 // Gather offsets to use when tarring data.
                 for (int i = 0; i < 16; i++)
@@ -488,7 +488,7 @@ namespace BracePLUS.Views
         private void InitLineChart(List<double[,]> calibData)
         { 
             // Take calibrated data
-            var data = AnalysisAssitant.ExtractAverageNormals(calibData);
+            var data = AnalysisAssitant.ExtractAbsoluteAverageNormals(calibData);
             RawNormals = data;
 
             // Create offset from initial value (0th index is sometimes wrong- needs fixing.)

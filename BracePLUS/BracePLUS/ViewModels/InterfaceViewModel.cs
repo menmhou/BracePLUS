@@ -208,36 +208,26 @@ namespace BracePLUS.ViewModels
         }
         void Client_OnPressureUpdated(object sender, PressureUpdatedEventArgs e)
         {
-            Device.BeginInvokeOnMainThread(() =>
+            Device.BeginInvokeOnMainThread(() => 
             {
                 if (BarChartData.Count > 0) BarChartData.Clear();
 
                 // Retrieve values from event args and normalize with offsets
                 for (int i = 0; i < 16; i++)
-                    normals[i] = e.Values[i] - offsets[i];
-                
+                    normals[i] = Math.Abs(e.Values[i]) - offsets[i];
+
                 // Find maximum value from array of values
                 double pressure = 0.0;
                 foreach (var val in normals)
                     if (val > pressure) pressure = val;
 
                 // Update average & maximum display labels
-                Average = AnalysisAssitant.GetAverage(e.Values);
+                Average = AnalysisAssitant.GetAverage(normals);
                 BarChartData.Add(new ChartDataModel("Pressure", Average));
 
                 if (pressure > Maximum) Maximum = pressure;
 
-                #region Simulation
-#if SIMULATION
-
-#else
-#endif
-                #endregion
-
-                if (pressure > MAX_PRESSURE)
-                {
-                    //App.Vibrate(1);
-                }
+                if (pressure > MAX_PRESSURE) App.Vibrate(1);
             });
         }
         #endregion

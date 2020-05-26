@@ -224,16 +224,14 @@ namespace BracePLUS.Analysis
         /// <param name="data">The data containing the sensor values (List of data arrays, each array is 3x16; XYZ values * 16 sensors)</param>
         /// <param name="index">The index of the desired sensor packet within the list of data</param>
         /// <returns></returns>
-        static public double[] ExtractPacketNormals(List<double[,]> data, int index)
+        static public double[] ExtractAbsolutePacketNormals(List<double[,]> data, int index)
         {
             double[] values = new double[16];
-
-            // App.DebugMsg($"Analysis: extracting packet normals.\nPacket index: {index}, size: {data[index].Length}");
 
             try
             {
                 for (int i = 0; i < 16; i++)
-                    values[i] = data[index][i, 2];
+                    values[i] = Math.Abs(data[index][i, 2]);
             }
             catch (Exception ex)
             {
@@ -249,7 +247,7 @@ namespace BracePLUS.Analysis
         /// </summary>
         /// <param name="calibData">The calibrated data containing sensor measurements.</param>
         /// <returns>List of maximums</returns>
-        static public List<double> ExtractMaximumNormals(List<double[,]> calibData)
+        static public List<double> ExtractAbsoluteMaximumNormals(List<double[,]> calibData)
         {
             var normals = new List<double>();
 
@@ -261,7 +259,7 @@ namespace BracePLUS.Analysis
 
                     for (int i = 0; i < 16; i++)
                     {
-                        z = calibData[j][i, 2];
+                        z = Math.Abs(calibData[j][i, 2]);
                         if (z > z_max) z_max = z;
                     }
 
@@ -281,7 +279,7 @@ namespace BracePLUS.Analysis
         /// </summary>
         /// <param name="calibData">The calibrated data containing sensor measurements.</param>
         /// <returns>List of averages.</returns>
-        static public List<double> ExtractAverageNormals(List<double[,]> calibData)
+        static public List<double> ExtractAbsoluteAverageNormals(List<double[,]> calibData)
         {
             // PrintCalibData(calibData);
 
@@ -292,7 +290,7 @@ namespace BracePLUS.Analysis
                 double packet_sum = 0;
 
                 for (int sensor = 0; sensor < 16; sensor++)
-                    packet_sum += calibData[packet][sensor, 2];
+                    packet_sum += Math.Abs(calibData[packet][sensor, 2]);
                 
                 var average = packet_sum / 16;
 
@@ -302,6 +300,11 @@ namespace BracePLUS.Analysis
             return normals;
         }
 
+        /// <summary>
+        /// Extract the average Z axis value from a group of data objects.
+        /// </summary>
+        /// <param name="group"></param>
+        /// <returns>Returns the average value over all the data objects</returns>
         static public double GetNormalAverageFromGroup(DataObjectGroup group)
         {
             List<double> normals = new List<double>();
