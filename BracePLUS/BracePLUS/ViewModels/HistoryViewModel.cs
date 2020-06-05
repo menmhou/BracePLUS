@@ -62,19 +62,18 @@ namespace BracePLUS.ViewModels
             }
         }
 
-        private DataObject _selectedObject;
-        public DataObject SelectedObject
+        private DataObject _selectedItem;
+        public DataObject SelectedItem
         {
-            get => _selectedObject;
+            get => _selectedItem;
             set
             {
-                _selectedObject = value;
-                RaisePropertyChanged(() => SelectedObject);
+                _selectedItem = value;
+                RaisePropertyChanged(() => SelectedItem);
 
-                if (_selectedObject != null)
+                if (_selectedItem != null)
                 {
-                    HandleSelection(_selectedObject);
-                    _selectedObject = null;
+                    HandleSelection(_selectedItem);
                 }
             }
         }
@@ -98,7 +97,7 @@ namespace BracePLUS.ViewModels
             DataObjects = new ObservableCollection<DataObject>();
 
             ListViewHeight = DeviceDisplay.MainDisplayInfo.Height;
-            SelectedObject = null;
+            SelectedItem = null;
 
             // Commands
             RefreshCommand = new Command(() => ExecuteRefreshCommand());
@@ -256,7 +255,7 @@ namespace BracePLUS.ViewModels
                 Debug.WriteLine($"Async nav push to new file inspect page failed: {ex.Message}");
             }
 
-            SelectedObject = null;
+            SelectedItem = null;
         }
 
         private void LoadLocalFiles()

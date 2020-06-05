@@ -75,16 +75,6 @@ namespace BracePLUS.ViewModels
                 RaisePropertyChanged(() => AnnotationLineHeight);
             }
         }
-        private int _selectedIndex;
-        public int SelectedIndex
-        {
-            get => _selectedIndex;
-            set
-            {
-                _selectedIndex = value;
-                RaisePropertyChanged(() => SelectedIndex);
-            }
-        }
         #endregion
         #region Refresh
         private bool _isRefreshing;
@@ -170,6 +160,11 @@ namespace BracePLUS.ViewModels
         }
         #endregion
 
+        public void OnAppearing()
+        {
+            SelectedObject = null;
+        }
+
         public void RefreshObjects()
         {
             var msg = "LOGGING: Refreshing files...";
@@ -195,6 +190,9 @@ namespace BracePLUS.ViewModels
 
                 App.GlobalAverage = avgs_sum / downloaded;
             }
+
+            UpdateGraph(DataObjectGroups);
+            ReorderDataObjects();
         }
 
         #region Private Methods

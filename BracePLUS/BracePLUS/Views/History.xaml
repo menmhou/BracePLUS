@@ -15,7 +15,7 @@
         <StackLayout BackgroundColor="#2196F3">
             <ListView x:Name="listView"
                       CachingStrategy="RecycleElement"
-                      SelectedItem="{Binding SelectedObject}"
+                      SelectedItem="{Binding SelectedItem}"
                       ItemsSource="{Binding DataObjects}"
                       HasUnevenRows="True"
                       HeightRequest="{Binding ListViewHeight}"
