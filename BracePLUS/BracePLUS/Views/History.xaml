@@ -91,8 +91,8 @@
                                         </chart:SfChart.PrimaryAxis>
 
                                         <chart:SfChart.SecondaryAxis>
-                                            <chart:NumericalAxis Maximum="0.75"
-                                                                 Minimum="0.25"/>
+                                            <chart:NumericalAxis Maximum="{Binding ChartMaximum}"
+                                                                 Minimum="{Binding ChartMinimum}}"/>
                                         </chart:SfChart.SecondaryAxis>
                                     </chart:SfChart>
                                     

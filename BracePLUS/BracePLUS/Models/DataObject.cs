@@ -64,6 +64,8 @@ namespace BracePLUS.Models
             set { }
         }
         public string ChartEnabled { get; set; }
+        public double ChartMaximum { get; set; }
+        public double ChartMinimum { get; set; }
         public bool ProgressBarEnabled { get; set; }
         public float DownloadProgress { get; set; }
         public string UpDownImage { get; set; }
@@ -276,6 +278,10 @@ namespace BracePLUS.Models
                     
                 }
                 ChartEnabled = "True";
+
+                // Set chart max/mins
+                ChartMaximum = Math.Round(AveragePressure, 2) + 0.05;
+                ChartMinimum = Math.Round(AveragePressure, 2) - 0.05;
             }
             catch (Exception ex)
             {
