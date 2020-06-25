@@ -19,11 +19,11 @@ namespace BracePLUS.Extensions
         public const int MAGTRIX =      100;	// 6bytes * 16nodes + 4 time bytes
         public const int MAGBOARD =     388;	// 6bytes * 64nodes + 4 time bytes
 
-        public const double MAX_PRESSURE = 1.1;
+        public const double MAX_PRESSURE = 0.8;
 
         public const string STORAGE_ACCOUNT_KEY1 = "DefaultEndpointsProtocol=https;AccountName=braceplusappstorage;AccountKey=LmBfodjxy05qZKCAgiKS08WOtyLMudXYt/oyaLpjWxUQeVAyRNZ3F+cZwXmZW07TroKSIrCIsZZGa+fVn85wUQ==;EndpointSuffix=core.windows.net";
 
-        // BLE Defintions
+        // BLE Definitions
         public const string DEV_NAME = "Brace+";
         public const int BLE_SCAN_TIMEOUT_MS = 10000;
         public const string uartServiceUUID = "49535343-fe7d-4ae5-8fa9-9fafd205e455";
