@@ -8087,6 +8087,7 @@ namespace BracePLUS.Droid
 			global::MvvmCross.Droid.Support.V7.AppCompat.Resource.Styleable.View_paddingEnd = global::BracePLUS.Droid.Resource.Styleable.View_paddingEnd;
 			global::MvvmCross.Droid.Support.V7.AppCompat.Resource.Styleable.View_paddingStart = global::BracePLUS.Droid.Resource.Styleable.View_paddingStart;
 			global::MvvmCross.Droid.Support.V7.AppCompat.Resource.Styleable.View_theme = global::BracePLUS.Droid.Resource.Styleable.View_theme;
+			global::MvvmCross.Droid.Support.V7.AppCompat.Resource.Xml.Empty = global::BracePLUS.Droid.Resource.Xml.Empty;
 			global::MvvmCross.Forms.Resource.Animation.abc_fade_in = global::BracePLUS.Droid.Resource.Animation.abc_fade_in;
 			global::MvvmCross.Forms.Resource.Animation.abc_fade_out = global::BracePLUS.Droid.Resource.Animation.abc_fade_out;
 			global::MvvmCross.Forms.Resource.Animation.abc_grow_fade_in_from_bottom = global::BracePLUS.Droid.Resource.Animation.abc_grow_fade_in_from_bottom;
@@ -11006,6 +11007,7 @@ namespace BracePLUS.Droid
 			global::MvvmCross.Forms.Resource.Styleable.View_paddingEnd = global::BracePLUS.Droid.Resource.Styleable.View_paddingEnd;
 			global::MvvmCross.Forms.Resource.Styleable.View_paddingStart = global::BracePLUS.Droid.Resource.Styleable.View_paddingStart;
 			global::MvvmCross.Forms.Resource.Styleable.View_theme = global::BracePLUS.Droid.Resource.Styleable.View_theme;
+			global::MvvmCross.Forms.Resource.Xml.Empty = global::BracePLUS.Droid.Resource.Xml.Empty;
 			global::Rg.Plugins.Popup.Resource.Animation.abc_fade_in = global::BracePLUS.Droid.Resource.Animation.abc_fade_in;
 			global::Rg.Plugins.Popup.Resource.Animation.abc_fade_out = global::BracePLUS.Droid.Resource.Animation.abc_fade_out;
 			global::Rg.Plugins.Popup.Resource.Animation.abc_grow_fade_in_from_bottom = global::BracePLUS.Droid.Resource.Animation.abc_grow_fade_in_from_bottom;
@@ -29069,7 +29071,10 @@ namespace BracePLUS.Droid
 		{
 			
 			// aapt resource value: 0x7F100000
-			public const int xamarin_essentials_fileprovider_file_paths = 2131755008;
+			public const int Empty = 2131755008;
+			
+			// aapt resource value: 0x7F100001
+			public const int xamarin_essentials_fileprovider_file_paths = 2131755009;
 			
 			static Xml()
 			{
