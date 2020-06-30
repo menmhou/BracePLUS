@@ -21,7 +21,7 @@ namespace BracePLUS.Extensions
 
         public const double MAX_PRESSURE = 0.8;
 
-        public const string STORAGE_ACCOUNT_KEY1 = "DefaultEndpointsProtocol=https;AccountName=braceplusappstorage;AccountKey=LmBfodjxy05qZKCAgiKS08WOtyLMudXYt/oyaLpjWxUQeVAyRNZ3F+cZwXmZW07TroKSIrCIsZZGa+fVn85wUQ==;EndpointSuffix=core.windows.net";
+        public const string STORAGE_ACCOUNT_KEY1 = "DefaultEndpointsProtocol=https;AccountName=braceplusstorageaccount;AccountKey=tsmJxA8CA+VweEj66RRpRF22Jo7M+0L38OB9O1fTrH9FpSULQ0suHVFg5ibepnnHaWOJwPutQoRVIi4Opc1qRw==;EndpointSuffix=core.windows.net";
 
         // BLE Definitions
         public const string DEV_NAME = "Brace+";
